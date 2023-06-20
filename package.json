@@ -1,0 +1,23 @@
+{
+  "name": "discord-interactive-menus",
+  "version": "1.0.0",
+  "description": "Simple utility to have dynamic, routed, and responsive Discord menus.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint . --ext .ts",
+    "build": "tsc",
+    "clean": "rm -rf dist"
+  },
+  "author": "irii",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^14.11.0",
+    "typescript": "^5.1.3"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.60.0",
+    "@typescript-eslint/parser": "^5.60.0",
+    "eslint": "^8.43.0"
+  }
+}
