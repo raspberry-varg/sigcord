@@ -179,6 +179,6 @@ export abstract class MenuView<
 
 class MenuViewComponentError extends Error {
   constructor(message: string) {
-    super(`MenuViewComponent error: ${message}`);
+    super(message);
   }
 }
