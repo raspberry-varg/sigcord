@@ -19,17 +19,9 @@ export async function safeRender(
 ) {
   let message;
 
-  // handle replied
-  if (renderTarget.replied) {
+  if (renderTarget.replied || renderTarget.deferred) {
     message = await renderTarget.editReply(viewPayload);
-  }
-  // handle deferred
-  if (renderTarget.deferred) {
-    message = await renderTarget.editReply(viewPayload);
-  }
-  // handle components
-  if (renderTarget.isMessageComponent()) {
-    // if reply preferred over update
+  } else if (renderTarget.isMessageComponent()) {
     if (preferReplyForComponent) {
       message = await renderTarget.reply({
         ...viewPayload,
