@@ -216,6 +216,6 @@ export abstract class InteractiveMenu {
 
 class InteractiveMenuError extends Error {
   constructor(message: string) {
-    super(`InteractiveMenu error: ${message}`);
+    super(message);
   }
 }
