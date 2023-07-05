@@ -15,6 +15,7 @@ const DEFAULT_IDLE = 60_000;
 interface InteractiveMenuOptions {
   /**
    * If a Message Component, reply to it instead of updating on first render.
+   * @default false
    */
   replyToComponentOnFirstRender: boolean;
   ephemeral: boolean;
@@ -100,6 +101,7 @@ export abstract class InteractiveMenu {
     const viewPayload = view.messagePayload();
     if (collectorEnded) {
       appendTimeoutEmbed(viewPayload, endReason);
+      viewPayload.components = [];
     }
 
     this.message = await safeRender(
@@ -144,7 +146,9 @@ export abstract class InteractiveMenu {
 
   private initCollector() {
     if (!this.message) {
-      throw new InteractiveMenuError(`'message' is undefined.`);
+      throw new InteractiveMenuError(
+        `Unable to initialize collectors; 'message' is undefined.`
+      );
     }
 
     this.collector = this.message.createMessageComponentCollector({
@@ -155,7 +159,6 @@ export abstract class InteractiveMenu {
     });
 
     this.collector.on('collect', async (collected) => {
-      collected.deferUpdate();
       await this.onCollect(collected);
     });
 
