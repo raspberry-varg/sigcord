@@ -133,6 +133,8 @@ export abstract class MenuView<
     this.messageComponentCallbacks.set(componentId, callback);
   }
 
+  onInteract = this.setComponentListener;
+
   /**
    * Safely await a ModalSubmitInteraction by only returning a response if
    * no other modal is currently being awaited.
