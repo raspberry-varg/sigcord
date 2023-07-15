@@ -9,8 +9,12 @@ import type {
   ModalSubmitInteraction,
 } from 'discord.js';
 import type { Router } from './Router';
+import type { ModalBundle } from './ModalBundle';
 
 type MenuViewComponentId = string;
+type ModalRepliableInteraction =
+  | CommandInteraction
+  | MessageComponentInteraction;
 
 export interface MenuViewPayload {
   ephemeral: boolean;
@@ -49,23 +53,24 @@ export abstract class MenuView<
     this.preEmbeds = [];
   }
 
-  PrePassEmbedsToNextRender(...embeds: EmbedBuilder[]) {
+  prePassEmbedsToNextRender(...embeds: EmbedBuilder[]) {
     this.preEmbeds.push(...embeds);
   }
 
-  PostPassEmbedsToNextRender(...embeds: EmbedBuilder[]) {
+  postPassEmbedsToNextRender(...embeds: EmbedBuilder[]) {
     this.postEmbeds.push(...embeds);
   }
 
-  PassEmbedsToNextRender(...embeds: EmbedBuilder[]) {
+  passEmbedsToNextRender(...embeds: EmbedBuilder[]) {
     this.passedEmbeds.push(...embeds);
   }
 
   /**
    * **DO NOT OVERRIDE**. Pass a collected interaction from the InteractiveMenu
    * to its respective listener.
+   * @internal
    */
-  _passCollectedInteractionToHandler(collected: CollectedMessageInteraction) {
+  __passCollectedInteractionToHandler(collected: CollectedMessageInteraction) {
     const interactionCallback = this.messageComponentCallbacks.get(
       collected.customId
     );
@@ -140,7 +145,7 @@ export abstract class MenuView<
    * no other modal is currently being awaited.
    */
   protected async awaitModalSubmit(
-    interaction: CommandInteraction | MessageComponentInteraction,
+    interaction: ModalRepliableInteraction,
     options: AwaitModalSubmitOptions<ModalSubmitInteraction>
   ) {
     this.latestModalOpenedInteractionId = interaction.id;
@@ -152,6 +157,30 @@ export abstract class MenuView<
       return null;
 
     return response;
+  }
+
+  protected async onModalSubmit(
+    interaction: ModalRepliableInteraction,
+    options: AwaitModalSubmitOptions<ModalSubmitInteraction>,
+    callback: (collected: ModalSubmitInteraction) => unknown
+  ) {
+    const response = await this.awaitModalSubmit(interaction, options);
+    if (!response) return;
+    return callback(response);
+  }
+
+  protected async executeModalBundle<Props>(
+    interaction: ModalRepliableInteraction,
+    modalBundle: ModalBundle<Props>,
+    props: Props
+  ) {
+    const modalBundleInstance = modalBundle(props);
+    await interaction.showModal(modalBundleInstance.getModal());
+    return this.onModalSubmit(
+      interaction,
+      modalBundleInstance.getSubmitOptions(),
+      modalBundleInstance.getSubmitHandler()
+    );
   }
 
   private assertComponentIdFormat(
