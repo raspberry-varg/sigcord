@@ -209,7 +209,7 @@ export abstract class InteractiveMenu {
       return;
     }
 
-    await this.getCurrentView()._passCollectedInteractionToHandler(collected);
+    await this.getCurrentView().__passCollectedInteractionToHandler(collected);
 
     if (this.renderAfterHandledInteraction) {
       await this.render();
