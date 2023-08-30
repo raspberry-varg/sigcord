@@ -86,15 +86,12 @@ export abstract class MenuView<
   }
 
   messagePayload(): MenuViewPayload {
-    const embeds = [
-      ...(this.embeds ? this.embeds() ?? [] : []),
-      ...this.pullEmbedsToPass(),
-    ];
+    const embeds = [...(this.embeds() ?? []), ...this.pullEmbedsToPass()];
     return {
       embeds,
       ephemeral: this.ephemeral,
-      content: this.content ? this.content() : undefined,
-      components: this.components ? this.components() : undefined,
+      content: this.content(),
+      components: this.components(),
     };
   }
 
@@ -103,12 +100,20 @@ export abstract class MenuView<
     return this.onLoad();
   }
 
-  protected content?: () => string | undefined;
-  protected embeds?: () => EmbedBuilder[] | undefined;
-  protected components?: () =>
+  protected content(): string | undefined {
+    return undefined;
+  }
+  protected embeds(): EmbedBuilder[] | undefined {
+    return undefined;
+  }
+  protected components():
     | ActionRowBuilder<MessageActionRowComponentBuilder>[]
-    | undefined;
-  protected onLoad?: () => Promise<unknown>;
+    | undefined {
+    return undefined;
+  }
+  protected async onLoad(): Promise<unknown> {
+    return undefined;
+  }
 
   protected createMessageComponentId(componentId: string): MenuViewComponentId {
     if (componentId.includes(':')) {
