@@ -133,6 +133,7 @@ export abstract class MenuView<
           `'createMessageComponentId()' when defining a new component id.`
       );
     }
+    return componentIdSplit.at(-1);
   }
 
   protected setComponentListener(
