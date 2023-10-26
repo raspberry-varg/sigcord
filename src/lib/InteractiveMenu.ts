@@ -62,8 +62,9 @@ export abstract class InteractiveMenu {
   }
 
   /** Swap the current displayed view. */
-  swapView(viewId: string) {
+  swapView(viewId: string, args: any[]) {
     this.activeView = viewId;
+    this.registeredViews.get(viewId)!.onSwap(args)
   }
 
   /** Get the current collector idle time before close in seconds. */

@@ -66,6 +66,11 @@ export abstract class MenuView<
   }
 
   /**
+   * Called when this view comes into view.
+   */
+  public onSwap(..._args: any[]) {}
+
+  /**
    * **DO NOT OVERRIDE**. Pass a collected interaction from the InteractiveMenu
    * to its respective listener.
    * @internal
