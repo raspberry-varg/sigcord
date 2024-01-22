@@ -1,11 +1,10 @@
-import type {
+import {
   ActionRowBuilder,
   AwaitModalSubmitOptions,
-  CollectedInteraction,
   CollectedMessageInteraction,
   CommandInteraction,
   EmbedBuilder,
-  MessageActionRowComponentBuilder,
+  MessageActionRowComponentBuilder, MessageComponentInteraction,
   ModalSubmitInteraction
 } from 'discord.js';
 import type { Router } from './Router';
@@ -14,7 +13,7 @@ import type { ModalBundle } from './ModalBundle';
 type MenuViewComponentId = string;
 type ModalRepliableInteraction =
   | CommandInteraction
-  | CollectedInteraction;
+  | MessageComponentInteraction;
 
 export interface MenuViewPayload {
   ephemeral: boolean;
@@ -24,7 +23,7 @@ export interface MenuViewPayload {
 }
 
 export interface MessageComponentCallback<
-  T extends CollectedInteraction = CollectedInteraction
+  T extends MessageComponentInteraction = MessageComponentInteraction
 > {
   (callback: T): Promise<unknown>;
 }
