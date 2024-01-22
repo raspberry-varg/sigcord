@@ -41,7 +41,7 @@ export abstract class MenuView<
   private preEmbeds: EmbedBuilder[];
   private latestModalOpenedInteractionId?: string;
 
-  protected constructor(
+  constructor(
     protected readonly router: Router,
     protected readonly props: MenuProps,
     private readonly ephemeral: boolean = true
