@@ -6,7 +6,6 @@ import type {
   CommandInteraction,
   EmbedBuilder,
   MessageActionRowComponentBuilder,
-  MessageComponentInteraction,
   ModalSubmitInteraction
 } from 'discord.js';
 import type { Router } from './Router';
@@ -15,7 +14,7 @@ import type { ModalBundle } from './ModalBundle';
 type MenuViewComponentId = string;
 type ModalRepliableInteraction =
   | CommandInteraction
-  | MessageComponentInteraction;
+  | CollectedInteraction;
 
 export interface MenuViewPayload {
   ephemeral: boolean;
