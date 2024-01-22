@@ -1,12 +1,13 @@
 import type {
   ActionRowBuilder,
   AwaitModalSubmitOptions,
+  CollectedInteraction,
   CollectedMessageInteraction,
   CommandInteraction,
   EmbedBuilder,
   MessageActionRowComponentBuilder,
   MessageComponentInteraction,
-  ModalSubmitInteraction,
+  ModalSubmitInteraction
 } from 'discord.js';
 import type { Router } from './Router';
 import type { ModalBundle } from './ModalBundle';
@@ -24,7 +25,7 @@ export interface MenuViewPayload {
 }
 
 export interface MessageComponentCallback<
-  T extends MessageComponentInteraction = MessageComponentInteraction
+  T extends CollectedInteraction = CollectedInteraction
 > {
   (callback: T): Promise<unknown>;
 }
@@ -42,7 +43,7 @@ export abstract class MenuView<
   private preEmbeds: EmbedBuilder[];
   private latestModalOpenedInteractionId?: string;
 
-  constructor(
+  protected constructor(
     protected readonly router: Router,
     protected readonly props: MenuProps,
     private readonly ephemeral: boolean = true
@@ -118,6 +119,22 @@ export abstract class MenuView<
   }
   protected async onLoad(): Promise<unknown> {
     return undefined;
+  }
+
+  /**
+   * @brief Create a component with a callback.
+   * 
+   * @description
+   * Utility method that creates a message component id tied to this view, attaches it to the component, and registers
+   * a provided callback to it.
+   */
+  protected createSmartComponent<ComponentType extends MessageActionRowComponentBuilder>(
+    componentId: string, componentBuilder: ComponentType, componentCallback: MessageComponentCallback,
+  ): ComponentType {
+    const componentClassId = this.createMessageComponentId(componentId);
+    componentBuilder.setCustomId(componentClassId);
+    this.setComponentListener(componentClassId, componentCallback);
+    return componentBuilder;
   }
 
   protected createMessageComponentId(componentId: string): MenuViewComponentId {
