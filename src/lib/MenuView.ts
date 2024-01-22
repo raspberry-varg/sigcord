@@ -34,7 +34,7 @@ export abstract class MenuView<
   abstract readonly id: string;
   private readonly messageComponentCallbacks: Map<
     MenuViewComponentId,
-    MessageComponentCallback
+    MessageComponentCallback<any>
   >;
   private passedEmbeds: EmbedBuilder[];
   private postEmbeds: EmbedBuilder[];
@@ -126,8 +126,8 @@ export abstract class MenuView<
    * Utility method that creates a message component id tied to this view, attaches it to the component, and registers
    * a provided callback to it.
    */
-  protected createSmartComponent<ComponentType extends MessageActionRowComponentBuilder>(
-    componentId: string, componentBuilder: ComponentType, componentCallback: MessageComponentCallback,
+  protected createSmartComponent<ComponentType extends MessageActionRowComponentBuilder, ComponentInteractionType extends MessageComponentInteraction>(
+    componentId: string, componentBuilder: ComponentType, componentCallback: MessageComponentCallback<ComponentInteractionType>,
   ): ComponentType {
     const componentClassId = this.createMessageComponentId(componentId);
     componentBuilder.setCustomId(componentClassId);
@@ -156,9 +156,9 @@ export abstract class MenuView<
     return componentIdSplit.at(-1);
   }
 
-  protected setComponentListener(
+  protected setComponentListener<ComponentInteractionType extends MessageComponentInteraction>(
     componentId: MenuViewComponentId,
-    callback: MessageComponentCallback
+    callback: MessageComponentCallback<ComponentInteractionType>
   ) {
     this.assertComponentIdFormat(componentId);
     this.messageComponentCallbacks.set(componentId, callback);
