@@ -52,7 +52,7 @@ export abstract class MenuView<
     this.preEmbeds = [];
   }
 
-  get interaction(): Readonly<RepliableInteraction> {
+  get interaction(): RepliableInteraction {
     return this.router.getParent().interaction;
   }
 
