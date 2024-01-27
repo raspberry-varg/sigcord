@@ -5,7 +5,7 @@ import {
   CommandInteraction,
   EmbedBuilder,
   MessageActionRowComponentBuilder, MessageComponentInteraction,
-  ModalSubmitInteraction
+  ModalSubmitInteraction, RepliableInteraction
 } from 'discord.js';
 import type { Router } from './Router';
 import type { ModalBundle } from './ModalBundle';
@@ -50,6 +50,10 @@ export abstract class MenuView<
     this.passedEmbeds = [];
     this.postEmbeds = [];
     this.preEmbeds = [];
+  }
+
+  get interaction(): Readonly<RepliableInteraction> {
+    return this.router.getParent().interaction;
   }
 
   prePassEmbedsToNextRender(...embeds: EmbedBuilder[]) {

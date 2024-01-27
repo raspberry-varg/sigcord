@@ -18,4 +18,8 @@ export class Router {
   parentId() {
     return this.interactiveMenu.id;
   }
+
+  getParent() {
+    return this.interactiveMenu;
+  }
 }
