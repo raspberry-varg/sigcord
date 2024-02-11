@@ -13,7 +13,7 @@ export function appendTimeoutEmbed(
 }
 
 export async function safeRender(
-  renderTarget: RepliableInteraction,
+  renderTarget: Readonly<RepliableInteraction>,
   viewPayload: MenuViewPayload,
   preferReplyForComponent = false
 ) {
