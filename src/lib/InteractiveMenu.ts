@@ -127,19 +127,20 @@ export abstract class InteractiveMenu {
     this.registeredViews.set(view.id, view);
   }
 
-  private getCurrentView() {
+  private getView(id: string): MenuView {
     if (this.registeredViews.size < 1) {
       throw new InteractiveMenuError(
         `There are no registered views in this InteractiveMenu. Use ` +
-          `'registerView()' on each of your MenuViews.`
+        `'registerView()' on each of your MenuViews.`
       );
     }
     const currentView = this.registeredViews.get(this.activeView);
     if (!currentView) {
       throw new InteractiveMenuError(
-        `'${currentView}' is not a registered view in InteractiveMenu ` +
-          `${this.id}. Ensure you use 'registerView()' on each of your ` +
-          `MenuViews.`
+        `'${id}' is not a registered view in InteractiveMenu ` +
+        `${this.id}. Ensure you use 'registerView()' on each of your ` +
+        `MenuViews.\n\n` +
+        `Registered views: [${[...this.registeredViews.keys()].join(', ')}]`
       );
     }
     return currentView;
