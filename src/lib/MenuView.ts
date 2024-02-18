@@ -34,6 +34,7 @@ export abstract class MenuView<
   abstract readonly id: string;
   private readonly messageComponentCallbacks: Map<
     MenuViewComponentId,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     MessageComponentCallback<any>
   >;
   private passedEmbeds: EmbedBuilder[];

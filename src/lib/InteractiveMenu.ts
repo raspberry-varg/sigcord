@@ -148,6 +148,7 @@ export abstract class InteractiveMenu {
     if (!this.cachedViews.has(id)) {
       this.cachedViews.set(id, new currentViewClass(this.router, this.props, this.options.ephemeral))
     }
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return this.cachedViews.get(id)!;
   }
 
