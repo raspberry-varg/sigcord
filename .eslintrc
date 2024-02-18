@@ -7,5 +7,7 @@
     "plugin:@typescript-eslint/eslint-recommended",
     "plugin:@typescript-eslint/recommended"
   ],
-  "@typescript-eslint/no-explicit-any": "none"
+  "settings": {
+    "@typescript-eslint/no-explicit-any": "none"
+  }
 }
