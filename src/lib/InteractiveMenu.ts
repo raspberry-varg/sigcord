@@ -144,7 +144,12 @@ export abstract class InteractiveMenu {
         `Registered views: [${[...this.registeredViews.keys()].join(', ')}]`
       );
     }
-    return currentView;
+    // initialize view if not already
+    if (!this.cachedViews.has(id)) {
+      this.cachedViews.set(id, new currentViewClass(this.router, this.props, this.options.ephemeral))
+    }
+    return this.cachedViews.get(id)!;
+  }
 
   private getCurrentView() {
     return this.getView(this.activeView);

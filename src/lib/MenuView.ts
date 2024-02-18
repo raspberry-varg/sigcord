@@ -71,7 +71,10 @@ export abstract class MenuView<
   /**
    * Called when this view comes into view.
    */
-  public onSwap(..._args: any[]) {}
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public onSwap(..._args: unknown[]) {
+    return;
+  }
 
   /**
    * **DO NOT OVERRIDE**. Pass a collected interaction from the InteractiveMenu

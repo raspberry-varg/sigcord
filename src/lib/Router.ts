@@ -5,7 +5,7 @@ export class Router {
   constructor(private readonly interactiveMenu: InteractiveMenu) {}
 
   /** Request a view swap from the InteractiveMenu parent. */
-  triggerView(viewId: string, args: any[] = []) {
+  triggerView(viewId: string, args: unknown[] = []) {
     this.interactiveMenu.swapView(viewId, args);
   }
 
