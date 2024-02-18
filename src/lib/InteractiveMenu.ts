@@ -62,9 +62,9 @@ export abstract class InteractiveMenu {
   }
 
   /** Swap the current displayed view. */
-  swapView(viewId: string, args: any[]) {
+  swapView(viewId: string, args: unknown[]) {
     this.activeView = viewId;
-    this.registeredViews.get(viewId)!.onSwap(...args)
+    this.getView(viewId).onSwap(...args)
   }
 
   /** Get the current collector idle time before close in seconds. */
@@ -134,8 +134,9 @@ export abstract class InteractiveMenu {
         `'registerView()' on each of your MenuViews.`
       );
     }
-    const currentView = this.registeredViews.get(this.activeView);
-    if (!currentView) {
+    // get view definition
+    const currentViewClass = this.registeredViews.get(id);
+    if (!currentViewClass) {
       throw new InteractiveMenuError(
         `'${id}' is not a registered view in InteractiveMenu ` +
         `${this.id}. Ensure you use 'registerView()' on each of your ` +
@@ -144,6 +145,9 @@ export abstract class InteractiveMenu {
       );
     }
     return currentView;
+
+  private getCurrentView() {
+    return this.getView(this.activeView);
   }
 
   private initCollector() {
