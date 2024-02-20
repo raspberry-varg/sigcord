@@ -45,7 +45,6 @@ export class MenuView<ViewProps extends NonNullable<unknown> = NonNullable<unkno
   private latestModalOpenedInteractionId?: string;
   private readonly messageComponentCallbacks: Map<
     MenuViewComponentId,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     MessageComponentCallback<any>
   >;
   private readonly __router?: Router;

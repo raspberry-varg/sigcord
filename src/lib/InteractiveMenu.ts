@@ -216,8 +216,6 @@ export class InteractiveMenu<
       typeof this.props extends ViewProps ? ViewProps : never
     >
   ) {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
     this.registeredViews.set(id, view);
     console.log(`Registering view with id: ${id}`);
   }
