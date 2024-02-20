@@ -37,7 +37,7 @@ const DefaultProps: IntrinsicViewProps = {
 } as const;
 
 export class MenuView<ViewProps extends NonNullable<unknown> = NonNullable<unknown>> {
-  readonly id: string = this.constructor.prototype.name;
+  readonly id: string = this.constructor.name;
   readonly props: ViewProps & IntrinsicViewProps;
   private passedEmbeds: EmbedBuilder[];
   private postEmbeds: EmbedBuilder[];
