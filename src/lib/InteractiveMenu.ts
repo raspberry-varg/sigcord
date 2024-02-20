@@ -61,6 +61,7 @@ type AllPropertiesOf<Views extends ViewDefinitions> = Views extends ViewArrayDef
  * @param id The unique ID of this menu. Used in component `customId`s.
  * @param views All views that this menu utilizes.
  * @param initialView The view that should be rendered first.
+ * @param intrinsic Override default values for intrinsic properties.
  */
 export function DefineMenu<
   Views extends ViewDefinitions,
