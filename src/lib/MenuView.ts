@@ -32,15 +32,13 @@ export interface IntrinsicViewProps {
   ephemeral: boolean | false;
 }
 
-const DefaultProperties: IntrinsicViewProps = {
+const DefaultProps: IntrinsicViewProps = {
   ephemeral: false,
 } as const;
 
-export class MenuView<
-  MenuProps extends NonNullable<unknown> = NonNullable<unknown>
-> {
-  abstract readonly id: string;
-  readonly props: MenuProps & IntrinsicViewProps;
+export class MenuView<ViewProps extends NonNullable<unknown> = NonNullable<unknown>> {
+  readonly id: string = this.constructor.prototype.name;
+  readonly props: ViewProps & IntrinsicViewProps;
   private passedEmbeds: EmbedBuilder[];
   private postEmbeds: EmbedBuilder[];
   private preEmbeds: EmbedBuilder[];
@@ -52,8 +50,8 @@ export class MenuView<
   >;
   private readonly __router?: Router;
 
-  constructor(props: MenuProps & Partial<IntrinsicViewProps>) {
-    this.props = Object.assign({...DefaultProperties}, props);
+  constructor(props: ViewProps & Partial<IntrinsicViewProps>) {
+    this.props = Object.assign({...DefaultProps}, props);
     this.messageComponentCallbacks = new Map();
     this.passedEmbeds = [];
     this.postEmbeds = [];
@@ -164,7 +162,7 @@ export class MenuView<
           `a different character.`
       );
     }
-    return `${this.router.parentId()}:${this.id}:${componentId}`;
+    return `${this.router.parentId}:${this.id}:${componentId}`;
   }
 
   protected getComponentId(rawCustomId: string) {
