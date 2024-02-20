@@ -41,15 +41,22 @@ const DefaultProperties: IntrinsicMenuProps = {
  * @param initialView The view that should be rendered first.
  */
 export function DefineMenu<
-  MenuProps extends NonNullable<unknown>,
+  Views extends (new (props: any) => MenuView)[],
+  Props extends {
+    [KView in keyof Views]: {
+      [KProp in keyof ConstructorParameters<Views[KView]>]: ConstructorParameters<Views[KView]>[KProp]
+    }[keyof ConstructorParameters<Views[KView]>]
+  }[keyof Views],
 >({
   id,
   initialView,
   views,
+  intrinsic,
 }: {
   id: string;
   initialView: string;
-  views: typeof MenuView<any>[];
+  views: Views;
+  intrinsic?: Partial<IntrinsicMenuProps>;
 }) {
   // check if initial view is valid
   if (!views.some((view) => view.prototype.id === initialView)) {
@@ -59,9 +66,9 @@ export function DefineMenu<
   }
 
   // constructor callback
-  return (interaction: RepliableInteraction, props: MenuProps) => {
+  return (interaction: RepliableInteraction, props: Props) => {
     // construct menu
-    const menu = new InteractiveMenu(initialView, interaction, props);
+    const menu = new InteractiveMenu(initialView, interaction, { ...intrinsic, props });
     menu.id = id;
     for (const view of views) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
