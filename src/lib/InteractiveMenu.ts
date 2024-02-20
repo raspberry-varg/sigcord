@@ -32,6 +32,44 @@ interface IntrinsicMenuProps extends IntrinsicViewProps {
 const DefaultProperties: IntrinsicMenuProps = {
   renderAfterHandledInteraction: true,
   ephemeral: false,
+};
+
+/**
+ * Define an interactive menu functionally.
+ * @param id The unique ID of this menu. Used in component `customId`s.
+ * @param views All views that this menu utilizes.
+ * @param initialView The view that should be rendered first.
+ */
+export function DefineMenu<
+  MenuProps extends NonNullable<unknown>,
+>({
+  id,
+  initialView,
+  views,
+}: {
+  id: string;
+  initialView: string;
+  views: typeof MenuView<any>[];
+}) {
+  // check if initial view is valid
+  if (!views.some((view) => view.prototype.id === initialView)) {
+    throw new InteractiveMenuError(
+      `Initial view ID: "${initialView}" is not a registered view.`
+    );
+  }
+
+  // constructor callback
+  return (interaction: RepliableInteraction, props: MenuProps) => {
+    // construct menu
+    const menu = new InteractiveMenu(initialView, interaction, props);
+    menu.id = id;
+    for (const view of views) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      menu.registerView(view);
+    }
+    return menu;
+  };
 }
 
 export class InteractiveMenu<Props extends NonNullable<unknown> = NonNullable<unknown>> {
