@@ -28,29 +28,43 @@ export interface MessageComponentCallback<
   (callback: T): Promise<unknown>;
 }
 
-export abstract class MenuView<
+export interface IntrinsicViewProps {
+  ephemeral: boolean | false;
+}
+
+const DefaultProperties: IntrinsicViewProps = {
+  ephemeral: false,
+} as const;
+
+export class MenuView<
   MenuProps extends NonNullable<unknown> = NonNullable<unknown>
 > {
   abstract readonly id: string;
+  readonly props: MenuProps & IntrinsicViewProps;
+  private passedEmbeds: EmbedBuilder[];
+  private postEmbeds: EmbedBuilder[];
+  private preEmbeds: EmbedBuilder[];
+  private latestModalOpenedInteractionId?: string;
   private readonly messageComponentCallbacks: Map<
     MenuViewComponentId,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     MessageComponentCallback<any>
   >;
-  private passedEmbeds: EmbedBuilder[];
-  private postEmbeds: EmbedBuilder[];
-  private preEmbeds: EmbedBuilder[];
-  private latestModalOpenedInteractionId?: string;
+  private readonly __router?: Router;
 
-  constructor(
-    protected readonly router: Router,
-    protected readonly props: MenuProps,
-    private readonly ephemeral: boolean = true
-  ) {
+  constructor(props: MenuProps & Partial<IntrinsicViewProps>) {
+    this.props = Object.assign({...DefaultProperties}, props);
     this.messageComponentCallbacks = new Map();
     this.passedEmbeds = [];
     this.postEmbeds = [];
     this.preEmbeds = [];
+  }
+
+  get router(): Router {
+    if (this.__router === undefined) {
+      throw new Error(`Internal: Router has not been defined.`);
+    }
+    return this.__router;
   }
 
   get interaction(): RepliableInteraction {
@@ -101,7 +115,7 @@ export abstract class MenuView<
     const embeds = [...(this.embeds() ?? []), ...this.pullEmbedsToPass()];
     return {
       embeds,
-      ephemeral: this.ephemeral,
+      ephemeral: this.props.ephemeral,
       content: this.content(),
       components: this.components(),
     };
