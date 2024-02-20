@@ -4,7 +4,7 @@ import type {
   Message,
   RepliableInteraction,
 } from 'discord.js';
-import type { MenuView } from './MenuView';
+import type { IntrinsicViewProps, MenuView } from './MenuView';
 import { Router } from './Router';
 import { SmartComponentType } from './SmartComponents';
 import { endReasonIsTimeout } from '../util/CollectorUtil';
@@ -12,53 +12,52 @@ import { appendTimeoutEmbed, safeRender } from '../util/RenderingUtil';
 
 const DEFAULT_IDLE = 60_000;
 
-interface InteractiveMenuOptions {
+interface IntrinsicMenuProps extends IntrinsicViewProps {
   /**
-   * If a Message Component, reply to it instead of updating on first render.
+   * When a message component is handled, call {@link render()}.
+   * @default true
+   */
+  renderAfterHandledInteraction: boolean | true;
+  /**
+   * Make this menu render its views as a private message.
    * @default false
    */
-  replyToComponentOnFirstRender: boolean;
-  ephemeral: boolean;
-}
-export interface InteractiveMenuInitOptions
-  extends Partial<InteractiveMenuOptions> {
+  ephemeral: boolean | false;
   /**
    * Existing message to listen for components from.
    */
-  message?: Message;
+  initialMessage?: Message;
 }
 
-export abstract class InteractiveMenu {
-  abstract id: string;
+const DefaultProperties: IntrinsicMenuProps = {
+  renderAfterHandledInteraction: true,
+  ephemeral: false,
+}
+
+export class InteractiveMenu<Props extends NonNullable<unknown> = NonNullable<unknown>> {
+  customId?: string;
   protected message?: Message;
+  protected activeView: string;
   protected readonly router: Router;
-  protected readonly options: InteractiveMenuOptions;
   protected readonly idleTimeMs?: number;
+  protected props: Props & IntrinsicMenuProps;
   private collector?: InteractionCollector<CollectedMessageInteraction>;
   private latestInteractionCollected?: CollectedMessageInteraction;
-  private readonly registeredViews: Map<string, MenuView>;
-  /**
-   * Whether or not to call {@link render render()} after each Collected Message
-   * Component is successfully handled.
-   * - {@link render()} is called when the listener handler defined in
-   *   {@link onCollect()} resolves its Promise (I.E. returns from the
-   *   asynchronous function or resolves a returned Promise).
-   */
-  abstract renderAfterHandledInteraction: boolean;
+
+  get id(): string {
+    return this.customId ?? this.constructor.name;
+  }
 
   constructor(
-    protected activeView: string,
+    protected readonly initialView: string,
     readonly interaction: RepliableInteraction,
-    menuOptions: InteractiveMenuInitOptions = {}
+    props: Props & Partial<IntrinsicMenuProps>,
   ) {
+    this.activeView = initialView;
+    this.props = Object.assign({...DefaultProperties}, props);
+    this.message = this.props.initialMessage;
     this.registeredViews = new Map();
     this.router = new Router(this);
-    this.message = menuOptions.message;
-    this.options = {
-      ephemeral: menuOptions.ephemeral ?? false,
-      replyToComponentOnFirstRender:
-        menuOptions.replyToComponentOnFirstRender ?? false,
-    };
   }
 
   /** Swap the current displayed view. */
@@ -80,8 +79,15 @@ export abstract class InteractiveMenu {
     return this.endListener('close');
   }
 
+  /**
+   * Force a reply to the initial interaction instead of dynamically rendering.
+   */
+  async reply() {
+    return this.render(true);
+  }
+
   /** Render the currently-active view to the original interaction. */
-  async render() {
+  async render(forceReply = false) {
     const view = this.getCurrentView();
     const collectorEnded = this.collector?.ended;
     const endReason = this.collector?.endReason;
@@ -91,7 +97,7 @@ export abstract class InteractiveMenu {
      * If rendering after each collected interaction, swap render target to
      * latest collected
      */
-    if (this.renderAfterHandledInteraction && this.latestInteractionCollected) {
+    if (this.props.renderAfterHandledInteraction && this.latestInteractionCollected) {
       renderTarget = this.latestInteractionCollected;
     }
 
@@ -108,9 +114,8 @@ export abstract class InteractiveMenu {
     this.message = await safeRender(
       renderTarget,
       viewPayload,
-      this.options.replyToComponentOnFirstRender
+      forceReply,
     );
-    this.options.replyToComponentOnFirstRender = false;
 
     if (!this.collector) {
       this.initCollector();
@@ -191,7 +196,7 @@ export abstract class InteractiveMenu {
 
       if (this.collector?.endReason === 'close') {
         // prevent re-render and delete the original interaction's reply
-        this.renderAfterHandledInteraction = false;
+        this.props.renderAfterHandledInteraction = false;
         this.interaction.deleteReply(this.message).catch((e) => {
           console.log(e);
         });
@@ -223,7 +228,7 @@ export abstract class InteractiveMenu {
 
     await this.getCurrentView().__passCollectedInteractionToHandler(collected);
 
-    if (this.renderAfterHandledInteraction) {
+    if (this.props.renderAfterHandledInteraction) {
       await this.render();
     }
   }
