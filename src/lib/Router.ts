@@ -15,7 +15,7 @@ export class Router {
   }
 
   /** Returns the id of the InteractiveMenu parent. */
-  parentId() {
+  get parentId() {
     return this.interactiveMenu.id;
   }
 
