@@ -12,7 +12,7 @@ import { appendTimeoutEmbed, safeRender } from '../util/RenderingUtil';
 
 const DEFAULT_IDLE = 60_000;
 
-interface IntrinsicMenuProps extends IntrinsicViewProps {
+export interface IntrinsicMenuProps extends IntrinsicViewProps {
   /**
    * When a message component is handled, call {@link render()}.
    * @default true
@@ -72,36 +72,37 @@ export function DefineMenu<
   };
 }
 
-export class InteractiveMenu<Props extends NonNullable<unknown> = NonNullable<unknown>> {
-  customId?: string;
+export class InteractiveMenu<
+  MenuProps extends NonNullable<unknown> = NonNullable<unknown>
+> {
+  id: string = this.constructor.prototype.id;
   protected message?: Message;
   protected activeView: string;
   protected readonly router: Router;
   protected readonly idleTimeMs?: number;
-  protected props: Props & IntrinsicMenuProps;
+  protected props: MenuProps & IntrinsicMenuProps;
   private collector?: InteractionCollector<CollectedMessageInteraction>;
   private latestInteractionCollected?: CollectedMessageInteraction;
-
-  get id(): string {
-    return this.customId ?? this.constructor.name;
-  }
+  private readonly registeredViews: Map<string, typeof MenuView<any>>;
+  private readonly cachedViews: Map<string, MenuView>;
 
   constructor(
     protected readonly initialView: string,
     readonly interaction: RepliableInteraction,
-    props: Props & Partial<IntrinsicMenuProps>,
+    props: MenuProps & Partial<IntrinsicMenuProps>
   ) {
     this.activeView = initialView;
-    this.props = Object.assign({...DefaultProperties}, props);
+    this.props = Object.assign({ ...DefaultProperties }, props);
     this.message = this.props.initialMessage;
     this.registeredViews = new Map();
+    this.cachedViews = new Map();
     this.router = new Router(this);
   }
 
   /** Swap the current displayed view. */
   swapView(viewId: string, args: unknown[]) {
     this.activeView = viewId;
-    this.getView(viewId).onSwap(...args)
+    this.getView(viewId).onSwap(...args);
   }
 
   /** Get the current collector idle time before close in seconds. */
@@ -135,7 +136,10 @@ export class InteractiveMenu<Props extends NonNullable<unknown> = NonNullable<un
      * If rendering after each collected interaction, swap render target to
      * latest collected
      */
-    if (this.props.renderAfterHandledInteraction && this.latestInteractionCollected) {
+    if (
+      this.props.renderAfterHandledInteraction &&
+      this.latestInteractionCollected
+    ) {
       renderTarget = this.latestInteractionCollected;
     }
 
@@ -149,11 +153,7 @@ export class InteractiveMenu<Props extends NonNullable<unknown> = NonNullable<un
       viewPayload.components = [];
     }
 
-    this.message = await safeRender(
-      renderTarget,
-      viewPayload,
-      forceReply,
-    );
+    this.message = await safeRender(renderTarget, viewPayload, forceReply);
 
     if (!this.collector) {
       this.initCollector();
@@ -165,16 +165,23 @@ export class InteractiveMenu<Props extends NonNullable<unknown> = NonNullable<un
     return this.collector?.stop(reason);
   }
 
-  /** Register a MenuView to the menu. */
-  protected registerView(view: MenuView) {
-    this.registeredViews.set(view.id, view);
+  /** Register a MenuView class to the menu. */
+  registerView<ViewProps extends NonNullable<unknown>>(
+    view: new (props: ViewProps, menuProps: typeof this.props) => MenuView<
+      typeof this.props extends ViewProps ? ViewProps : never
+    >
+  ) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    this.registeredViews.set(view.prototype.id, view);
+    console.log(`Registering view with id: ${view.prototype.id}`);
   }
 
   private getView(id: string): MenuView {
     if (this.registeredViews.size < 1) {
       throw new InteractiveMenuError(
         `There are no registered views in this InteractiveMenu. Use ` +
-        `'registerView()' on each of your MenuViews.`
+          `'registerView()' on each of your MenuViews.`
       );
     }
     // get view definition
@@ -182,17 +189,21 @@ export class InteractiveMenu<Props extends NonNullable<unknown> = NonNullable<un
     if (!currentViewClass) {
       throw new InteractiveMenuError(
         `'${id}' is not a registered view in InteractiveMenu ` +
-        `${this.id}. Ensure you use 'registerView()' on each of your ` +
-        `MenuViews.\n\n` +
-        `Registered views: [${[...this.registeredViews.keys()].join(', ')}]`
+          `${this.id}. Ensure you use 'registerView()' on each of your ` +
+          `MenuViews.\n\n` +
+          `Registered views: [${[...this.registeredViews.keys()].join(', ')}]`
       );
     }
     // initialize view if not already
-    if (!this.cachedViews.has(id)) {
-      this.cachedViews.set(id, new currentViewClass(this.router, this.props, this.options.ephemeral))
+    let viewInstance = this.cachedViews.get(id);
+    if (!viewInstance) {
+      viewInstance = new currentViewClass(this.props);
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore-next-line: Attach router instance.
+      viewInstance.__router = this.router;
+      this.cachedViews.set(id, viewInstance);
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return this.cachedViews.get(id)!;
+    return viewInstance;
   }
 
   private getCurrentView() {
