@@ -34,6 +34,28 @@ const DefaultProperties: IntrinsicMenuProps = {
   ephemeral: false,
 };
 
+type ViewConstructor = new (props: any) => MenuView;
+type ViewArrayDefinitions = ViewConstructor[];
+type ViewRecordDefinitions = Record<string, unknown> & Record<string, ViewConstructor>;
+type ViewDefinitions = ViewArrayDefinitions | ViewRecordDefinitions;
+
+type AllPropertiesOfRecord<Views extends ViewRecordDefinitions> = {
+  [KView in keyof Views]: {
+    [KProp in keyof ConstructorParameters<Views[KView]>]: ConstructorParameters<Views[KView]>[KProp]
+  }[keyof ConstructorParameters<Views[KView]>]
+}[keyof Views];
+type AllPropertiesOfArray<Views extends ViewArrayDefinitions> = {
+  [KView in keyof Views]: {
+    [KProp in keyof ConstructorParameters<Views[KView]>]: ConstructorParameters<Views[KView]>[KProp]
+  }[keyof ConstructorParameters<Views[KView]>]
+}[keyof Views];
+
+type AllPropertiesOf<Views extends ViewDefinitions> = Views extends ViewArrayDefinitions
+  ? AllPropertiesOfArray<Views>
+  : Views extends ViewRecordDefinitions
+  ? AllPropertiesOfRecord<Views>
+  : never;
+
 /**
  * Define an interactive menu functionally.
  * @param id The unique ID of this menu. Used in component `customId`s.
@@ -41,12 +63,8 @@ const DefaultProperties: IntrinsicMenuProps = {
  * @param initialView The view that should be rendered first.
  */
 export function DefineMenu<
-  Views extends (new (props: any) => MenuView)[],
-  Props extends {
-    [KView in keyof Views]: {
-      [KProp in keyof ConstructorParameters<Views[KView]>]: ConstructorParameters<Views[KView]>[KProp]
-    }[keyof ConstructorParameters<Views[KView]>]
-  }[keyof Views],
+  Views extends ViewDefinitions,
+  Props extends AllPropertiesOf<Views> & Partial<IntrinsicMenuProps>,
 >({
   id,
   initialView,
@@ -54,12 +72,32 @@ export function DefineMenu<
   intrinsic,
 }: {
   id: string;
-  initialView: string;
+  initialView: Views extends ViewArrayDefinitions ? string : keyof Views;
   views: Views;
   intrinsic?: Partial<IntrinsicMenuProps>;
 }) {
   // check if initial view is valid
-  if (!views.some((view) => view.prototype.id === initialView)) {
+  const idToClass = new Map<string, ViewConstructor>();
+  if (Array.isArray(views)) {
+    // convert array to map of id to view class
+    for (const view of views) {
+      // quick initialization to get the user-defined id
+      const id = new view({}).id;
+      if (idToClass.has(id)) {
+        throw new InteractiveMenuError(`Id '${id}' already exists in this interactive menu.`);
+      }
+      idToClass.set(id, view);
+    }
+  } else {
+    // remap record key-value pairs into map
+    for (const [id, view] of Object.entries(views)) {
+      if (idToClass.has(id)) {
+        throw new InteractiveMenuError(`Id '${id}' already exists in this interactive menu.`);
+      }
+      idToClass.set(id, view);
+    }
+  }
+  if (!idToClass.has(initialView)) {
     throw new InteractiveMenuError(
       `Initial view ID: "${initialView}" is not a registered view.`
     );
@@ -68,12 +106,10 @@ export function DefineMenu<
   // constructor callback
   return (interaction: RepliableInteraction, props: Props) => {
     // construct menu
-    const menu = new InteractiveMenu(initialView, interaction, { ...intrinsic, props });
+    const menu = new InteractiveMenu(initialView, interaction, { ...intrinsic, ...props });
     menu.id = id;
-    for (const view of views) {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      menu.registerView(view);
+    for (const [id, view] of idToClass.entries()) {
+      menu.registerView(id, view);
     }
     return menu;
   };
@@ -82,7 +118,7 @@ export function DefineMenu<
 export class InteractiveMenu<
   MenuProps extends NonNullable<unknown> = NonNullable<unknown>
 > {
-  id: string = this.constructor.prototype.id;
+  id: string = this.constructor.name;
   protected message?: Message;
   protected activeView: string;
   protected readonly router: Router;
@@ -174,14 +210,15 @@ export class InteractiveMenu<
 
   /** Register a MenuView class to the menu. */
   registerView<ViewProps extends NonNullable<unknown>>(
-    view: new (props: ViewProps, menuProps: typeof this.props) => MenuView<
+    id: string,
+    view: new (props: ViewProps) => MenuView<
       typeof this.props extends ViewProps ? ViewProps : never
     >
   ) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    this.registeredViews.set(view.prototype.id, view);
-    console.log(`Registering view with id: ${view.prototype.id}`);
+    this.registeredViews.set(id, view);
+    console.log(`Registering view with id: ${id}`);
   }
 
   private getView(id: string): MenuView {
