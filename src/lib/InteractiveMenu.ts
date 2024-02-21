@@ -12,6 +12,19 @@ import { appendTimeoutEmbed, safeRender } from '../util/RenderingUtil';
 
 const DEFAULT_IDLE = 60_000;
 
+interface RenderOptions<ViewIds extends string = string> {
+  /**
+   * Reply or followup instead of editing or updating the original message.
+   * @default false
+   */
+  forceReply: boolean | false;
+  view?: ViewIds;
+}
+
+const DefaultRenderOptions: RenderOptions = {
+  forceReply: false,
+} as const;
+
 export interface IntrinsicMenuProps extends IntrinsicViewProps {
   /**
    * When a message component is handled, call {@link render()}.
@@ -73,7 +86,7 @@ export function DefineMenu<
   Props extends AllPropertiesOf<Views> & Partial<IntrinsicMenuProps>,
 >(definition: {
   id: string;
-  initialView: Views extends ViewArrayDefinitions ? (InstanceType<Views[number]>['id']) : keyof Views;
+  initialView: Views extends ViewArrayDefinitions ? string : keyof Views;
   views: Views;
   intrinsic?: Partial<IntrinsicMenuProps>;
 }) {
@@ -114,7 +127,7 @@ export function DefineMenu<
   // constructor callback
   return (interaction: RepliableInteraction, props: Props) => {
     // construct menu
-    const menu = new InteractiveMenu(initialView, interaction, { ...intrinsic, ...props });
+    const menu = new InteractiveMenu<Props, typeof initialView>(initialView, interaction, { ...intrinsic, ...props });
     menu.id = id;
     for (const [id, view] of idToClass.entries()) {
       menu.registerView(id, view);
@@ -124,7 +137,8 @@ export function DefineMenu<
 }
 
 export class InteractiveMenu<
-  MenuProps extends NonNullable<unknown> = NonNullable<unknown>
+  MenuProps extends NonNullable<unknown> = NonNullable<unknown>,
+  ViewId extends string = string,
 > {
   id: string = this.constructor.name;
   protected message?: Message;
@@ -172,12 +186,19 @@ export class InteractiveMenu<
   /**
    * Force a reply to the initial interaction instead of dynamically rendering.
    */
-  async reply() {
-    return this.render(true);
+  async reply(options: Omit<Partial<RenderOptions<ViewId>>, 'forceReply'>) {
+    return await this.render({ ...options, forceReply: true });
   }
 
-  /** Render the currently-active view to the original interaction. */
-  async render(forceReply = false) {
+  /**
+   * Render the currently-active view to the original interaction.
+   */
+  async render(options?: Partial<RenderOptions<ViewId>>) {
+    const o = { ...DefaultRenderOptions, ...options };
+    if (o.view) {
+      // change initial view
+      this.activeView = o.view;
+    }
     const view = this.getCurrentView();
     const collectorEnded = this.collector?.ended;
     const endReason = this.collector?.endReason;
@@ -204,7 +225,7 @@ export class InteractiveMenu<
       viewPayload.components = [];
     }
 
-    this.message = await safeRender(renderTarget, viewPayload, forceReply);
+    this.message = await safeRender(renderTarget, viewPayload, o.forceReply);
 
     if (!this.collector) {
       this.initCollector();
