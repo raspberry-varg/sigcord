@@ -48,30 +48,42 @@ const DefaultProperties: IntrinsicMenuProps = {
 };
 
 // To whoever just Ctrl+Clicked, I'm so sorry for all this type mangling, but it works.
-type UnionToIntersection<U> =
-  (U extends any ? (x: U)=>void : never) extends ((x: infer I)=>void) ? I : never
-type ArrayUnionToIntersection<U> = U extends Array<infer T> ? UnionToIntersection<T> : never;
-type ObjectUnionToIntersection<U> = U extends Record<string, infer T> ? UnionToIntersection<T> : never;
+type UnionToIntersection<U> = (U extends any ? (x: U) => void : never) extends (
+  x: infer I
+) => void
+  ? I
+  : never;
+type ArrayUnionToIntersection<U> = U extends Array<infer T>
+  ? UnionToIntersection<T>
+  : never;
+type ObjectUnionToIntersection<U> = U extends Record<string, infer T>
+  ? UnionToIntersection<T>
+  : never;
 
 type ViewConstructor = new (props: any) => MenuView;
 type ViewArrayDefinitions = ViewConstructor[];
-type ViewRecordDefinitions = Record<string, unknown> & Record<string, ViewConstructor>;
+type ViewRecordDefinitions = Record<string, unknown> &
+  Record<string, ViewConstructor>;
 type ViewDefinitions = ViewArrayDefinitions | ViewRecordDefinitions;
 
-type AllPropertiesOfRecord<Views extends ViewRecordDefinitions> = ObjectUnionToIntersection<{
-  [KView in keyof Views]: ConstructorParameters<Views[KView]>[0]
-}>;
-type AllPropertiesOfArray<Views extends ViewArrayDefinitions> = ArrayUnionToIntersection<{
-  [KView in keyof Views]: ConstructorParameters<Views[KView]>[0]
-}>;
+type AllPropertiesOfRecord<Views extends ViewRecordDefinitions> =
+  ObjectUnionToIntersection<{
+    [KView in keyof Views]: ConstructorParameters<Views[KView]>[0];
+  }>;
+type AllPropertiesOfArray<Views extends ViewArrayDefinitions> =
+  ArrayUnionToIntersection<{
+    [KView in keyof Views]: ConstructorParameters<Views[KView]>[0];
+  }>;
 
-type ResolveAllPropertiesOf<Views extends ViewDefinitions> = Views extends ViewArrayDefinitions
-  ? AllPropertiesOfArray<Views>
-  : Views extends ViewRecordDefinitions
+type ResolveAllPropertiesOf<Views extends ViewDefinitions> =
+  Views extends ViewArrayDefinitions
+    ? AllPropertiesOfArray<Views>
+    : Views extends ViewRecordDefinitions
     ? AllPropertiesOfRecord<Views>
     : never;
 
-type AllPropertiesOf<Views extends ViewDefinitions> = ResolveAllPropertiesOf<Views>;
+type AllPropertiesOf<Views extends ViewDefinitions> =
+  ResolveAllPropertiesOf<Views>;
 
 /**
  * Define an interactive menu functionally.
@@ -83,19 +95,14 @@ type AllPropertiesOf<Views extends ViewDefinitions> = ResolveAllPropertiesOf<Vie
  */
 export function DefineMenu<
   Views extends ViewDefinitions,
-  Props extends AllPropertiesOf<Views> & Partial<IntrinsicMenuProps>,
+  Props extends AllPropertiesOf<Views> & Partial<IntrinsicMenuProps>
 >(definition: {
   id: string;
   initialView: Views extends ViewArrayDefinitions ? string : keyof Views;
   views: Views;
   intrinsic?: Partial<IntrinsicMenuProps>;
 }) {
-  const {
-    id,
-    initialView,
-    views,
-    intrinsic,
-  } = definition;
+  const { id, initialView, views, intrinsic } = definition;
 
   // check if initial view is valid
   const idToClass = new Map<string, ViewConstructor>();
@@ -105,7 +112,9 @@ export function DefineMenu<
       // quick initialization to get the user-defined id
       const id = new view({}).id;
       if (idToClass.has(id)) {
-        throw new InteractiveMenuError(`Id '${id}' already exists in this interactive menu.`);
+        throw new InteractiveMenuError(
+          `Id '${id}' already exists in this interactive menu.`
+        );
       }
       idToClass.set(id, view);
     }
@@ -113,7 +122,9 @@ export function DefineMenu<
     // remap record key-value pairs into map
     for (const [id, view] of Object.entries(views)) {
       if (idToClass.has(id)) {
-        throw new InteractiveMenuError(`Id '${id}' already exists in this interactive menu.`);
+        throw new InteractiveMenuError(
+          `Id '${id}' already exists in this interactive menu.`
+        );
       }
       idToClass.set(id, view);
     }
@@ -127,7 +138,11 @@ export function DefineMenu<
   // constructor callback
   return (interaction: RepliableInteraction, props: Props) => {
     // construct menu
-    const menu = new InteractiveMenu<Props, typeof initialView>(initialView, interaction, { ...intrinsic, ...props });
+    const menu = new InteractiveMenu<Props, typeof initialView>(
+      initialView,
+      interaction,
+      { ...intrinsic, ...props }
+    );
     menu.id = id;
     for (const [id, view] of idToClass.entries()) {
       menu.registerView(id, view);
@@ -138,7 +153,7 @@ export function DefineMenu<
 
 export class InteractiveMenu<
   MenuProps extends NonNullable<unknown> = NonNullable<unknown>,
-  ViewId extends string = string,
+  ViewId extends string = string
 > {
   id: string = this.constructor.name;
   protected message?: Message;

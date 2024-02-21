@@ -4,8 +4,10 @@ import {
   CollectedMessageInteraction,
   CommandInteraction,
   EmbedBuilder,
-  MessageActionRowComponentBuilder, MessageComponentInteraction,
-  ModalSubmitInteraction, RepliableInteraction
+  MessageActionRowComponentBuilder,
+  MessageComponentInteraction,
+  ModalSubmitInteraction,
+  RepliableInteraction,
 } from 'discord.js';
 import type { Router } from './Router';
 import type { ModalBundle } from './ModalBundle';
@@ -36,7 +38,9 @@ const DefaultProps: IntrinsicViewProps = {
   ephemeral: false,
 } as const;
 
-export class MenuView<ViewProps extends NonNullable<unknown> = NonNullable<unknown>> {
+export class MenuView<
+  ViewProps extends NonNullable<unknown> = NonNullable<unknown>
+> {
   readonly id: string = this.constructor.name;
   readonly props: ViewProps & IntrinsicViewProps;
   private passedEmbeds: EmbedBuilder[];
@@ -50,7 +54,7 @@ export class MenuView<ViewProps extends NonNullable<unknown> = NonNullable<unkno
   private readonly __router?: Router;
 
   constructor(props: ViewProps & Partial<IntrinsicViewProps>) {
-    this.props = Object.assign({...DefaultProps}, props);
+    this.props = Object.assign({ ...DefaultProps }, props);
     this.messageComponentCallbacks = new Map();
     this.passedEmbeds = [];
     this.postEmbeds = [];
@@ -140,13 +144,18 @@ export class MenuView<ViewProps extends NonNullable<unknown> = NonNullable<unkno
 
   /**
    * @brief Create a component with a callback.
-   * 
+   *
    * @description
    * Utility method that creates a message component id tied to this view, attaches it to the component, and registers
    * a provided callback to it.
    */
-  protected createSmartComponent<ComponentType extends MessageActionRowComponentBuilder, ComponentInteractionType extends MessageComponentInteraction>(
-    componentId: string, componentBuilder: ComponentType, componentCallback: MessageComponentCallback<ComponentInteractionType>,
+  protected createSmartComponent<
+    ComponentType extends MessageActionRowComponentBuilder,
+    ComponentInteractionType extends MessageComponentInteraction
+  >(
+    componentId: string,
+    componentBuilder: ComponentType,
+    componentCallback: MessageComponentCallback<ComponentInteractionType>
   ): ComponentType {
     const componentClassId = this.createMessageComponentId(componentId);
     componentBuilder.setCustomId(componentClassId);
@@ -175,7 +184,9 @@ export class MenuView<ViewProps extends NonNullable<unknown> = NonNullable<unkno
     return componentIdSplit.at(-1);
   }
 
-  protected setComponentListener<ComponentInteractionType extends MessageComponentInteraction>(
+  protected setComponentListener<
+    ComponentInteractionType extends MessageComponentInteraction
+  >(
     componentId: MenuViewComponentId,
     callback: MessageComponentCallback<ComponentInteractionType>
   ) {
