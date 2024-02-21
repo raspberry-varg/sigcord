@@ -38,13 +38,14 @@ const DefaultProperties: IntrinsicMenuProps = {
 type UnionToIntersection<U> =
   (U extends any ? (x: U)=>void : never) extends ((x: infer I)=>void) ? I : never
 type ArrayUnionToIntersection<U> = U extends Array<infer T> ? UnionToIntersection<T> : never;
+type ObjectUnionToIntersection<U> = U extends Record<string, infer T> ? UnionToIntersection<T> : never;
 
 type ViewConstructor = new (props: any) => MenuView;
 type ViewArrayDefinitions = ViewConstructor[];
 type ViewRecordDefinitions = Record<string, unknown> & Record<string, ViewConstructor>;
 type ViewDefinitions = ViewArrayDefinitions | ViewRecordDefinitions;
 
-type AllPropertiesOfRecord<Views extends ViewRecordDefinitions> = ArrayUnionToIntersection<{
+type AllPropertiesOfRecord<Views extends ViewRecordDefinitions> = ObjectUnionToIntersection<{
   [KView in keyof Views]: ConstructorParameters<Views[KView]>[0]
 }>;
 type AllPropertiesOfArray<Views extends ViewArrayDefinitions> = ArrayUnionToIntersection<{
@@ -61,25 +62,28 @@ type AllPropertiesOf<Views extends ViewDefinitions> = ResolveAllPropertiesOf<Vie
 
 /**
  * Define an interactive menu functionally.
- * @param id The unique ID of this menu. Used in component `customId`s.
- * @param views All views that this menu utilizes.
- * @param initialView The view that should be rendered first.
- * @param intrinsic Override default values for intrinsic properties.
+ * @param definition All required interactive menu properties.
+ * @param definition.id The unique ID of this menu. Used in component `customId`s.
+ * @param definition.views All views that this menu utilizes.
+ * @param definition.initialView The view that should be rendered first.
+ * @param definition.intrinsic Override default values for intrinsic properties.
  */
 export function DefineMenu<
   Views extends ViewDefinitions,
   Props extends AllPropertiesOf<Views> & Partial<IntrinsicMenuProps>,
->({
-  id,
-  initialView,
-  views,
-  intrinsic,
-}: {
+>(definition: {
   id: string;
-  initialView: Views extends ViewArrayDefinitions ? string : keyof Views;
+  initialView: Views extends ViewArrayDefinitions ? (InstanceType<Views[number]>['id']) : keyof Views;
   views: Views;
   intrinsic?: Partial<IntrinsicMenuProps>;
 }) {
+  const {
+    id,
+    initialView,
+    views,
+    intrinsic,
+  } = definition;
+
   // check if initial view is valid
   const idToClass = new Map<string, ViewConstructor>();
   if (Array.isArray(views)) {
