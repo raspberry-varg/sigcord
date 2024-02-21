@@ -34,27 +34,30 @@ const DefaultProperties: IntrinsicMenuProps = {
   ephemeral: false,
 };
 
+// To whoever just Ctrl+Clicked, I'm so sorry for all this type mangling, but it works.
+type UnionToIntersection<U> =
+  (U extends any ? (x: U)=>void : never) extends ((x: infer I)=>void) ? I : never
+type ArrayUnionToIntersection<U> = U extends Array<infer T> ? UnionToIntersection<T> : never;
+
 type ViewConstructor = new (props: any) => MenuView;
 type ViewArrayDefinitions = ViewConstructor[];
 type ViewRecordDefinitions = Record<string, unknown> & Record<string, ViewConstructor>;
 type ViewDefinitions = ViewArrayDefinitions | ViewRecordDefinitions;
 
-type AllPropertiesOfRecord<Views extends ViewRecordDefinitions> = {
-  [KView in keyof Views]: {
-    [KProp in keyof ConstructorParameters<Views[KView]>]: ConstructorParameters<Views[KView]>[KProp]
-  }[keyof ConstructorParameters<Views[KView]>]
-}[keyof Views];
-type AllPropertiesOfArray<Views extends ViewArrayDefinitions> = {
-  [KView in keyof Views]: {
-    [KProp in keyof ConstructorParameters<Views[KView]>]: ConstructorParameters<Views[KView]>[KProp]
-  }[keyof ConstructorParameters<Views[KView]>]
-}[keyof Views];
+type AllPropertiesOfRecord<Views extends ViewRecordDefinitions> = ArrayUnionToIntersection<{
+  [KView in keyof Views]: ConstructorParameters<Views[KView]>[0]
+}>;
+type AllPropertiesOfArray<Views extends ViewArrayDefinitions> = ArrayUnionToIntersection<{
+  [KView in keyof Views]: ConstructorParameters<Views[KView]>[0]
+}>;
 
-type AllPropertiesOf<Views extends ViewDefinitions> = Views extends ViewArrayDefinitions
+type ResolveAllPropertiesOf<Views extends ViewDefinitions> = Views extends ViewArrayDefinitions
   ? AllPropertiesOfArray<Views>
   : Views extends ViewRecordDefinitions
-  ? AllPropertiesOfRecord<Views>
-  : never;
+    ? AllPropertiesOfRecord<Views>
+    : never;
+
+type AllPropertiesOf<Views extends ViewDefinitions> = ResolveAllPropertiesOf<Views>;
 
 /**
  * Define an interactive menu functionally.
