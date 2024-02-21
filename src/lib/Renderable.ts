@@ -3,10 +3,10 @@ import {
   EmbedBuilder,
   Message,
   MessageActionRowComponentBuilder,
-  RepliableInteraction
-} from "discord.js";
-import {safeRender} from "../util/RenderingUtil";
-import {MenuViewPayload} from "./MenuView";
+  RepliableInteraction,
+} from 'discord.js';
+import { safeRender } from '../util/RenderingUtil';
+import { MenuViewPayload } from './MenuView';
 
 interface RenderOptions {
   ephemeral: boolean;
@@ -16,10 +16,13 @@ interface RenderOptions {
 export class Renderable {
   public message?: Message;
 
-  constructor(public interaction: RepliableInteraction, private readonly options: RenderOptions = {
-    ephemeral: true,
-    replyToComponentOnFirstRender: false,
-  }) {}
+  constructor(
+    public interaction: RepliableInteraction,
+    private readonly options: RenderOptions = {
+      ephemeral: true,
+      replyToComponentOnFirstRender: false,
+    }
+  ) {}
 
   async triggerPreloads() {
     if (!this.onLoad) return;
