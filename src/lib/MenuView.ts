@@ -27,7 +27,7 @@ export interface MenuViewPayload {
 export interface MessageComponentCallback<
   T extends MessageComponentInteraction = MessageComponentInteraction
 > {
-  (callback: T): Promise<unknown>;
+  (callback: T): Promise<unknown> | unknown;
 }
 
 export interface IntrinsicViewProps {
