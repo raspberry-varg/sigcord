@@ -3,7 +3,6 @@
  */
 
 import type {
-  ActionRowBuilder,
   AwaitModalSubmitOptions,
   CommandInteraction,
   EmbedBuilder,
@@ -13,7 +12,7 @@ import type {
   ModalSubmitInteraction,
   RepliableInteraction,
 } from 'discord.js';
-import type { MessageComponentCallback } from './MenuView';
+import type { MessageComponentCallback, ViewPayload } from './MenuView';
 import { MaybePromise } from '../util/TypesUtil';
 
 type PropsBase = NonNullable<unknown>;
@@ -36,13 +35,6 @@ export type OnLoadCallback = () => MaybePromise<void>;
 
 interface MenuContext {
   interaction: RepliableInteraction;
-}
-
-interface ViewPayload {
-  ephemeral?: boolean;
-  content?: string;
-  embeds?: EmbedBuilder[];
-  components?: ActionRowBuilder<MessageActionRowComponentBuilder>[];
 }
 
 export interface ViewBuiltins {
