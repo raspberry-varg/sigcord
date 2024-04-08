@@ -11,6 +11,7 @@ import { IntrinsicMenuProps } from './InteractiveMenu';
 import { appendTimeoutEmbed, safeRender } from '../util/RenderingUtil';
 import { endReasonIsTimeout } from '../util/CollectorUtil';
 import { SmartComponentType } from './SmartComponents';
+import { assert } from '../util/Assertions';
 
 export interface ControllerContext {
   // onLoadCallbacks: OnLoadCallback[];
@@ -53,9 +54,10 @@ export function MenuController<
   ViewId extends string = string
 >(
   menuId: string,
+  initialViewId: string,
   registeredViews: View[],
   interaction: RepliableInteraction,
-  initProps: MenuProps
+  initProps: MenuProps,
 ) {
   const ctx = createContext();
   const builtins: ViewBuiltins = {
@@ -113,7 +115,7 @@ export function MenuController<
     MessageComponentCallback<any>
   >();
 
-  let view: View;
+  let view: View = getView(initialViewId);
   let message: Message;
   let collector: InteractionCollector<CollectedMessageInteraction> | null =
     null;
@@ -250,7 +252,7 @@ export function MenuController<
       console.warn(
         `MenuView: No handler defined for ${getComponentId(collected.customId)}`
       );
-      return Promise.resolve('No handler defined.');
+      return 'No handler defined.';
     }
     await interactionCallback(collected);
 
@@ -293,9 +295,9 @@ export function MenuController<
       await view.onLoad?.(props);
     }
 
-    const viewPayload = await view.render(props);
+    let viewPayload = await view.render(props);
     if (collectorEnded) {
-      appendTimeoutEmbed({ephemeral: false, ...viewPayload}, endReason);
+      viewPayload = appendTimeoutEmbed({ephemeral: false, ...viewPayload}, endReason);
       viewPayload.components = [];
     }
 

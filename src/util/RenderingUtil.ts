@@ -10,6 +10,7 @@ export function appendTimeoutEmbed(
     ...(payload.embeds ?? []).splice(0, 10),
     TimeoutEmbed(endReason),
   ];
+  return payload;
 }
 
 export async function safeRender(
