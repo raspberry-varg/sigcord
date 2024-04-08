@@ -1,6 +1,13 @@
 export { IntrinsicMenuProps, DefineMenu } from './lib/InteractiveMenu';
 export * from './lib/MenuView';
-export * from './lib/Router';
+export {
+  DefineView,
+  OnLoadCallback,
+  View,
+  ViewBuiltins,
+  ViewProps,
+  ViewRender,
+} from './lib/FunctionalMenuView';
 export * from './lib/SmartComponents';
 export * from './lib/PrebuiltEmbeds';
 export * from './lib/Renderable';

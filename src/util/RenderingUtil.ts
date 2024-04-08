@@ -1,6 +1,6 @@
-import { RepliableInteraction } from 'discord.js';
 import { MenuViewPayload } from '../lib/MenuView';
 import { TimeoutEmbed } from '../lib/PrebuiltEmbeds';
+import { RepliableInteraction } from 'discord.js';
 
 export function appendTimeoutEmbed(
   payload: MenuViewPayload,
