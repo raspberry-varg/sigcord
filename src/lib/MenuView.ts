@@ -6,7 +6,7 @@ import type {
 } from 'discord.js';
 
 export interface ViewPayload {
-  ephemeral: boolean;
+  ephemeral?: boolean;
   content?: string;
   embeds?: EmbedBuilder[];
   components?: ActionRowBuilder<MessageActionRowComponentBuilder>[];
