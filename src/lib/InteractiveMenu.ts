@@ -92,9 +92,8 @@ export function DefineMenu<
   const idToClass = new Map<string, View>();
   if (Array.isArray(views)) {
     // convert array to map of id to view class
-    for (const view of views) {
-      // quick initialization to get the user-defined id
-      const id = new view({}).id;
+    for (const view of views as View[]) {
+      const id = view.id;
       if (idToClass.has(id)) {
         throw new InteractiveMenuError(
           `Id '${id}' already exists in this interactive menu.`
@@ -124,6 +123,7 @@ export function DefineMenu<
     // construct controller
     const menu = MenuController<Props, typeof initialView>(
       id,
+      initialView,
       [...idToClass.values()],
       interaction,
       { ...intrinsic, ...props }

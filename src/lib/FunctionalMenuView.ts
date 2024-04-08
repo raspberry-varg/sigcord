@@ -86,5 +86,5 @@ export interface InternalViewContext {
 export function DefineView<
   Props extends NonNullable<unknown> = NonNullable<unknown>
 >(definition: View<Props>): View<Props> {
-  return definition;
+  return {...definition} as const;
 }
