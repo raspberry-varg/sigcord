@@ -30,7 +30,7 @@ export interface View<Props extends PropsBase = PropsBase> {
 
 export type ViewRender<Props extends PropsBase = PropsBase> = (
   props: ViewProps<Props>
-) => MaybePromise<Partial<ViewPayload>>;
+) => MaybePromise<ViewPayload>;
 
 export type OnLoadCallback = () => MaybePromise<void>;
 
@@ -39,7 +39,7 @@ interface MenuContext {
 }
 
 interface ViewPayload {
-  ephemeral: boolean;
+  ephemeral?: boolean;
   content?: string;
   embeds?: EmbedBuilder[];
   components?: ActionRowBuilder<MessageActionRowComponentBuilder>[];
