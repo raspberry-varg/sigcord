@@ -5,7 +5,7 @@ import type {
   MessageComponentInteraction,
 } from 'discord.js';
 
-export interface MenuViewPayload {
+export interface ViewPayload {
   ephemeral: boolean;
   content?: string;
   embeds?: EmbedBuilder[];
