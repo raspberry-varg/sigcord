@@ -40,18 +40,17 @@ type ObjectUnionToIntersection<U> = U extends Record<string, infer T>
   ? UnionToIntersection<T>
   : never;
 
-type ViewArrayDefinitions = View[];
-type ViewRecordDefinitions = Record<string, unknown> & Record<string, View>;
+type ViewArrayDefinitions = View<any>[];
+type ViewRecordDefinitions = Record<string, View<any>>;
 export type ViewDefinitions = ViewArrayDefinitions | ViewRecordDefinitions;
 
+type AllProperties<Views extends ViewDefinitions> = {
+  [KView in keyof Views]: Views[KView] extends View<infer Props> ? Props : never;
+};
 type AllPropertiesOfRecord<Views extends ViewRecordDefinitions> =
-  ObjectUnionToIntersection<{
-    [KView in keyof Views]: Parameters<Views[KView]['render']>[0];
-  }>;
+  ObjectUnionToIntersection<AllProperties<Views>>;
 type AllPropertiesOfArray<Views extends ViewArrayDefinitions> =
-  ArrayUnionToIntersection<{
-    [KView in keyof Views]: Parameters<Views[KView]['render']>[0];
-  }>;
+  ArrayUnionToIntersection<AllProperties<Views>>;
 
 type ResolveAllPropertiesOf<Views extends ViewDefinitions> =
   Views extends ViewArrayDefinitions
@@ -62,6 +61,13 @@ type ResolveAllPropertiesOf<Views extends ViewDefinitions> =
 
 type AllPropertiesOf<Views extends ViewDefinitions> =
   ResolveAllPropertiesOf<Views>;
+
+type AllIdsOf<Views extends ViewDefinitions> =
+  Views extends ViewArrayDefinitions
+    ? Views[number]['id'] // TODO: Figure out why this doesn't work properly.
+    : Views extends ViewRecordDefinitions
+    ? keyof Views
+    : never;
 
 /**
  * Define an interactive menu.
@@ -76,7 +82,7 @@ export function DefineMenu<
   Props extends AllPropertiesOf<Views> & Partial<IntrinsicMenuProps>
 >(definition: {
   id: string;
-  initialView: Views extends ViewArrayDefinitions ? string : keyof Views;
+  initialView: AllIdsOf<Views>;
   views: Views;
   intrinsic?: Partial<IntrinsicMenuProps>;
 }) {
