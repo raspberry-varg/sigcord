@@ -79,21 +79,24 @@ export function MenuController<
       latestModal.interactionId = interaction.id;
       const response = await interaction.awaitModalSubmit(options).catch(() => {
         console.log('Modal ended without receiving a response.');
+        flushModal();
         return null;
       });
       if (
         !response ||
-        latestModal.interactionId !== interaction.id ||
-        latestModal.customId !== response.customId
+        (latestModal.interactionId.length && latestModal.interactionId !== interaction.id) ||
+        (latestModal.customId.length && latestModal.customId !== response.customId)
       ) {
         return null;
       }
+      flushModal();
       return response;
     },
     $onModalSubmit: async (interaction, options, callback) => {
       latestModal.interactionId = interaction.id;
       const response = await interaction.awaitModalSubmit(options).catch(() => {
         console.log('Modal ended without receiving a response.');
+        flushModal();
         return;
       });
       if (
@@ -103,6 +106,7 @@ export function MenuController<
       ) {
         return;
       }
+      flushModal();
       await callback(response);
     },
     $close: () => closeMenu(),
@@ -140,6 +144,11 @@ export function MenuController<
     componentCallbacks.clear();
     latestModal.interactionId = '';
     latestModal.customId = '';
+  }
+
+  function flushModal() {
+    latestModal.customId = '';
+    latestModal.interactionId = '';
   }
 
   function getView(id: string): View {
