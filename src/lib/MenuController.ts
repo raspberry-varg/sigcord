@@ -59,12 +59,11 @@ export function MenuController<
   interaction: RepliableInteraction,
   initProps: MenuProps,
 ) {
-  const ctx = createContext();
   const builtins: ViewBuiltins = {
     $appendEmbeds: (...embeds: EmbedBuilder[]) =>
-      ctx.appendedEmbeds.push(...embeds),
+      appendedEmbeds.push(...embeds),
     $prependEmbeds: (...embeds: EmbedBuilder[]) =>
-      ctx.prependedEmbeds.push(...embeds),
+      prependedEmbeds.push(...embeds),
     $swap: (id: string) => changeViewWithCallback(id),
     $component: ({ id, component, callback }) => {
       const componentId = createComponentId(id);
@@ -114,6 +113,8 @@ export function MenuController<
     MenuViewComponentId,
     MessageComponentCallback<any>
   >();
+  const appendedEmbeds: EmbedBuilder[] = [];
+  const prependedEmbeds: EmbedBuilder[] = [];
 
   let view: View = getView(initialViewId);
   let message: Message;
@@ -301,6 +302,16 @@ export function MenuController<
       viewPayload.components = [];
     }
 
+    if (appendedEmbeds.length || prependedEmbeds.length) {
+      viewPayload.embeds = [
+        ...prependedEmbeds,
+        ...(viewPayload.embeds ?? []),
+        ...appendedEmbeds,
+      ];
+      prependedEmbeds.length = 0;
+      appendedEmbeds.length = 0;
+    }
+
     message = await safeRender(renderTarget, {ephemeral: false, ...viewPayload}, o.forceReply);
 
     if (!collector) {
@@ -329,16 +340,6 @@ function buildProps<Props extends NonNullable<unknown>>(
   };
   $.$ = $;
   return $;
-}
-
-function createContext(): ControllerContext {
-  return {
-    // onLoadCallbacks: [],
-    appendedEmbeds: [],
-    prependedEmbeds: [],
-    smartComponents: new Map(),
-    queuedViewChange: null,
-  };
 }
 
 class MenuViewComponentError extends Error {
