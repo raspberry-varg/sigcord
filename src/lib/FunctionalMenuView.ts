@@ -22,7 +22,7 @@ type ModalRepliableInteraction =
   | MessageComponentInteraction;
 
 export interface View<Props extends PropsBase = PropsBase> {
-  id: string;
+  readonly id: string;
   onLoad?: (props: ViewProps<Props>) => MaybePromise<void>;
   onSwap?: (...args: any[]) => MaybePromise<void>;
   render: ViewRender<Props>;
