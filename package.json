@@ -15,7 +15,8 @@
     "lint": "eslint . --ext .ts",
     "format": "npx prettier --write src",
     "build": "tsc",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "publish": "npm run clean && npm run build && npm publish"
   },
   "author": "irii",
   "license": "ISC",
