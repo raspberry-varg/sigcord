@@ -70,7 +70,7 @@ export function MenuController<
       appendedEmbeds.push(...embeds),
     $prependEmbeds: (...embeds: EmbedBuilder[]) =>
       prependedEmbeds.push(...embeds),
-    $swap: (id: string) => changeViewWithCallback(id),
+    $swap: (id: string, ...args: any[]) => changeViewWithCallback(id, ...args),
     $component: ({ id, component, callback }) => {
       const componentId = createComponentId(id);
       component.setCustomId(componentId);

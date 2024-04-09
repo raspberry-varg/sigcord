@@ -70,7 +70,7 @@ export interface ViewBuiltins {
     component: ComponentType;
     callback: MessageComponentCallback<ComponentInteractionType>;
   }): ComponentType;
-  $swap(toViewId: string): void;
+  $swap(toViewId: string, ...args: any[]): void;
   $appendEmbeds(...embeds: EmbedBuilder[]): void;
   $prependEmbeds(...embeds: EmbedBuilder[]): void;
   $showModal(
