@@ -71,10 +71,10 @@ export function MenuController<
     $prependEmbeds: (...embeds: EmbedBuilder[]) =>
       prependedEmbeds.push(...embeds),
     $swap: (id: string, ...args: any[]) => changeViewWithCallback(id, ...args),
-    $component: ({ id, component, callback }) => {
+    $component: ({ id, component, handler }) => {
       const componentId = createComponentId(id);
       component.setCustomId(componentId);
-      componentCallbacks.set(componentId, callback);
+      componentCallbacks.set(componentId, handler);
       return component;
     },
     $showModal: async (interaction, modal) => {
@@ -169,7 +169,10 @@ export function MenuController<
     } else {
       // try cache for instantiated view
       if (!closureViewsCache.has(id)) {
-        closureViewsCache.set(id, await instantiateViewFromClosure(view));
+        closureViewsCache.set(
+          id,
+          await instantiateViewFromClosure<{}>(view, props)
+        );
       }
       viewInstance = closureViewsCache.get(id)!;
     }
