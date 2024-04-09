@@ -35,9 +35,9 @@ interface ViewClosureBody<Props extends PropsBase = PropsBase> {
 export type ViewClosureDefinition<Props extends PropsBase = PropsBase> =
   ViewDefinitionBase & ViewClosureBody<Props>;
 
-export type ViewClosure<Props extends PropsBase = PropsBase> = (
-  props?: ViewProps<Props>
-) => ViewClosureReturn<Props>;
+export type ViewClosure<Props extends PropsBase = PropsBase> =
+  | (() => ViewClosureReturn<Props>)
+  | ((props: ViewProps<Props>) => ViewClosureReturn<Props>);
 
 export interface ViewBody<Props extends PropsBase = PropsBase> {
   onSwap?: (...args: any[]) => MaybePromise<void>;
@@ -51,9 +51,9 @@ export type View<Props extends PropsBase = PropsBase> =
   | ViewClosureDefinition<Props>
   | ViewDefinition<Props>;
 
-export type ViewRender<Props extends PropsBase = PropsBase> = (
-  props?: ViewProps<Props>
-) => MaybePromise<ViewPayload>;
+export type ViewRender<Props extends PropsBase = PropsBase> =
+  | (() => MaybePromise<ViewPayload>)
+  | ((props: ViewProps<Props>) => MaybePromise<ViewPayload>);
 
 export type ViewInstance<Props extends PropsBase = PropsBase> =
   ViewDefinition<Props>;
