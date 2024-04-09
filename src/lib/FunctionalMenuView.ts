@@ -35,8 +35,9 @@ interface ViewClosureBody<Props extends PropsBase = PropsBase> {
 export type ViewClosureDefinition<Props extends PropsBase = PropsBase> =
   ViewDefinitionBase & ViewClosureBody<Props>;
 
-export type ViewClosure<Props extends PropsBase = PropsBase> =
-  () => ViewClosureReturn<Props>;
+export type ViewClosure<Props extends PropsBase = PropsBase> = (
+  props?: ViewProps<Props>
+) => ViewClosureReturn<Props>;
 
 export interface ViewBody<Props extends PropsBase = PropsBase> {
   onSwap?: (...args: any[]) => MaybePromise<void>;
@@ -51,7 +52,7 @@ export type View<Props extends PropsBase = PropsBase> =
   | ViewDefinition<Props>;
 
 export type ViewRender<Props extends PropsBase = PropsBase> = (
-  props: ViewProps<Props>
+  props?: ViewProps<Props>
 ) => MaybePromise<ViewPayload>;
 
 export type ViewInstance<Props extends PropsBase = PropsBase> =
@@ -68,7 +69,7 @@ export interface ViewBuiltins {
   >(definition: {
     id: string;
     component: ComponentType;
-    callback: MessageComponentCallback<ComponentInteractionType>;
+    handler: MessageComponentCallback<ComponentInteractionType>;
   }): ComponentType;
   $swap(toViewId: string, ...args: any[]): void;
   $appendEmbeds(...embeds: EmbedBuilder[]): void;
@@ -108,8 +109,11 @@ export function DefineView<Props extends PropsBase = PropsBase>(
 /** @internal */
 export async function instantiateViewFromClosure<
   Props extends PropsBase = PropsBase
->(view: ViewClosureDefinition<Props>): Promise<ViewInstance<Props>> {
-  const body = await view.closure();
+>(
+  view: ViewClosureDefinition<Props>,
+  props: ViewProps<Props>
+): Promise<ViewInstance<Props>> {
+  const body = await view.closure(props);
   return {
     ...body,
     id: view.id,
