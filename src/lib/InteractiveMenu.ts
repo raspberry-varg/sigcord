@@ -45,7 +45,9 @@ type ViewRecordDefinitions = Record<string, View<any>>;
 export type ViewDefinitions = ViewArrayDefinitions | ViewRecordDefinitions;
 
 type AllProperties<Views extends ViewDefinitions> = {
-  [KView in keyof Views]: Views[KView] extends View<infer Props> ? Props : never;
+  [KView in keyof Views]: Views[KView] extends View<infer Props>
+    ? Props
+    : never;
 };
 type AllPropertiesOfRecord<Views extends ViewRecordDefinitions> =
   ObjectUnionToIntersection<AllProperties<Views>>;

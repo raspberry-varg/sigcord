@@ -6,7 +6,13 @@ import type {
   RepliableInteraction,
   Message,
 } from 'discord.js';
-import { View, ViewBuiltins, ViewProps } from './FunctionalMenuView';
+import {
+  View,
+  ViewBuiltins,
+  ViewInstance,
+  ViewProps,
+  instantiateViewFromClosure,
+} from './FunctionalMenuView';
 import { IntrinsicMenuProps } from './InteractiveMenu';
 import { appendTimeoutEmbed, safeRender } from '../util/RenderingUtil';
 import { endReasonIsTimeout } from '../util/CollectorUtil';
@@ -57,7 +63,7 @@ export function MenuController<
   initialViewId: string,
   registeredViews: View[],
   interaction: RepliableInteraction,
-  initProps: MenuProps,
+  initProps: MenuProps
 ) {
   const builtins: ViewBuiltins = {
     $appendEmbeds: (...embeds: EmbedBuilder[]) =>
@@ -84,8 +90,10 @@ export function MenuController<
       });
       if (
         !response ||
-        (latestModal.interactionId.length && latestModal.interactionId !== interaction.id) ||
-        (latestModal.customId.length && latestModal.customId !== response.customId)
+        (latestModal.interactionId.length &&
+          latestModal.interactionId !== interaction.id) ||
+        (latestModal.customId.length &&
+          latestModal.customId !== response.customId)
       ) {
         return null;
       }
@@ -113,6 +121,7 @@ export function MenuController<
   };
   const props = buildProps(initProps, interaction, builtins);
   const views = new Map<string, View>(registeredViews.map((v) => [v.id, v]));
+  const closureViewsCache = new Map<string, ViewInstance>();
   const componentCallbacks = new Map<
     MenuViewComponentId,
     MessageComponentCallback<any>
@@ -120,7 +129,7 @@ export function MenuController<
   const appendedEmbeds: EmbedBuilder[] = [];
   const prependedEmbeds: EmbedBuilder[] = [];
 
-  let view: View = getView(initialViewId);
+  let view: ViewInstance;
   let message: Message;
   let collector: InteractionCollector<CollectedMessageInteraction> | null =
     null;
@@ -151,23 +160,33 @@ export function MenuController<
     latestModal.interactionId = '';
   }
 
-  function getView(id: string): View {
+  async function getView(id: string): Promise<ViewInstance> {
     const view = views.get(id);
     assert(view, `"${id}" is not a registered view.`);
-    return view;
+    let viewInstance: ViewInstance;
+    if (!('closure' in view)) {
+      viewInstance = view;
+    } else {
+      // try cache for instantiated view
+      if (!closureViewsCache.has(id)) {
+        closureViewsCache.set(id, await instantiateViewFromClosure(view));
+      }
+      viewInstance = closureViewsCache.get(id)!;
+    }
+    return viewInstance;
   }
 
-  function changeView(id: string) {
+  async function changeView(id: string) {
     assert(
-      id !== view.id,
+      !(view !== undefined && id === view.id),
       `Cannot swap to the same view; already in view "${id}"`
     );
-    view = getView(id);
+    view = await getView(id);
     clearViewArtifacts();
   }
 
   async function changeViewWithCallback(id: string, ...args: any[]) {
-    changeView(id);
+    await changeView(id);
     await view.onSwap?.(...args);
   }
 
@@ -287,7 +306,10 @@ export function MenuController<
     const o = { ...DefaultRenderOptions, ...options };
     if (o.view) {
       // change initial view
-      changeView(o.view);
+      await changeView(o.view);
+    }
+    if (view === undefined) {
+      await changeView(initialViewId);
     }
     const collectorEnded = collector?.ended;
     const endReason = collector?.endReason;
@@ -301,13 +323,12 @@ export function MenuController<
       renderTarget = latestInteractionCollected;
     }
 
-    if (!collectorEnded) {
-      await view.onLoad?.(props);
-    }
-
     let viewPayload = await view.render(props);
     if (collectorEnded) {
-      viewPayload = appendTimeoutEmbed({ephemeral: false, ...viewPayload}, endReason);
+      viewPayload = appendTimeoutEmbed(
+        { ephemeral: false, ...viewPayload },
+        endReason
+      );
       viewPayload.components = [];
     }
 
@@ -321,7 +342,11 @@ export function MenuController<
       appendedEmbeds.length = 0;
     }
 
-    message = await safeRender(renderTarget, {ephemeral: false, ...viewPayload}, o.forceReply);
+    message = await safeRender(
+      renderTarget,
+      { ephemeral: false, ...viewPayload },
+      o.forceReply
+    );
 
     if (!collector) {
       initCollector();

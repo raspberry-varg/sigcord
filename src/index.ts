@@ -2,9 +2,10 @@ export { IntrinsicMenuProps, DefineMenu } from './lib/InteractiveMenu';
 export * from './lib/MenuView';
 export {
   DefineView,
-  OnLoadCallback,
   View,
+  ViewBody,
   ViewBuiltins,
+  ViewClosure,
   ViewProps,
   ViewRender,
 } from './lib/FunctionalMenuView';
