@@ -4,9 +4,11 @@ export {
   DefineView,
   View,
   ViewBody,
-  ViewBuiltins,
+  Synapse,
+  Synapse as ViewSynapse,
   ViewClosure,
   ViewProps,
+  ViewProps as Props,
   ViewRender,
 } from './lib/FunctionalMenuView';
 export * from './lib/SmartComponents';

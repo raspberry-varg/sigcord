@@ -62,8 +62,22 @@ interface MenuContext {
   interaction: RepliableInteraction;
 }
 
-export interface ViewBuiltins {
-  $component<
+/**
+ * Closure functions to manage and interact with a bound menu instance.
+ * 
+ * The `Synapse` is a collection of closure functions bound to a menu instance.
+ * These act as the central nervous system for your interactive menus.
+ */
+export interface Synapse {
+  /**
+   * Configures a reactive message component.
+   * 
+   * - Passed component id is auto-formatted to `menuId:viewId:componentId`.
+   * - Calls the passed component builder's `setCustomId` with the provided id.
+   * - Binds a given handler to a component via its id.
+   * @returns The provided component builder.
+   */
+  component<
     ComponentType extends MessageActionRowComponentBuilder,
     ComponentInteractionType extends MessageComponentInteraction
   >(definition: {
@@ -71,28 +85,28 @@ export interface ViewBuiltins {
     component: ComponentType;
     handler: MessageComponentCallback<ComponentInteractionType>;
   }): ComponentType;
-  $swap(toViewId: string, ...args: any[]): void;
-  $appendEmbeds(...embeds: EmbedBuilder[]): void;
-  $prependEmbeds(...embeds: EmbedBuilder[]): void;
-  $showModal(
+  swap(toViewId: string, ...args: any[]): void;
+  appendEmbeds(...embeds: EmbedBuilder[]): void;
+  prependEmbeds(...embeds: EmbedBuilder[]): void;
+  showModal(
     interaction: ModalRepliableInteraction,
     modal: ModalBuilder
   ): Promise<void>;
-  $awaitModalSubmit(
+  awaitModalSubmit(
     interaction: ModalRepliableInteraction,
     options: AwaitModalSubmitOptions<ModalSubmitInteraction>
   ): Promise<ModalSubmitInteraction<import('discord.js').CacheType> | null>;
-  $onModalSubmit(
+  onModalSubmit(
     interaction: ModalRepliableInteraction,
     options: AwaitModalSubmitOptions<ModalSubmitInteraction>,
     callback: (collected: ModalSubmitInteraction) => unknown
   ): Promise<void>;
-  $close: () => void;
+  close: () => void;
 }
 
 export type ViewProps<
   Props extends NonNullable<unknown> = NonNullable<unknown>
-> = Props & ViewBuiltins & { ctx: MenuContext } & { $: ViewProps<Props> };
+> = Props & { ctx: MenuContext } & { $: Synapse };
 
 export function DefineView<Props extends PropsBase = PropsBase>(
   id: string,
