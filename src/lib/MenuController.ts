@@ -12,6 +12,7 @@ import {
   ViewInstance,
   ViewProps,
   instantiateViewFromClosure,
+  MenuContext,
 } from './FunctionalMenuView';
 import { IntrinsicMenuProps } from './InteractiveMenu';
 import { appendTimeoutEmbed, safeRender } from '../util/RenderingUtil';
@@ -65,7 +66,12 @@ export function MenuController<
   interaction: RepliableInteraction,
   initProps: MenuProps
 ) {
+  const ctx: MenuContext = {
+    interaction,
+    initialInteraction: interaction,
+  };
   const builtins: Synapse = {
+    ctx,
     appendEmbeds: (...embeds: EmbedBuilder[]) => appendedEmbeds.push(...embeds),
     prependEmbeds: (...embeds: EmbedBuilder[]) =>
       prependedEmbeds.push(...embeds),
@@ -118,7 +124,7 @@ export function MenuController<
     },
     close: () => closeMenu(),
   };
-  const props = buildProps(initProps, interaction, builtins);
+  const props = buildProps(initProps, builtins);
   const views = new Map<string, View>(registeredViews.map((v) => [v.id, v]));
   const closureViewsCache = new Map<string, ViewInstance>();
   const componentCallbacks = new Map<
@@ -324,6 +330,7 @@ export function MenuController<
     if (props.renderAfterHandledInteraction && latestInteractionCollected) {
       renderTarget = latestInteractionCollected;
     }
+    ctx.interaction = renderTarget;
 
     let viewPayload = await view.render(props);
     if (collectorEnded) {
@@ -364,13 +371,11 @@ export function MenuController<
 
 function buildProps<Props extends NonNullable<unknown>>(
   initProps: Props,
-  interaction: RepliableInteraction,
   builtins: Synapse
 ) {
   const props: ViewProps<Props> & IntrinsicMenuProps = {
     ...DefaultProperties,
     ...initProps,
-    ctx: { interaction },
     $: builtins,
   };
   return props;
