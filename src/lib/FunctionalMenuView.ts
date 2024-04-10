@@ -64,14 +64,14 @@ interface MenuContext {
 
 /**
  * Closure functions to manage and interact with a bound menu instance.
- * 
+ *
  * The `Synapse` is a collection of closure functions bound to a menu instance.
  * These act as the central nervous system for your interactive menus.
  */
 export interface Synapse {
   /**
    * Configures a reactive message component.
-   * 
+   *
    * - Passed component id is auto-formatted to `menuId:viewId:componentId`.
    * - Calls the passed component builder's `setCustomId` with the provided id.
    * - Binds a given handler to a component via its id.
