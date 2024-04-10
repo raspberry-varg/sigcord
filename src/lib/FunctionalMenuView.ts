@@ -58,8 +58,20 @@ export type ViewRender<Props extends PropsBase = PropsBase> =
 export type ViewInstance<Props extends PropsBase = PropsBase> =
   ViewDefinition<Props>;
 
-interface MenuContext {
+export interface MenuContext {
+  /**
+   * The latest interaction this menu is bound to.
+   *
+   * Note: If `props.renderAfterHandledInteraction` is set to `true`,
+   *       this is the latest collected interaction (i.e. a component interaction).
+   */
   interaction: RepliableInteraction;
+  /**
+   * The reaction provided when initializing this menu.
+   *
+   * Useful if `props.renderAfterHandledInteraction` is set to `true`.
+   */
+  readonly initialInteraction: RepliableInteraction;
 }
 
 /**
@@ -102,11 +114,12 @@ export interface Synapse {
     callback: (collected: ModalSubmitInteraction) => unknown
   ): Promise<void>;
   close: () => void;
+  ctx: MenuContext;
 }
 
 export type ViewProps<
   Props extends NonNullable<unknown> = NonNullable<unknown>
-> = Props & { ctx: MenuContext } & { $: Synapse };
+> = Props & { $: Synapse };
 
 export function DefineView<Props extends PropsBase = PropsBase>(
   id: string,
