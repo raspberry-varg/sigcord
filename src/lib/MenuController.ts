@@ -8,7 +8,7 @@ import type {
 } from 'discord.js';
 import {
   View,
-  ViewBuiltins,
+  Synapse,
   ViewInstance,
   ViewProps,
   instantiateViewFromClosure,
@@ -65,23 +65,22 @@ export function MenuController<
   interaction: RepliableInteraction,
   initProps: MenuProps
 ) {
-  const builtins: ViewBuiltins = {
-    $appendEmbeds: (...embeds: EmbedBuilder[]) =>
-      appendedEmbeds.push(...embeds),
-    $prependEmbeds: (...embeds: EmbedBuilder[]) =>
+  const builtins: Synapse = {
+    appendEmbeds: (...embeds: EmbedBuilder[]) => appendedEmbeds.push(...embeds),
+    prependEmbeds: (...embeds: EmbedBuilder[]) =>
       prependedEmbeds.push(...embeds),
-    $swap: (id: string, ...args: any[]) => changeViewWithCallback(id, ...args),
-    $component: ({ id, component, handler }) => {
+    swap: (id: string, ...args: any[]) => changeViewWithCallback(id, ...args),
+    component: ({ id, component, handler }) => {
       const componentId = createComponentId(id);
       component.setCustomId(componentId);
       componentCallbacks.set(componentId, handler);
       return component;
     },
-    $showModal: async (interaction, modal) => {
+    showModal: async (interaction, modal) => {
       latestModal.customId = modal.data.custom_id ?? '';
       return await interaction.showModal(modal);
     },
-    $awaitModalSubmit: async (interaction, options) => {
+    awaitModalSubmit: async (interaction, options) => {
       latestModal.interactionId = interaction.id;
       const response = await interaction.awaitModalSubmit(options).catch(() => {
         console.log('Modal ended without receiving a response.');
@@ -100,7 +99,7 @@ export function MenuController<
       flushModal();
       return response;
     },
-    $onModalSubmit: async (interaction, options, callback) => {
+    onModalSubmit: async (interaction, options, callback) => {
       latestModal.interactionId = interaction.id;
       const response = await interaction.awaitModalSubmit(options).catch(() => {
         console.log('Modal ended without receiving a response.');
@@ -117,7 +116,7 @@ export function MenuController<
       flushModal();
       await callback(response);
     },
-    $close: () => closeMenu(),
+    close: () => closeMenu(),
   };
   const props = buildProps(initProps, interaction, builtins);
   const views = new Map<string, View>(registeredViews.map((v) => [v.id, v]));
@@ -366,17 +365,15 @@ export function MenuController<
 function buildProps<Props extends NonNullable<unknown>>(
   initProps: Props,
   interaction: RepliableInteraction,
-  builtins: ViewBuiltins
+  builtins: Synapse
 ) {
-  const $: ViewProps<Props> & IntrinsicMenuProps = {
+  const props: ViewProps<Props> & IntrinsicMenuProps = {
     ...DefaultProperties,
-    ...builtins,
     ...initProps,
     ctx: { interaction },
-    $: {} as ViewProps<Props>,
+    $: builtins,
   };
-  $.$ = $;
-  return $;
+  return props;
 }
 
 class MenuViewComponentError extends Error {
