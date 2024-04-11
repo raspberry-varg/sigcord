@@ -131,6 +131,7 @@ export function MenuController<
     MenuViewComponentId,
     MessageComponentCallback<any>
   >();
+  const renderedViews = new Set<View>();
   const appendedEmbeds: EmbedBuilder[] = [];
   const prependedEmbeds: EmbedBuilder[] = [];
 
@@ -319,6 +320,13 @@ export function MenuController<
     if (view === undefined) {
       await changeView(initialViewId);
     }
+    // if subview, ensure `onSwap` has been called at least once
+    assert(
+      !view.isSubView || renderedViews.has(view),
+      `Tried to render subview "${view.id}" directly. ` +
+        'Subviews must be swapped into.'
+    );
+
     const collectorEnded = collector?.ended;
     const endReason = collector?.endReason;
     let renderTarget = interaction;
@@ -333,6 +341,7 @@ export function MenuController<
     ctx.interaction = renderTarget;
 
     let viewPayload = await view.render(props);
+    renderedViews.add(view);
     if (collectorEnded) {
       viewPayload = appendTimeoutEmbed(
         { ephemeral: false, ...viewPayload },

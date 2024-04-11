@@ -22,6 +22,8 @@ type ModalRepliableInteraction =
 
 interface ViewDefinitionBase {
   readonly id: string;
+  /** If true, this view cannot be an initial view and must be swapped into. */
+  isSubView?: boolean;
 }
 
 type ViewClosureReturn<Props extends PropsBase = PropsBase> = MaybePromise<
@@ -40,6 +42,7 @@ export type ViewClosure<Props extends PropsBase = PropsBase> =
   | ((props: ViewProps<Props>) => ViewClosureReturn<Props>);
 
 export interface ViewBody<Props extends PropsBase = PropsBase> {
+  /** Callback when this view is {@link Synapse.swap swapped} into. */
   onSwap?: (...args: any[]) => MaybePromise<void>;
   render: ViewRender<Props>;
 }
@@ -131,6 +134,19 @@ export function DefineView<Props extends PropsBase = PropsBase>(
       : definition),
     id,
   };
+}
+
+/**
+ * Define a view that can only be swapped into.
+ * Cannot be used as an initial view.
+ */
+export function DefineSubView<Props extends PropsBase = PropsBase>(
+  id: string,
+  definition: ViewClosure<Props> | ViewBody<Props>
+): View<Props> {
+  const view = DefineView(id, definition);
+  view.isSubView = true;
+  return view;
 }
 
 /** @internal */
