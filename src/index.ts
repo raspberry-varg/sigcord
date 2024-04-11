@@ -2,6 +2,7 @@ export { IntrinsicMenuProps, DefineMenu } from './lib/InteractiveMenu';
 export * from './lib/MenuView';
 export {
   DefineView,
+  DefineSubView,
   View,
   ViewBody,
   Synapse,
