@@ -344,7 +344,7 @@ export function MenuController<
     renderedViews.add(view);
     if (collectorEnded) {
       viewPayload = appendTimeoutEmbed(
-        { ephemeral: false, ...viewPayload },
+        { ...props, ...viewPayload },
         endReason
       );
       viewPayload.components = [];
@@ -362,7 +362,7 @@ export function MenuController<
 
     message = await safeRender(
       renderTarget,
-      { ephemeral: false, ...viewPayload },
+      { ...props, ...viewPayload },
       o.forceReply
     );
 
@@ -381,13 +381,12 @@ export function MenuController<
 function buildProps<Props extends NonNullable<unknown>>(
   initProps: Props,
   builtins: Synapse
-) {
-  const props: ViewProps<Props> & IntrinsicMenuProps = {
+): ViewProps<Props> & IntrinsicMenuProps {
+  return {
     ...DefaultProperties,
     ...initProps,
     $: builtins,
   };
-  return props;
 }
 
 class MenuViewComponentError extends Error {
