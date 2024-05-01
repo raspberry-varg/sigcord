@@ -75,6 +75,10 @@ export interface MenuContext {
    * Useful if `props.renderAfterHandledInteraction` is set to `true`.
    */
   readonly initialInteraction: RepliableInteraction;
+  /**
+   * The current menu idle time in milliseconds.
+   */
+  get idleTimeMs(): number;
 }
 
 /**
@@ -116,6 +120,8 @@ export interface Synapse {
     options: AwaitModalSubmitOptions<ModalSubmitInteraction>,
     callback: (collected: ModalSubmitInteraction) => unknown
   ): Promise<void>;
+  setIdleMs(idleMilliseconds: number): void;
+  setIdleSec(idleSeconds: number): void;
   close: () => void;
   ctx: MenuContext;
 }
