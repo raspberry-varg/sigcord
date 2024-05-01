@@ -18,7 +18,7 @@ import { IntrinsicMenuProps } from './InteractiveMenu';
 import { appendTimeoutEmbed, safeRender } from '../util/RenderingUtil';
 import { endReasonIsTimeout } from '../util/CollectorUtil';
 import { SmartComponentType } from './SmartComponents';
-import { assert } from '../util/Assertions';
+import { assert, assertAndReturn } from '../util/Assertions';
 
 export interface ControllerContext {
   // onLoadCallbacks: OnLoadCallback[];
@@ -51,6 +51,7 @@ const DEFAULT_IDLE = 60_000;
 
 const DefaultProperties: IntrinsicMenuProps = {
   renderAfterHandledInteraction: true,
+  idleTimeMs: DEFAULT_IDLE,
   ephemeral: false,
 };
 
@@ -69,6 +70,9 @@ export function MenuController<
   const ctx: MenuContext = {
     interaction,
     initialInteraction: interaction,
+    get idleTimeMs(): number {
+      return idle;
+    },
   };
   const builtins: Synapse = {
     ctx,
@@ -122,6 +126,20 @@ export function MenuController<
       flushModal();
       await callback(response);
     },
+    setIdleMs: (idleMilliseconds: number) => {
+      assert(
+        idleMilliseconds > 0,
+        `Idle time must be greater than 0 milliseconds, got [${idleMilliseconds}].`
+      );
+      updateListenerIdle(idleMilliseconds);
+    },
+    setIdleSec: (idleSeconds: number) => {
+      assert(
+        idleSeconds > 0,
+        `Idle time must be greater than 0 seconds, got [${idleSeconds}].`
+      );
+      updateListenerIdle(idleSeconds * 1_000);
+    },
     close: () => closeMenu(),
   };
   const props = buildProps(initProps, builtins);
@@ -135,6 +153,14 @@ export function MenuController<
   const appendedEmbeds: EmbedBuilder[] = [];
   const prependedEmbeds: EmbedBuilder[] = [];
 
+  let idle: number =
+    props.idleTimeMs === undefined
+      ? DEFAULT_IDLE
+      : assertAndReturn(
+          props.idleTimeMs,
+          (t) => t > 0,
+          `Idle time must be greater than 0 milliseconds, got [${props.idleTimeMs}].`
+        );
   let view: ViewInstance;
   let message: Message;
   let collector: InteractionCollector<CollectedMessageInteraction> | null =
@@ -230,7 +256,7 @@ export function MenuController<
       filter: (i) =>
         i.user.id === interaction.user.id &&
         i.channelId === interaction.channelId,
-      idle: DEFAULT_IDLE, // TODO: Get idle time from props
+      idle,
     });
 
     collector.on('collect', async (collected) => {
@@ -261,6 +287,13 @@ export function MenuController<
         return;
       }
     });
+  }
+
+  function updateListenerIdle(timeMilliseconds: number): void {
+    if (collector && !collector.ended) {
+      idle = timeMilliseconds;
+      collector.resetTimer({ time: timeMilliseconds });
+    }
   }
 
   function handlePrebuiltComponents(collected: CollectedMessageInteraction) {
@@ -343,10 +376,7 @@ export function MenuController<
     let viewPayload = await view.render(props);
     renderedViews.add(view);
     if (collectorEnded) {
-      viewPayload = appendTimeoutEmbed(
-        { ...props, ...viewPayload },
-        endReason
-      );
+      viewPayload = appendTimeoutEmbed({ ...props, ...viewPayload }, endReason);
       viewPayload.components = [];
     }
 

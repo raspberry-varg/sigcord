@@ -25,6 +25,10 @@ export interface IntrinsicMenuProps extends IntrinsicViewProps {
    * Existing message to listen for components from.
    */
   initialMessage?: Message;
+  /**
+   * Time in milliseconds to wait before timing out a menu for inactivity.
+   */
+  idleTimeMs?: number;
 }
 
 // To whoever just Ctrl+Clicked, I'm so sorry for all this type mangling, but it works.
