@@ -19,6 +19,7 @@ import { appendTimeoutEmbed, safeRender } from '../util/RenderingUtil';
 import { endReasonIsTimeout } from '../util/CollectorUtil';
 import { SmartComponentType } from './SmartComponents';
 import { assert, assertAndReturn } from '../util/Assertions';
+import { Listener } from './Listener';
 
 export interface ControllerContext {
   // onLoadCallbacks: OnLoadCallback[];
@@ -57,6 +58,11 @@ const DefaultProperties: IntrinsicMenuProps = {
 
 type MenuViewComponentId = string;
 
+interface MenuControllerListeners {
+  onRender: Listener<void>;
+  onEnd: Listener<string | null>;
+}
+
 export function MenuController<
   MenuProps extends NonNullable<unknown> = NonNullable<unknown>,
   ViewId extends string = string
@@ -67,6 +73,10 @@ export function MenuController<
   interaction: RepliableInteraction,
   initProps: MenuProps
 ) {
+  const listeners: MenuControllerListeners = {
+    onRender: new Listener(),
+    onEnd: new Listener(),
+  };
   const ctx: MenuContext = {
     interaction,
     initialInteraction: interaction,
@@ -206,6 +216,7 @@ export function MenuController<
           await instantiateViewFromClosure<{}>(view, props)
         );
       }
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       viewInstance = closureViewsCache.get(id)!;
     }
     return viewInstance;
@@ -269,20 +280,25 @@ export function MenuController<
       }
 
       const endReason = collector.endReason;
+      listeners.onEnd.fire(endReason);
       console.log(
         `${menuId} component listener successfully stopped due to reason: ` +
           endReason
       );
+
       if (collected.size < 1 || endReasonIsTimeout(endReason)) {
         await render();
         return;
       }
 
-      if (collector?.endReason === 'close') {
+      if (collector.endReason === 'close') {
         // prevent re-render and delete the original interaction's reply
         props.renderAfterHandledInteraction = false;
         interaction.deleteReply(message).catch((e) => {
-          console.log(e);
+          console.error(
+            `Unable to delete the original interaction reply for menuId [${menuId}]: `,
+            e
+          );
         });
         return;
       }
@@ -395,16 +411,34 @@ export function MenuController<
       { ...props, ...viewPayload },
       o.forceReply
     );
+    listeners.onRender.fire();
 
     if (!collector) {
       initCollector();
     }
   }
 
-  // provide a render API
+  /*
+   * Listener API
+   */
+  function onRender(callback: () => unknown, once = false): void {
+    listeners.onRender.do(callback, once);
+  }
+  function onEnd(callback: (endReason: string | null) => unknown): void {
+    listeners.onEnd.do(callback);
+  }
+  const awaitRender = () => listeners.onRender.asPromise();
+  const awaitEnd = () => listeners.onEnd.asPromise();
+
   return {
+    // render API
     reply,
     render,
+    // listener API
+    onRender,
+    awaitRender,
+    onEnd,
+    awaitEnd,
   };
 }
 
