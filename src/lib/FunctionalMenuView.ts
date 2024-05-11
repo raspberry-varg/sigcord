@@ -102,7 +102,7 @@ export interface Synapse {
   >(definition: {
     id: string;
     component: ComponentType;
-    handler: MessageComponentCallback<ComponentInteractionType>;
+    controller: MessageComponentCallback<ComponentInteractionType>;
   }): ComponentType;
   swap(toViewId: string, ...args: any[]): void;
   appendEmbeds(...embeds: EmbedBuilder[]): void;

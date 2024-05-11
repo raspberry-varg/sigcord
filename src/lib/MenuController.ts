@@ -90,10 +90,10 @@ export function MenuController<
     prependEmbeds: (...embeds: EmbedBuilder[]) =>
       prependedEmbeds.push(...embeds),
     swap: (id: string, ...args: any[]) => changeViewWithCallback(id, ...args),
-    component: ({ id, component, handler }) => {
+    component: ({ id, component, controller }) => {
       const componentId = createComponentId(id);
       component.setCustomId(componentId);
-      componentCallbacks.set(componentId, handler);
+      componentCallbacks.set(componentId, controller);
       return component;
     },
     showModal: async (interaction, modal) => {
