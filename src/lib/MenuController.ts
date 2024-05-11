@@ -15,8 +15,11 @@ import {
   MenuContext,
 } from './FunctionalMenuView';
 import { IntrinsicMenuProps } from './InteractiveMenu';
-import { appendTimeoutEmbed, safeRender } from '../util/RenderingUtil';
-import { endReasonIsTimeout } from '../util/CollectorUtil';
+import {
+  appendTimeoutEmbed as appendTimeoutOrCloseEmbed,
+  safeRender,
+} from '../util/RenderingUtil';
+import { endReasonIsTimeoutOrClose } from '../util/CollectorUtil';
 import { SmartComponentType } from './SmartComponents';
 import { assert, assertAndReturn } from '../util/Assertions';
 import { Listener } from './Listener';
@@ -287,7 +290,7 @@ export function MenuController<
           endReason
       );
 
-      if (collected.size < 1 || endReasonIsTimeout(endReason)) {
+      if (collected.size < 1 || endReasonIsTimeoutOrClose(endReason)) {
         await render();
         return;
       }
@@ -393,7 +396,12 @@ export function MenuController<
     let viewPayload = await view.render(props);
     renderedViews.add(view);
     if (collectorEnded) {
-      viewPayload = appendTimeoutEmbed({ ...props, ...viewPayload }, endReason);
+      if (endReasonIsTimeoutOrClose(endReason)) {
+        viewPayload = appendTimeoutOrCloseEmbed(
+          { ...props, ...viewPayload },
+          endReason
+        );
+      }
       viewPayload.components = [];
     }
 
