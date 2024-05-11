@@ -401,8 +401,9 @@ export function MenuController<
           { ...props, ...viewPayload },
           endReason
         );
+        viewPayload.components = [];
       }
-      viewPayload.components = [];
+      return;
     }
 
     if (appendedEmbeds.length || prependedEmbeds.length) {
