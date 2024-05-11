@@ -151,6 +151,7 @@ export function MenuController<
       updateListenerIdle(idleSeconds * 1_000);
     },
     close: () => closeMenu(),
+    stop: (reason?: string) => endListener(reason),
   };
   const props = buildProps(initProps, builtins);
   const views = new Map<string, View>(registeredViews.map((v) => [v.id, v]));

@@ -123,6 +123,7 @@ export interface Synapse {
   setIdleMs(idleMilliseconds: number): void;
   setIdleSec(idleSeconds: number): void;
   close: () => void;
+  stop: (reason?: string) => void;
   ctx: MenuContext;
 }
 
