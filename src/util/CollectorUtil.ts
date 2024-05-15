@@ -1,6 +1,6 @@
-export function endReasonIsTimeoutOrClose(endReason?: string | null) {
+export function endReasonIsTimeout(endReason?: string | null) {
   return (
     endReason &&
-    ['idle', 'timeout', 'time', 'close'].some((reason) => reason === endReason)
+    ['idle', 'timeout', 'time'].some((reason) => reason === endReason)
   );
 }

@@ -15,11 +15,8 @@ import {
   MenuContext,
 } from './FunctionalMenuView';
 import { IntrinsicMenuProps } from './InteractiveMenu';
-import {
-  appendTimeoutEmbed as appendTimeoutOrCloseEmbed,
-  safeRender,
-} from '../util/RenderingUtil';
-import { endReasonIsTimeoutOrClose } from '../util/CollectorUtil';
+import { appendTimeoutEmbed, safeRender } from '../util/RenderingUtil';
+import { endReasonIsTimeout } from '../util/CollectorUtil';
 import { SmartComponentType } from './SmartComponents';
 import { assert, assertAndReturn } from '../util/Assertions';
 import { Listener } from './Listener';
@@ -217,6 +214,7 @@ export function MenuController<
       if (!closureViewsCache.has(id)) {
         closureViewsCache.set(
           id,
+          // eslint-disable-next-line @typescript-eslint/ban-types
           await instantiateViewFromClosure<{}>(view, props)
         );
       }
@@ -290,11 +288,6 @@ export function MenuController<
           endReason
       );
 
-      if (collected.size < 1 || endReasonIsTimeoutOrClose(endReason)) {
-        await render();
-        return;
-      }
-
       if (collector.endReason === 'close') {
         // prevent re-render and delete the original interaction's reply
         props.renderAfterHandledInteraction = false;
@@ -304,6 +297,11 @@ export function MenuController<
             e
           );
         });
+        return;
+      }
+
+      if (collected.size < 1 || endReasonIsTimeout(endReason)) {
+        await render();
         return;
       }
     });
@@ -396,11 +394,8 @@ export function MenuController<
     let viewPayload = await view.render(props);
     renderedViews.add(view);
     if (collectorEnded) {
-      if (endReasonIsTimeoutOrClose(endReason)) {
-        viewPayload = appendTimeoutOrCloseEmbed(
-          { ...props, ...viewPayload },
-          endReason
-        );
+      if (endReasonIsTimeout(endReason)) {
+        viewPayload = appendTimeoutEmbed({ ...props, ...viewPayload });
         viewPayload.components = [];
       }
       return;

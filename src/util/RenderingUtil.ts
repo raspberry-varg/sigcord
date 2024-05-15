@@ -2,14 +2,8 @@ import { ViewPayload } from '../lib/MenuView';
 import { TimeoutEmbed } from '../lib/PrebuiltEmbeds';
 import { RepliableInteraction } from 'discord.js';
 
-export function appendTimeoutEmbed(
-  payload: ViewPayload,
-  endReason?: string | null
-) {
-  payload.embeds = [
-    ...(payload.embeds ?? []).splice(0, 10),
-    TimeoutEmbed(endReason),
-  ];
+export function appendTimeoutEmbed(payload: ViewPayload) {
+  payload.embeds = [...(payload.embeds ?? []).splice(0, 10), TimeoutEmbed];
   return payload;
 }
 
