@@ -3,6 +3,7 @@ import type { IntrinsicViewProps } from './MenuView';
 import { View } from './FunctionalMenuView';
 import { MenuController } from './MenuController';
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 export interface Menu<Views extends ViewDefinitions = {}> {
   id: string;
   initialView: Views extends ViewArrayDefinitions ? string : keyof Views;

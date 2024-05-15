@@ -4,6 +4,7 @@ import type {
   ModalSubmitInteraction,
 } from 'discord.js';
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 export type ModalBundle<Props = {}> = (props: Props) => ModalBundleBlueprint;
 
 export interface ModalBundleBlueprint {
@@ -13,11 +14,13 @@ export interface ModalBundleBlueprint {
 }
 
 type ModalSubmitHandler = (response: ModalSubmitInteraction) => unknown;
+// eslint-disable-next-line @typescript-eslint/ban-types
 type ModalSubmitHandlerWithValues<Values extends {}> = (
   response: ModalSubmitInteraction,
   values: Values
 ) => unknown;
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 function extractModalSubmitValues<Values extends {}>(
   modalSubmit: ModalSubmitInteraction
 ): Values {
@@ -30,6 +33,7 @@ function extractModalSubmitValues<Values extends {}>(
   return Object.fromEntries(entries);
 }
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 export function useValues<Values extends {}>(
   modalSubmitHandler: ModalSubmitHandlerWithValues<Values>
 ): ModalSubmitHandler {
