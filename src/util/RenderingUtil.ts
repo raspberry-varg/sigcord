@@ -1,18 +1,23 @@
-import { ViewPayload } from '../lib/MenuView';
+import {
+  ViewPayloadResolved,
+  resolveViewPayload,
+  type ViewPayload,
+} from '../lib/MenuView';
 import { TimeoutEmbed } from '../lib/PrebuiltEmbeds';
 import { RepliableInteraction } from 'discord.js';
 
-export function appendTimeoutEmbed(payload: ViewPayload) {
+export function appendTimeoutEmbed(payload: ViewPayloadResolved) {
   payload.embeds = [...(payload.embeds ?? []).splice(0, 10), TimeoutEmbed];
   return payload;
 }
 
 export async function safeRender(
   renderTarget: RepliableInteraction,
-  viewPayload: ViewPayload,
+  viewPayloadRaw: ViewPayload,
   preferReplyForComponent = false
 ) {
   let message;
+  const viewPayload = await resolveViewPayload(viewPayloadRaw);
 
   if (renderTarget.replied || renderTarget.deferred) {
     message = await renderTarget.editReply(viewPayload);

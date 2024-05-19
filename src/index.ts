@@ -1,5 +1,9 @@
 export { IntrinsicMenuProps, DefineMenu } from './lib/InteractiveMenu';
-export * from './lib/MenuView';
+export {
+  IntrinsicViewProps,
+  ViewPayload,
+  MessageComponentCallback,
+} from './lib/MenuView';
 export {
   DefineView,
   DefineSubView,

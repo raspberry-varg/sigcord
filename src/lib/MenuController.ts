@@ -20,6 +20,7 @@ import { endReasonIsTimeout } from '../util/CollectorUtil';
 import { SmartComponentType } from './SmartComponents';
 import { assert, assertAndReturn } from '../util/Assertions';
 import { Listener } from './Listener';
+import { resolveViewPayload } from './MenuView';
 
 export interface ControllerContext {
   // onLoadCallbacks: OnLoadCallback[];
@@ -391,7 +392,8 @@ export function MenuController<
     }
     ctx.interaction = renderTarget;
 
-    let viewPayload = await view.render(props);
+    const viewPayloadRaw = await view.render(props);
+    let viewPayload = await resolveViewPayload(viewPayloadRaw);
     renderedViews.add(view);
     if (collectorEnded) {
       if (endReasonIsTimeout(endReason)) {
