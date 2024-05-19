@@ -1,7 +1,7 @@
 {
   "name": "@raspberry-varg/discord-interactive-menus",
   "repository": "https://github.com/raspberry-varg/discord-interactive-menus.git",
-  "version": "2.4.4",
+  "version": "2.4.5",
   "description": "Simple utility to have dynamic, routed, and responsive Discord menus.",
   "directories": {
     "lib": "dist"
@@ -29,5 +29,5 @@
     "eslint": "^8.43.0",
     "prettier": "^2.8.8"
   },
-  "exports": "./index.js"
+  "exports": "./dist/index.js"
 }
