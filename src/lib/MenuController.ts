@@ -20,6 +20,7 @@ import { endReasonIsTimeout } from '../util/CollectorUtil';
 import { SmartComponentType } from './SmartComponents';
 import { assert, assertAndReturn } from '../util/Assertions';
 import { Listener } from './Listener';
+import { logger } from '../util/Logger';
 
 export interface ControllerContext {
   // onLoadCallbacks: OnLoadCallback[];
@@ -103,7 +104,7 @@ export function MenuController<
     awaitModalSubmit: async (interaction, options) => {
       latestModal.interactionId = interaction.id;
       const response = await interaction.awaitModalSubmit(options).catch(() => {
-        console.log('Modal ended without receiving a response.');
+        logger.debug('Modal ended without receiving a response.');
         flushModal();
         return null;
       });
@@ -122,7 +123,7 @@ export function MenuController<
     onModalSubmit: async (interaction, options, callback) => {
       latestModal.interactionId = interaction.id;
       const response = await interaction.awaitModalSubmit(options).catch(() => {
-        console.log('Modal ended without receiving a response.');
+        logger.debug('Modal ended without receiving a response.');
         flushModal();
         return;
       });
@@ -283,7 +284,7 @@ export function MenuController<
 
       const endReason = collector.endReason;
       listeners.onEnd.fire(endReason);
-      console.log(
+      logger.debug(
         `${menuId} component listener successfully stopped due to reason: ` +
           endReason
       );
@@ -292,7 +293,7 @@ export function MenuController<
         // prevent re-render and delete the original interaction's reply
         props.renderAfterHandledInteraction = false;
         interaction.deleteReply(message).catch((e) => {
-          console.error(
+          logger.error(
             `Unable to delete the original interaction reply for menuId [${menuId}]: `,
             e
           );
@@ -319,7 +320,7 @@ export function MenuController<
     if (collected.isButton()) {
       switch (id) {
         case SmartComponentType.CloseButton: {
-          console.log('Closing Menu via official CloseMenuButton');
+          logger.debug('Closing Menu via official CloseMenuButton');
           closeMenu();
           return true;
         }
@@ -338,7 +339,7 @@ export function MenuController<
     // route to registered handler
     const interactionCallback = componentCallbacks.get(collected.customId);
     if (!interactionCallback) {
-      console.warn(
+      logger.warn(
         `MenuView: No handler defined for ${getComponentId(collected.customId)}`
       );
       return 'No handler defined.';
