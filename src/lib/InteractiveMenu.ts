@@ -1,29 +1,15 @@
-import type {
-  CollectedMessageInteraction,
-  InteractionCollector,
-  Message,
-  RepliableInteraction,
-} from 'discord.js';
-import type { IntrinsicViewProps, MenuView } from './MenuView';
-import { Router } from './Router';
-import { SmartComponentType } from './SmartComponents';
-import { endReasonIsTimeout } from '../util/CollectorUtil';
-import { appendTimeoutEmbed, safeRender } from '../util/RenderingUtil';
+import type { Message, RepliableInteraction } from 'discord.js';
+import type { IntrinsicViewProps } from './MenuView';
+import { View } from './FunctionalMenuView';
+import { MenuController } from './MenuController';
 
-const DEFAULT_IDLE = 60_000;
-
-interface RenderOptions<ViewIds extends string = string> {
-  /**
-   * Reply or followup instead of editing or updating the original message.
-   * @default false
-   */
-  forceReply: boolean | false;
-  view?: ViewIds;
+// eslint-disable-next-line @typescript-eslint/ban-types
+export interface Menu<Views extends ViewDefinitions = {}> {
+  id: string;
+  initialView: Views extends ViewArrayDefinitions ? string : keyof Views;
+  views: Views;
+  intrinsic?: Partial<IntrinsicMenuProps>;
 }
-
-const DefaultRenderOptions: RenderOptions = {
-  forceReply: false,
-} as const;
 
 export interface IntrinsicMenuProps extends IntrinsicViewProps {
   /**
@@ -40,12 +26,11 @@ export interface IntrinsicMenuProps extends IntrinsicViewProps {
    * Existing message to listen for components from.
    */
   initialMessage?: Message;
+  /**
+   * Time in milliseconds to wait before timing out a menu for inactivity.
+   */
+  idleTimeMs?: number;
 }
-
-const DefaultProperties: IntrinsicMenuProps = {
-  renderAfterHandledInteraction: true,
-  ephemeral: false,
-};
 
 // To whoever just Ctrl+Clicked, I'm so sorry for all this type mangling, but it works.
 type UnionToIntersection<U> = (U extends any ? (x: U) => void : never) extends (
@@ -60,20 +45,19 @@ type ObjectUnionToIntersection<U> = U extends Record<string, infer T>
   ? UnionToIntersection<T>
   : never;
 
-type ViewConstructor = new (props: any) => MenuView;
-type ViewArrayDefinitions = ViewConstructor[];
-type ViewRecordDefinitions = Record<string, unknown> &
-  Record<string, ViewConstructor>;
-type ViewDefinitions = ViewArrayDefinitions | ViewRecordDefinitions;
+type ViewArrayDefinitions = View<any>[];
+type ViewRecordDefinitions = Record<string, View<any>>;
+export type ViewDefinitions = ViewArrayDefinitions | ViewRecordDefinitions;
 
+type AllProperties<Views extends ViewDefinitions> = {
+  [KView in keyof Views]: Views[KView] extends View<infer Props>
+    ? Props
+    : never;
+};
 type AllPropertiesOfRecord<Views extends ViewRecordDefinitions> =
-  ObjectUnionToIntersection<{
-    [KView in keyof Views]: ConstructorParameters<Views[KView]>[0];
-  }>;
+  ObjectUnionToIntersection<AllProperties<Views>>;
 type AllPropertiesOfArray<Views extends ViewArrayDefinitions> =
-  ArrayUnionToIntersection<{
-    [KView in keyof Views]: ConstructorParameters<Views[KView]>[0];
-  }>;
+  ArrayUnionToIntersection<AllProperties<Views>>;
 
 type ResolveAllPropertiesOf<Views extends ViewDefinitions> =
   Views extends ViewArrayDefinitions
@@ -85,8 +69,15 @@ type ResolveAllPropertiesOf<Views extends ViewDefinitions> =
 type AllPropertiesOf<Views extends ViewDefinitions> =
   ResolveAllPropertiesOf<Views>;
 
+type AllIdsOf<Views extends ViewDefinitions> =
+  Views extends ViewArrayDefinitions
+    ? Views[number]['id'] // TODO: Figure out why this doesn't work properly.
+    : Views extends ViewRecordDefinitions
+    ? keyof Views
+    : never;
+
 /**
- * Define an interactive menu functionally.
+ * Define an interactive menu.
  * @param definition All required interactive menu properties.
  * @param definition.id The unique ID of this menu. Used in component `customId`s.
  * @param definition.views All views that this menu utilizes.
@@ -98,19 +89,18 @@ export function DefineMenu<
   Props extends AllPropertiesOf<Views> & Partial<IntrinsicMenuProps>
 >(definition: {
   id: string;
-  initialView: Views extends ViewArrayDefinitions ? string : keyof Views;
+  initialView: AllIdsOf<Views>;
   views: Views;
   intrinsic?: Partial<IntrinsicMenuProps>;
 }) {
   const { id, initialView, views, intrinsic } = definition;
 
   // check if initial view is valid
-  const idToClass = new Map<string, ViewConstructor>();
+  const idToClass = new Map<string, View>();
   if (Array.isArray(views)) {
     // convert array to map of id to view class
-    for (const view of views) {
-      // quick initialization to get the user-defined id
-      const id = new view({}).id;
+    for (const view of views as View[]) {
+      const id = view.id;
       if (idToClass.has(id)) {
         throw new InteractiveMenuError(
           `Id '${id}' already exists in this interactive menu.`
@@ -135,238 +125,18 @@ export function DefineMenu<
     );
   }
 
-  // constructor callback
+  // factory callback
   return (interaction: RepliableInteraction, props: Props) => {
-    // construct menu
-    const menu = new InteractiveMenu<Props, typeof initialView>(
+    // construct controller
+    const menu = MenuController<Props, typeof initialView>(
+      id,
       initialView,
+      [...idToClass.values()],
       interaction,
       { ...intrinsic, ...props }
     );
-    menu.id = id;
-    for (const [id, view] of idToClass.entries()) {
-      menu.registerView(id, view);
-    }
     return menu;
   };
-}
-
-export class InteractiveMenu<
-  MenuProps extends NonNullable<unknown> = NonNullable<unknown>,
-  ViewId extends string = string
-> {
-  id: string = this.constructor.name;
-  protected message?: Message;
-  protected activeView: string;
-  protected readonly router: Router;
-  protected readonly idleTimeMs?: number;
-  protected props: MenuProps & IntrinsicMenuProps;
-  private collector?: InteractionCollector<CollectedMessageInteraction>;
-  private latestInteractionCollected?: CollectedMessageInteraction;
-  private readonly registeredViews: Map<string, typeof MenuView<any>>;
-  private readonly cachedViews: Map<string, MenuView>;
-
-  constructor(
-    protected readonly initialView: string,
-    readonly interaction: RepliableInteraction,
-    props: MenuProps & Partial<IntrinsicMenuProps>
-  ) {
-    this.activeView = initialView;
-    this.props = Object.assign({ ...DefaultProperties }, props);
-    this.message = this.props.initialMessage;
-    this.registeredViews = new Map();
-    this.cachedViews = new Map();
-    this.router = new Router(this);
-  }
-
-  /** Swap the current displayed view. */
-  swapView(viewId: string, args: unknown[]) {
-    this.activeView = viewId;
-    this.getView(viewId).onSwap(...args);
-  }
-
-  /** Get the current collector idle time before close in seconds. */
-  idleTimeSeconds() {
-    return Math.round((this.idleTimeMs ?? DEFAULT_IDLE) / 1_000);
-  }
-
-  /**
-   * Close the Menu and end component listener.
-   * - This will also delete ephemeral replies.
-   */
-  closeMenu() {
-    return this.endListener('close');
-  }
-
-  /**
-   * Force a reply to the initial interaction instead of dynamically rendering.
-   */
-  async reply(options: Omit<Partial<RenderOptions<ViewId>>, 'forceReply'>) {
-    return await this.render({ ...options, forceReply: true });
-  }
-
-  /**
-   * Render the currently-active view to the original interaction.
-   */
-  async render(options?: Partial<RenderOptions<ViewId>>) {
-    const o = { ...DefaultRenderOptions, ...options };
-    if (o.view) {
-      // change initial view
-      this.activeView = o.view;
-    }
-    const view = this.getCurrentView();
-    const collectorEnded = this.collector?.ended;
-    const endReason = this.collector?.endReason;
-    let renderTarget = this.interaction;
-
-    /**
-     * If rendering after each collected interaction, swap render target to
-     * latest collected
-     */
-    if (
-      this.props.renderAfterHandledInteraction &&
-      this.latestInteractionCollected
-    ) {
-      renderTarget = this.latestInteractionCollected;
-    }
-
-    if (!collectorEnded) {
-      await view.triggerPreloads();
-    }
-
-    const viewPayload = view.messagePayload();
-    if (collectorEnded) {
-      appendTimeoutEmbed(viewPayload, endReason);
-      viewPayload.components = [];
-    }
-
-    this.message = await safeRender(renderTarget, viewPayload, o.forceReply);
-
-    if (!this.collector) {
-      this.initCollector();
-    }
-  }
-
-  /** End the listener with a given reason, ending interactivity as a result. */
-  protected endListener(reason?: string) {
-    return this.collector?.stop(reason);
-  }
-
-  /** Register a MenuView class to the menu. */
-  registerView<ViewProps extends NonNullable<unknown>>(
-    id: string,
-    view: new (props: ViewProps) => MenuView<
-      typeof this.props extends ViewProps ? ViewProps : never
-    >
-  ) {
-    this.registeredViews.set(id, view);
-    console.log(`Registering view with id: ${id}`);
-  }
-
-  private getView(id: string): MenuView {
-    if (this.registeredViews.size < 1) {
-      throw new InteractiveMenuError(
-        `There are no registered views in this InteractiveMenu. Use ` +
-          `'registerView()' on each of your MenuViews.`
-      );
-    }
-    // get view definition
-    const currentViewClass = this.registeredViews.get(id);
-    if (!currentViewClass) {
-      throw new InteractiveMenuError(
-        `'${id}' is not a registered view in InteractiveMenu ` +
-          `${this.id}. Ensure you use 'registerView()' on each of your ` +
-          `MenuViews.\n\n` +
-          `Registered views: [${[...this.registeredViews.keys()].join(', ')}]`
-      );
-    }
-    // initialize view if not already
-    let viewInstance = this.cachedViews.get(id);
-    if (!viewInstance) {
-      viewInstance = new currentViewClass(this.props);
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore-next-line: Attach router instance.
-      viewInstance.__router = this.router;
-      this.cachedViews.set(id, viewInstance);
-    }
-    return viewInstance;
-  }
-
-  private getCurrentView() {
-    return this.getView(this.activeView);
-  }
-
-  private initCollector() {
-    if (!this.message) {
-      throw new InteractiveMenuError(
-        `Unable to initialize collectors; 'message' is undefined.`
-      );
-    }
-
-    this.collector = this.message.createMessageComponentCollector({
-      filter: (i) =>
-        i.user.id === this.interaction.user.id &&
-        i.channelId === this.interaction.channelId,
-      idle: this.idleTimeMs ?? DEFAULT_IDLE,
-    });
-
-    this.collector.on('collect', async (collected) => {
-      await this.onCollect(collected);
-    });
-
-    this.collector.on('end', async (collected) => {
-      if (!this.collector) {
-        return;
-      }
-
-      const endReason = this.collector.endReason;
-      console.log(
-        `${this.id} component listener successfully stopped due to reason: ` +
-          endReason
-      );
-      if (collected.size < 1 || endReasonIsTimeout(endReason)) {
-        await this.render();
-        return;
-      }
-
-      if (this.collector?.endReason === 'close') {
-        // prevent re-render and delete the original interaction's reply
-        this.props.renderAfterHandledInteraction = false;
-        this.interaction.deleteReply(this.message).catch((e) => {
-          console.log(e);
-        });
-        return;
-      }
-    });
-  }
-
-  private handlePrebuiltComponents(collected: CollectedMessageInteraction) {
-    const id = collected.customId;
-    if (collected.isButton()) {
-      switch (id) {
-        case SmartComponentType.CloseButton: {
-          console.log('Closing Menu via official CloseMenuButton');
-          this.closeMenu();
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  private async onCollect(collected: CollectedMessageInteraction) {
-    this.latestInteractionCollected = collected;
-
-    if (this.handlePrebuiltComponents(collected)) {
-      return;
-    }
-
-    await this.getCurrentView().__passCollectedInteractionToHandler(collected);
-
-    if (this.props.renderAfterHandledInteraction) {
-      await this.render();
-    }
-  }
 }
 
 class InteractiveMenuError extends Error {
