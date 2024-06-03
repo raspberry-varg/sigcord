@@ -124,6 +124,7 @@ export interface Synapse {
   setIdleSec(idleSeconds: number): void;
   close: () => void;
   stop: (reason?: string) => void;
+  skipRender: () => void;
   ctx: MenuContext;
 }
 

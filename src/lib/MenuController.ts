@@ -152,6 +152,9 @@ export function MenuController<
       updateListenerIdle(idleSeconds * 1_000);
     },
     close: () => closeMenu(),
+    skipRender: (shouldSkip = true) => {
+      skipRender = shouldSkip;
+    },
     stop: (reason?: string) => endListener(reason),
   };
   const props = buildProps(initProps, builtins);
@@ -182,6 +185,16 @@ export function MenuController<
     interactionId: '',
     customId: '',
   };
+  let skipRender = false;
+
+  function shouldRerender() {
+    return skipRender === false;
+  }
+
+  function afterRender() {
+    skipRender = false;
+    listeners.onRender.fire();
+  }
 
   function createComponentId(componentId: string): MenuViewComponentId {
     if (componentId.includes(':')) {
@@ -364,6 +377,10 @@ export function MenuController<
    * Render the currently-active view to the original interaction.
    */
   async function render(options?: Partial<RenderOptions<ViewId>>) {
+    if (!shouldRerender()) {
+      logger.debug('Re-render has been skipped.', { menuId, viewId: view.id });
+      return;
+    }
     const o = { ...DefaultRenderOptions, ...options };
     if (o.view) {
       // change initial view
@@ -417,7 +434,7 @@ export function MenuController<
       { ...props, ...viewPayload },
       o.forceReply
     );
-    listeners.onRender.fire();
+    afterRender();
 
     if (!collector) {
       initCollector();
