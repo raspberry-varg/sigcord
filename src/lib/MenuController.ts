@@ -206,7 +206,7 @@ export function MenuController<
   let skipRender = false;
 
   function shouldRerender() {
-    return skipRender === false;
+    return !collector.hasEnded() && skipRender === false;
   }
 
   function afterComponentHandled() {
