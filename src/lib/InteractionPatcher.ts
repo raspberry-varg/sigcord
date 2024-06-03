@@ -3,7 +3,6 @@ import type { ViewPayload } from './MenuView';
 import { safeRender } from '../util/RenderingUtil';
 import type { RenderOptions } from './MenuController';
 import type { IntrinsicMenuProps } from './InteractiveMenu';
-import { logger } from '../util/Logger';
 
 export class InteractionPatcher {
   message?: Message;
@@ -26,10 +25,6 @@ export class InteractionPatcher {
   }
 
   async delete() {
-    if (!this.message) {
-      logger.warn(this.message, 'Tried to delete a non-existent message.');
-      return;
-    }
-    return await this.message.delete();
+    return await this.interaction.deleteReply();
   }
 }

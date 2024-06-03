@@ -123,7 +123,7 @@ export interface Synapse {
   ): Promise<void>;
   setIdleMs(idleMilliseconds: number): void;
   setIdleSec(idleSeconds: number): void;
-  close: () => Promise<Message | undefined>;
+  close: () => Promise<void>;
   stop: (reason?: string) => void;
   skipRender: () => void;
   ctx: MenuContext;
