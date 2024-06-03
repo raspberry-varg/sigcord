@@ -247,6 +247,7 @@ export function MenuController<
    */
   async function closeMenu() {
     stopMenu('close');
+    patcher.mountInteraction(collector.lastCollected ?? patcher.interaction);
     return await patcher.delete();
   }
 
