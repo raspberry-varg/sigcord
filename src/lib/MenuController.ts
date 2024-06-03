@@ -146,7 +146,7 @@ export function MenuController<
       skipRender: (shouldSkip = true) => {
         skipRender = shouldSkip;
       },
-      stop: (reason?: string) => endListener(reason),
+      stop: (reason?: string) => stopMenu(reason),
     };
   }
   function getView(id: string): View {
@@ -169,7 +169,7 @@ export function MenuController<
   }
   const ctx: MenuContext = {
     get interaction(): RepliableInteraction {
-      return patcher.interaction;
+      return getPatchTarget();
     },
     initialInteraction: interaction,
     get idleTimeMs(): number {
@@ -247,12 +247,8 @@ export function MenuController<
    */
   async function closeMenu() {
     stopMenu('close');
-    patcher.mountInteraction(collector.lastCollected ?? patcher.interaction);
+    patcher.mountInteraction(interaction);
     return await patcher.delete();
-  }
-
-  function endListener(reason?: string) {
-    return collector.stop(reason);
   }
 
   function getComponentId(rawCustomId: string) {
@@ -306,11 +302,12 @@ export function MenuController<
   }
 
   async function onCollect(collected: CollectedMessageInteraction) {
-    if (props.renderAfterHandledInteraction) {
-      patcher.mountInteraction(collected);
-    }
     if (handlePrebuiltComponents(collected)) {
       return;
+    }
+
+    if (props.renderAfterHandledInteraction) {
+      patcher.mountInteraction(collected);
     }
 
     // route to registered handler
