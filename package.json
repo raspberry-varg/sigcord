@@ -18,7 +18,6 @@
     "build": "tsc",
     "clean": "rm -rf dist",
     "prepack": "npm run build && npx prettier --check src && npm run lint",
-    "publish": "npm publish"
   },
   "author": "irii",
   "license": "ISC",
