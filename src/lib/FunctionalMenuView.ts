@@ -6,7 +6,6 @@ import type {
   AwaitModalSubmitOptions,
   CommandInteraction,
   EmbedBuilder,
-  Message,
   MessageActionRowComponentBuilder,
   MessageComponentInteraction,
   ModalBuilder,
