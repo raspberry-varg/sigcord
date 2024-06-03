@@ -305,6 +305,9 @@ export function MenuController<
   }
 
   async function onCollect(collected: CollectedMessageInteraction) {
+    if (props.renderAfterHandledInteraction) {
+      patcher.mountInteraction(collected);
+    }
     if (handlePrebuiltComponents(collected)) {
       return;
     }
