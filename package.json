@@ -17,7 +17,7 @@
     "prebuild": "npm run clean",
     "build": "tsc",
     "clean": "rm -rf dist",
-    "prepack": "npm run build && npx prettier --check src && npm run lint",
+    "prepack": "npm run build && npx prettier --check src && npm run lint"
   },
   "author": "irii",
   "license": "ISC",
