@@ -6,6 +6,7 @@ import type {
   AwaitModalSubmitOptions,
   CommandInteraction,
   EmbedBuilder,
+  Message,
   MessageActionRowComponentBuilder,
   MessageComponentInteraction,
   ModalBuilder,
@@ -122,7 +123,7 @@ export interface Synapse {
   ): Promise<void>;
   setIdleMs(idleMilliseconds: number): void;
   setIdleSec(idleSeconds: number): void;
-  close: () => void;
+  close: () => Promise<Message | undefined>;
   stop: (reason?: string) => void;
   skipRender: () => void;
   ctx: MenuContext;
