@@ -22,7 +22,6 @@ export class RenderingEngine {
   view?: View;
   private queuedView?: QueuedView;
   private closureViewCache = new Map<string, ViewInstance>();
-  // @ts-ignore
   private wantRender = true;
   private queuedEmbeds?: Partial<QueuedEmbeds>;
 
@@ -40,6 +39,7 @@ export class RenderingEngine {
 
   queueRender(wantRender = true) {
     this.wantRender = wantRender;
+    this.wantRender;
   }
 
   queueViewSwap(view: View, args: unknown[]) {
