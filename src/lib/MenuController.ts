@@ -195,8 +195,7 @@ export function MenuController<
 
   function clearViewArtifacts() {
     componentCallbacks.clear();
-    latestModal.interactionId = '';
-    latestModal.customId = '';
+    flushModal();
   }
 
   function flushModal() {
