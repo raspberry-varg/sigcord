@@ -343,9 +343,10 @@ export function MenuController<
       );
       return 'No handler defined.';
     }
+    const currentView = view;
     await interactionCallback(collected);
 
-    if (props.renderAfterHandledInteraction) {
+    if (view === currentView && props.renderAfterHandledInteraction) {
       await render();
     }
   }
