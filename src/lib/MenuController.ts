@@ -1,26 +1,19 @@
 import type {
   EmbedBuilder,
   CollectedMessageInteraction,
-  InteractionCollector,
   MessageComponentInteraction,
   RepliableInteraction,
-  Message,
 } from 'discord.js';
-import {
-  View,
-  Synapse,
-  ViewInstance,
-  ViewProps,
-  instantiateViewFromClosure,
-  MenuContext,
-} from './FunctionalMenuView';
+import { View, Synapse, ViewProps, MenuContext } from './FunctionalMenuView';
 import { IntrinsicMenuProps } from './InteractiveMenu';
-import { appendTimeoutEmbed, safeRender } from '../util/RenderingUtil';
-import { endReasonIsTimeout } from '../util/CollectorUtil';
 import { SmartComponentType } from './SmartComponents';
 import { assert, assertAndReturn } from '../util/Assertions';
 import { Listener } from './Listener';
 import { logger } from '../util/Logger';
+import { RenderingEngine } from './RenderingEngine';
+import { InteractionPatcher } from './InteractionPatcher';
+import { CollectorService } from './CollectorService';
+import { TimeoutEmbed } from './PrebuiltEmbeds';
 
 export interface ControllerContext {
   // onLoadCallbacks: OnLoadCallback[];
@@ -74,99 +67,128 @@ export function MenuController<
   interaction: RepliableInteraction,
   initProps: MenuProps
 ) {
-  const listeners: MenuControllerListeners = {
-    onRender: new Listener(),
-    onEnd: new Listener(),
-  };
+  function createSynapse(): Synapse {
+    return {
+      ctx,
+      appendEmbeds: (...embeds: EmbedBuilder[]) =>
+        renderer.appendEmbeds(...embeds),
+      prependEmbeds: (...embeds: EmbedBuilder[]) =>
+        renderer.prependEmbeds(...embeds),
+      swap: (id: string, ...args: unknown[]) => {
+        clearViewArtifacts();
+        renderer.queueViewSwap(getView(id), args);
+      },
+      component: ({ id, component, controller }) => {
+        const componentId = createComponentId(id);
+        component.setCustomId(componentId);
+        collector.onComponent(componentId, controller);
+        return component;
+      },
+      showModal: async (interaction, modal) => {
+        latestModal.customId = modal.data.custom_id ?? '';
+        return await interaction.showModal(modal);
+      },
+      awaitModalSubmit: async (interaction, options) => {
+        latestModal.interactionId = interaction.id;
+        const response = await interaction
+          .awaitModalSubmit(options)
+          .catch(() => {
+            logger.debug('Modal ended without receiving a response.');
+            flushModal();
+            return null;
+          });
+        if (
+          !response ||
+          (latestModal.interactionId.length &&
+            latestModal.interactionId !== interaction.id) ||
+          (latestModal.customId.length &&
+            latestModal.customId !== response.customId)
+        ) {
+          return null;
+        }
+        flushModal();
+        return response;
+      },
+      onModalSubmit: async (interaction, options, callback) => {
+        latestModal.interactionId = interaction.id;
+        const response = await interaction
+          .awaitModalSubmit(options)
+          .catch(() => {
+            logger.debug('Modal ended without receiving a response.');
+            flushModal();
+            return;
+          });
+        if (
+          !response ||
+          latestModal.interactionId !== interaction.id ||
+          latestModal.customId !== response.customId
+        ) {
+          return;
+        }
+        flushModal();
+        await callback(response);
+      },
+      setIdleMs: (idleMilliseconds: number) => {
+        assert(
+          idleMilliseconds > 0,
+          `Idle time must be greater than 0 milliseconds, got [${idleMilliseconds}].`
+        );
+        updateListenerIdle(idleMilliseconds);
+      },
+      setIdleSec: (idleSeconds: number) => {
+        assert(
+          idleSeconds > 0,
+          `Idle time must be greater than 0 seconds, got [${idleSeconds}].`
+        );
+        updateListenerIdle(idleSeconds * 1_000);
+      },
+      close: async () => await closeMenu(),
+      skipRender: (shouldSkip = true) => {
+        skipRender = shouldSkip;
+      },
+      stop: (reason?: string) => endListener(reason),
+    };
+  }
+  function getView(id: string): View {
+    const view = views.get(id);
+    assert(view, `"${id}" is not a registered view.`);
+    return view;
+  }
+  function getPatchTarget(): RepliableInteraction {
+    return props.renderAfterHandledInteraction && collector.lastCollected
+      ? collector.lastCollected
+      : interaction;
+  }
+  function stopMenu(reason?: string) {
+    collector.stop(reason);
+    cleanup();
+  }
+  function cleanup() {
+    // TODO(@raspberry-varg): Implement relevant cleanup.
+    return;
+  }
   const ctx: MenuContext = {
-    interaction,
+    get interaction(): RepliableInteraction {
+      return patcher.interaction;
+    },
     initialInteraction: interaction,
     get idleTimeMs(): number {
       return idle;
     },
   };
-  const builtins: Synapse = {
-    ctx,
-    appendEmbeds: (...embeds: EmbedBuilder[]) => appendedEmbeds.push(...embeds),
-    prependEmbeds: (...embeds: EmbedBuilder[]) =>
-      prependedEmbeds.push(...embeds),
-    swap: (id: string, ...args: any[]) => changeViewWithCallback(id, ...args),
-    component: ({ id, component, controller }) => {
-      const componentId = createComponentId(id);
-      component.setCustomId(componentId);
-      componentCallbacks.set(componentId, controller);
-      return component;
-    },
-    showModal: async (interaction, modal) => {
-      latestModal.customId = modal.data.custom_id ?? '';
-      return await interaction.showModal(modal);
-    },
-    awaitModalSubmit: async (interaction, options) => {
-      latestModal.interactionId = interaction.id;
-      const response = await interaction.awaitModalSubmit(options).catch(() => {
-        logger.debug('Modal ended without receiving a response.');
-        flushModal();
-        return null;
-      });
-      if (
-        !response ||
-        (latestModal.interactionId.length &&
-          latestModal.interactionId !== interaction.id) ||
-        (latestModal.customId.length &&
-          latestModal.customId !== response.customId)
-      ) {
-        return null;
-      }
-      flushModal();
-      return response;
-    },
-    onModalSubmit: async (interaction, options, callback) => {
-      latestModal.interactionId = interaction.id;
-      const response = await interaction.awaitModalSubmit(options).catch(() => {
-        logger.debug('Modal ended without receiving a response.');
-        flushModal();
-        return;
-      });
-      if (
-        !response ||
-        latestModal.interactionId !== interaction.id ||
-        latestModal.customId !== response.customId
-      ) {
-        return;
-      }
-      flushModal();
-      await callback(response);
-    },
-    setIdleMs: (idleMilliseconds: number) => {
-      assert(
-        idleMilliseconds > 0,
-        `Idle time must be greater than 0 milliseconds, got [${idleMilliseconds}].`
-      );
-      updateListenerIdle(idleMilliseconds);
-    },
-    setIdleSec: (idleSeconds: number) => {
-      assert(
-        idleSeconds > 0,
-        `Idle time must be greater than 0 seconds, got [${idleSeconds}].`
-      );
-      updateListenerIdle(idleSeconds * 1_000);
-    },
-    close: () => closeMenu(),
-    skipRender: (shouldSkip = true) => {
-      skipRender = shouldSkip;
-    },
-    stop: (reason?: string) => endListener(reason),
-  };
+  const builtins = createSynapse();
   const props = buildProps(initProps, builtins);
   const views = new Map<string, View>(registeredViews.map((v) => [v.id, v]));
-  const closureViewsCache = new Map<string, ViewInstance>();
+  const renderer = new RenderingEngine();
+  const patcher = new InteractionPatcher(interaction, props);
+  const listeners: MenuControllerListeners = {
+    onRender: new Listener(),
+    onEnd: new Listener(),
+  };
   const componentCallbacks = new Map<
     MenuViewComponentId,
     MessageComponentCallback<any>
   >();
-  const renderedViews = new Set<View>();
-  const appendedEmbeds: EmbedBuilder[] = [];
-  const prependedEmbeds: EmbedBuilder[] = [];
 
   let idle: number =
     props.idleTimeMs === undefined
@@ -176,11 +198,7 @@ export function MenuController<
           (t) => t > 0,
           `Idle time must be greater than 0 milliseconds, got [${props.idleTimeMs}].`
         );
-  let view: ViewInstance;
-  let message: Message;
-  let collector: InteractionCollector<CollectedMessageInteraction> | null =
-    null;
-  let latestInteractionCollected: CollectedMessageInteraction | null = null;
+  const collector = new CollectorService(listeners.onEnd);
   const latestModal = {
     interactionId: '',
     customId: '',
@@ -189,6 +207,10 @@ export function MenuController<
 
   function shouldRerender() {
     return skipRender === false;
+  }
+
+  function afterComponentHandled() {
+    skipRender = false;
   }
 
   function afterRender() {
@@ -203,10 +225,13 @@ export function MenuController<
           `a different character.`
       );
     }
-    return `${menuId}:${view.id}:${componentId}`;
+    return `${menuId}:${
+      renderer.view ? renderer.view.id : initialViewId
+    }:${componentId}`;
   }
 
   function clearViewArtifacts() {
+    collector.clear();
     componentCallbacks.clear();
     flushModal();
   }
@@ -216,51 +241,17 @@ export function MenuController<
     latestModal.interactionId = '';
   }
 
-  async function getView(id: string): Promise<ViewInstance> {
-    const view = views.get(id);
-    assert(view, `"${id}" is not a registered view.`);
-    let viewInstance: ViewInstance;
-    if (!('closure' in view)) {
-      viewInstance = view;
-    } else {
-      // try cache for instantiated view
-      if (!closureViewsCache.has(id)) {
-        closureViewsCache.set(
-          id,
-          // eslint-disable-next-line @typescript-eslint/ban-types
-          await instantiateViewFromClosure<{}>(view, props)
-        );
-      }
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      viewInstance = closureViewsCache.get(id)!;
-    }
-    return viewInstance;
-  }
-
-  async function changeView(id: string) {
-    assert(
-      !(view !== undefined && id === view.id),
-      `Cannot swap to the same view; already in view "${id}"`
-    );
-    view = await getView(id);
-    clearViewArtifacts();
-  }
-
-  async function changeViewWithCallback(id: string, ...args: any[]) {
-    await changeView(id);
-    await view.onSwap?.(...args);
-  }
-
   /**
    * Close the Menu and end component listener.
    * - This will also delete ephemeral replies.
    */
-  function closeMenu() {
-    return endListener('close');
+  async function closeMenu() {
+    stopMenu('close');
+    return await patcher.delete();
   }
 
   function endListener(reason?: string) {
-    return collector?.stop(reason);
+    return collector.stop(reason);
   }
 
   function getComponentId(rawCustomId: string) {
@@ -274,57 +265,29 @@ export function MenuController<
     return componentIdSplit.at(-1);
   }
 
+  function onTimeout() {
+    cleanup();
+    return patchTimeout();
+  }
+
   // TODO: Move collector into a microservice outside of this file.
   function initCollector() {
+    const message = patcher.message;
     assert(message, `Unable to initialize collectors; 'message' is undefined.`);
-
-    collector = message.createMessageComponentCollector({
+    collector.init({
+      idle,
+      message,
+      onTimeout,
+      onCollect,
       filter: (i) =>
         i.user.id === interaction.user.id &&
         i.channelId === interaction.channelId,
-      idle,
-    });
-
-    collector.on('collect', async (collected) => {
-      await onCollect(collected);
-    });
-
-    collector.on('end', async (collected) => {
-      if (!collector) {
-        return;
-      }
-
-      const endReason = collector.endReason;
-      listeners.onEnd.fire(endReason);
-      logger.debug(
-        `${menuId} component listener successfully stopped due to reason: ` +
-          endReason
-      );
-
-      if (collector.endReason === 'close') {
-        // prevent re-render and delete the original interaction's reply
-        props.renderAfterHandledInteraction = false;
-        interaction.deleteReply(message).catch((e) => {
-          logger.error(
-            `Unable to delete the original interaction reply for menuId [${menuId}]: `,
-            e
-          );
-        });
-        return;
-      }
-
-      if (collected.size < 1 || endReasonIsTimeout(endReason)) {
-        await render();
-        return;
-      }
     });
   }
 
   function updateListenerIdle(timeMilliseconds: number): void {
-    if (collector && !collector.ended) {
-      idle = timeMilliseconds;
-      collector.resetTimer({ time: timeMilliseconds });
-    }
+    idle = timeMilliseconds;
+    collector.updateIdle(timeMilliseconds);
   }
 
   function handlePrebuiltComponents(collected: CollectedMessageInteraction) {
@@ -342,26 +305,46 @@ export function MenuController<
   }
 
   async function onCollect(collected: CollectedMessageInteraction) {
-    latestInteractionCollected = collected;
-
     if (handlePrebuiltComponents(collected)) {
       return;
     }
 
     // route to registered handler
-    const interactionCallback = componentCallbacks.get(collected.customId);
+    const interactionCallback = collector.getComponentCallback(
+      collected.customId
+    );
     if (!interactionCallback) {
       logger.warn(
         `MenuView: No handler defined for ${getComponentId(collected.customId)}`
       );
-      return 'No handler defined.';
+      return;
     }
-    const currentView = view;
     await interactionCallback(collected);
 
-    if (view === currentView && props.renderAfterHandledInteraction) {
-      await render();
+    if (shouldRerender()) {
+      await update();
     }
+    afterComponentHandled();
+  }
+
+  async function initialRender(options: Partial<RenderOptions>) {
+    const initialView = getView(options.view ?? initialViewId);
+    assert(
+      !initialView.isSubView,
+      `Tried to render subview "${initialView.id}" directly. ` +
+        'Subviews must be swapped into.'
+    );
+    renderer.queueViewSwap(initialView, []);
+    renderer.queueRender();
+    patcher.mountInteraction(getPatchTarget());
+    const payload = await renderer.render(props);
+    await patcher.patch(payload, options);
+  }
+
+  /** Handles subsequent rerenders. */
+  async function update(): Promise<void> {
+    const payload = await renderer.render(props);
+    await patcher.patch(payload, {});
   }
 
   /**
@@ -370,75 +353,23 @@ export function MenuController<
   async function reply(
     options: Omit<Partial<RenderOptions<ViewId>>, 'forceReply'>
   ) {
-    return await render({ ...options, forceReply: true });
+    return await start({ ...options, forceReply: true });
+  }
+
+  async function patchTimeout() {
+    renderer.appendEmbeds(TimeoutEmbed);
+    const payload = await renderer.render(props);
+    await patcher.patch(payload, {});
   }
 
   /**
    * Render the currently-active view to the original interaction.
    */
-  async function render(options?: Partial<RenderOptions<ViewId>>) {
-    if (!shouldRerender()) {
-      logger.debug('Re-render has been skipped.', { menuId, viewId: view.id });
-      return;
-    }
-    const o = { ...DefaultRenderOptions, ...options };
-    if (o.view) {
-      // change initial view
-      await changeView(o.view);
-    }
-    if (view === undefined) {
-      await changeView(initialViewId);
-    }
-    // if subview, ensure `onSwap` has been called at least once
-    assert(
-      !view.isSubView || renderedViews.has(view),
-      `Tried to render subview "${view.id}" directly. ` +
-        'Subviews must be swapped into.'
-    );
-
-    const collectorEnded = collector?.ended;
-    const endReason = collector?.endReason;
-    let renderTarget = interaction;
-
-    /**
-     * If rendering after each collected interaction, swap render target to
-     * latest collected
-     */
-    if (props.renderAfterHandledInteraction && latestInteractionCollected) {
-      renderTarget = latestInteractionCollected;
-    }
-    ctx.interaction = renderTarget;
-
-    let viewPayload = await view.render(props);
-    renderedViews.add(view);
-    if (collectorEnded) {
-      if (endReasonIsTimeout(endReason)) {
-        viewPayload = appendTimeoutEmbed({ ...props, ...viewPayload });
-        viewPayload.components = [];
-      }
-      return;
-    }
-
-    if (appendedEmbeds.length || prependedEmbeds.length) {
-      viewPayload.embeds = [
-        ...prependedEmbeds,
-        ...(viewPayload.embeds ?? []),
-        ...appendedEmbeds,
-      ];
-      prependedEmbeds.length = 0;
-      appendedEmbeds.length = 0;
-    }
-
-    message = await safeRender(
-      renderTarget,
-      { ...props, ...viewPayload },
-      o.forceReply
-    );
+  async function start(options: Partial<RenderOptions> = {}) {
+    options = { ...DefaultRenderOptions, ...options };
+    await initialRender(options);
+    initCollector();
     afterRender();
-
-    if (!collector) {
-      initCollector();
-    }
   }
 
   /*
@@ -456,7 +387,9 @@ export function MenuController<
   return {
     // render API
     reply,
-    render,
+    /**@deprecated Please use `.start` instead. */
+    render: start,
+    start,
     // listener API
     onRender,
     awaitRender,
