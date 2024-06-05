@@ -1,12 +1,13 @@
 import type { EmbedBuilder } from 'discord.js';
-import type { Props } from '..';
-import { assert } from '../util/Assertions';
+import type { Props } from '../index.js';
+import { assert } from '../util/Assertions.js';
 import {
   instantiateViewFromClosure,
+  isReactiveViewInstance,
   type View,
   type ViewInstance,
-} from './FunctionalMenuView';
-import type { ViewPayload } from './MenuView';
+} from './FunctionalMenuView.js';
+import type { ViewPayload } from './MenuView.js';
 
 interface QueuedView {
   view: View;
@@ -24,6 +25,14 @@ export class RenderingEngine {
   private closureViewCache = new Map<string, ViewInstance>();
   private wantRender = true;
   private queuedEmbeds?: Partial<QueuedEmbeds>;
+
+  isCurrentViewReactive(): boolean {
+    return !!this.view && isReactiveViewInstance(this.view);
+  }
+
+  hasQueuedView(): boolean {
+    return !!this.queuedView;
+  }
 
   prependEmbeds(...embeds: EmbedBuilder[]): void {
     this.queuedEmbeds ??= {};
@@ -55,7 +64,18 @@ export class RenderingEngine {
       await view.onSwap?.(...this.queuedView.args);
       this.queuedView = undefined;
     }
-    const payload = await view.render(props);
+    let payload: ViewPayload;
+    if (isReactiveViewInstance(view)) {
+      payload = {
+        ephemeral: view.ephemeral,
+        content:
+          typeof view.content === 'string' ? view.content : view.content?.(),
+        embeds: maybeCallArray(view.embeds),
+        components: maybeCallArray(view.components),
+      };
+    } else {
+      payload = await view.render(props);
+    }
     if (this.queuedEmbeds) {
       payload.embeds = this.attachEnqueuedEmbeds(payload.embeds ?? []);
     }
@@ -103,4 +123,11 @@ export class RenderingEngine {
     }
     return embeds;
   }
+}
+
+function maybeCallArray<T>(fnOrArray?: T[] | (() => T[])): T[] | undefined {
+  if (fnOrArray === undefined) {
+    return fnOrArray;
+  }
+  return Array.isArray(fnOrArray) ? fnOrArray : fnOrArray();
 }

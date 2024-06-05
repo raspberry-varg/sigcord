@@ -4,16 +4,18 @@ import type {
   MessageComponentInteraction,
   RepliableInteraction,
 } from 'discord.js';
-import { View, Synapse, ViewProps, MenuContext } from './FunctionalMenuView';
-import { IntrinsicMenuProps } from './InteractiveMenu';
-import { SmartComponentType } from './SmartComponents';
-import { assert, assertAndReturn } from '../util/Assertions';
-import { Listener } from './Listener';
-import { logger } from '../util/Logger';
-import { RenderingEngine } from './RenderingEngine';
-import { InteractionPatcher } from './InteractionPatcher';
-import { CollectorService } from './CollectorService';
-import { TimeoutEmbed } from './PrebuiltEmbeds';
+import { View, Synapse, ViewProps, MenuContext } from './FunctionalMenuView.js';
+import { IntrinsicMenuProps } from './InteractiveMenu.js';
+import { SmartComponentType } from './SmartComponents.js';
+import { assert, assertAndReturn } from '../util/Assertions.js';
+import { Listener } from './Listener.js';
+import { logger } from '../util/Logger.js';
+import { RenderingEngine } from './RenderingEngine.js';
+import { InteractionPatcher } from './InteractionPatcher.js';
+import { CollectorService } from './CollectorService.js';
+import { TimeoutEmbed } from './PrebuiltEmbeds.js';
+import { reactive } from '@reactively/core';
+import type { Signal } from '../index.js';
 
 export interface ControllerContext {
   // onLoadCallbacks: OnLoadCallback[];
@@ -147,6 +149,24 @@ export function MenuController<
         skipRender = shouldSkip;
       },
       stop: (reason?: string) => stopMenu(reason),
+      queueRender: (queueRender = true) => {
+        manualPatchQueued = queueRender;
+      },
+      createSignal: (fnOrValue, params) => {
+        return reactive(fnOrValue, params);
+      },
+      createEffect: (fn, params) => {
+        let version = 0;
+        const signal = reactive(() => {
+          fn();
+          version++;
+          console.log(`returning version=${version}`);
+          return version;
+        }, {...params});
+        signal.get();
+        effects.push(signal);
+        effectVersions.push(version);
+      },
     };
   }
   function getView(id: string): View {
@@ -189,6 +209,8 @@ export function MenuController<
     MenuViewComponentId,
     MessageComponentCallback<any>
   >();
+  const effects: Signal<number>[] = [];
+  const effectVersions: number[] = [];
 
   let idle: number =
     props.idleTimeMs === undefined
@@ -204,17 +226,46 @@ export function MenuController<
     customId: '',
   };
   let skipRender = false;
+  let manualPatchQueued = false;
 
   function shouldRerender() {
-    return !collector.hasEnded() && skipRender === false;
+    logger.debug({
+      skipRender,
+      collectorEnded: collector.hasEnded(),
+      isCurrentViewReactive: renderer.isCurrentViewReactive(),
+      rendererHasQueuedView: renderer.hasQueuedView(),
+      manualPatchQueued,
+    });
+    if (skipRender || collector.hasEnded()) {
+      return false;
+    }
+    // do not wait for reactivity to render a queued view
+    if (manualPatchQueued || renderer.hasQueuedView()) {
+      return true;
+    }
+    if (renderer.isCurrentViewReactive()) {
+      let reactiveGraphIsDirty = false;
+      effects.forEach((effect, i) => {
+        const oldVersion = effectVersions[i];
+        const newVersion = effect.get();
+        const hasChanged = oldVersion !== newVersion;
+        effectVersions[i] = newVersion;
+        if (hasChanged) {
+          reactiveGraphIsDirty = true;
+        }
+      });
+      logger.debug({reactiveGraphIsDirty});
+      return reactiveGraphIsDirty;
+    }
+    return true;
   }
 
   function afterComponentHandled() {
-    skipRender = false;
+    manualPatchQueued = false;
   }
 
   function afterRender() {
-    skipRender = false;
+    manualPatchQueued = false;
     listeners.onRender.fire();
   }
 
@@ -323,6 +374,7 @@ export function MenuController<
     await interactionCallback(collected);
 
     if (shouldRerender()) {
+      logger.debug('Rerendering due to component call.');
       await update();
     }
     afterComponentHandled();
