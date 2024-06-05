@@ -12,8 +12,9 @@ import type {
   ModalSubmitInteraction,
   RepliableInteraction,
 } from 'discord.js';
-import type { MessageComponentCallback, ViewPayload } from './MenuView';
-import { MaybePromise } from '../util/TypesUtil';
+import type { Reactive, ReactivelyParams } from '@reactively/core';
+import type { MessageComponentCallback, ReactiveViewPayload, ViewPayload } from './MenuView.js';
+import { MaybePromise } from '../util/TypesUtil.js';
 
 type PropsBase = NonNullable<unknown>;
 type ModalRepliableInteraction =
@@ -24,10 +25,11 @@ interface ViewDefinitionBase {
   readonly id: string;
   /** If true, this view cannot be an initial view and must be swapped into. */
   isSubView?: boolean;
+  onSwap?: (...args: any[]) => MaybePromise<void>;
 }
 
 type ViewClosureReturn<Props extends PropsBase = PropsBase> = MaybePromise<
-  ViewBody<Props>
+  ViewBody<Props> | ReactiveViewBody
 >;
 
 interface ViewClosureBody<Props extends PropsBase = PropsBase> {
@@ -41,14 +43,19 @@ export type ViewClosure<Props extends PropsBase = PropsBase> =
   | (() => ViewClosureReturn<Props>)
   | ((props: ViewProps<Props>) => ViewClosureReturn<Props>);
 
+export type ReactiveView<Props extends PropsBase> =
+  | (() => ReactiveViewPayload)
+  | ((props: ViewProps<Props>) => ReactiveViewPayload);
+
+export type ReactiveViewBody = ReactiveViewPayload;
+
 export interface ViewBody<Props extends PropsBase = PropsBase> {
   /** Callback when this view is {@link Synapse.swap swapped} into. */
-  onSwap?: (...args: any[]) => MaybePromise<void>;
   render: ViewRender<Props>;
 }
 
 export type ViewDefinition<Props extends PropsBase = PropsBase> =
-  ViewDefinitionBase & ViewBody<Props>;
+  ViewDefinitionBase & (ViewBody<Props> | ReactiveViewBody);
 
 export type View<Props extends PropsBase = PropsBase> =
   | ViewClosureDefinition<Props>
@@ -59,7 +66,13 @@ export type ViewRender<Props extends PropsBase = PropsBase> =
   | ((props: ViewProps<Props>) => MaybePromise<ViewPayload>);
 
 export type ViewInstance<Props extends PropsBase = PropsBase> =
-  ViewDefinition<Props>;
+  | ClassicViewInstance<Props>
+  | ReactiveViewInstance;
+
+export type ClassicViewInstance<Props extends PropsBase> = ViewDefinitionBase &
+  ViewBody<Props>;
+
+export type ReactiveViewInstance = ViewDefinitionBase & ReactiveViewBody;
 
 export interface MenuContext {
   /**
@@ -124,7 +137,16 @@ export interface Synapse {
   setIdleSec(idleSeconds: number): void;
   close: () => Promise<void>;
   stop: (reason?: string) => void;
+  queueRender: () => void;
   skipRender: () => void;
+  createSignal: <T>(
+    fnOrValue: T | (() => T),
+    params?: ReactivelyParams
+  ) => Reactive<T>;
+  createEffect: <T>(
+    fn: () => T,
+    params?: Omit<ReactivelyParams, 'effect'>
+  ) => void;
   ctx: MenuContext;
 }
 
@@ -169,4 +191,11 @@ export async function instantiateViewFromClosure<
     ...body,
     id: view.id,
   };
+}
+
+/** @internal */
+export function isReactiveViewInstance<Props extends PropsBase>(
+  body: ViewInstance<Props>
+): body is ReactiveViewInstance {
+  return !('render' in body);
 }
