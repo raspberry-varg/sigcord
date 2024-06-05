@@ -1,5 +1,5 @@
-export { IntrinsicMenuProps, DefineMenu } from './lib/InteractiveMenu';
-export * from './lib/MenuView';
+export { IntrinsicMenuProps, DefineMenu } from './lib/InteractiveMenu.js';
+export * from './lib/MenuView.js';
 export {
   DefineView,
   DefineSubView,
@@ -11,8 +11,9 @@ export {
   ViewProps,
   ViewProps as Props,
   ViewRender,
-} from './lib/FunctionalMenuView';
-export * from './lib/SmartComponents';
-export * from './lib/PrebuiltEmbeds';
-export * from './lib/Renderable';
-export { ModalBundle, useValues } from './lib/ModalBundle';
+} from './lib/FunctionalMenuView.js';
+export * from './lib/SmartComponents.js';
+export * from './lib/PrebuiltEmbeds.js';
+export * from './lib/Renderable.js';
+export { ModalBundle, useValues } from './lib/ModalBundle.js';
+export { Reactive as Signal } from '@reactively/core';
