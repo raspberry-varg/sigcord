@@ -1,7 +1,7 @@
 import type { Message, RepliableInteraction } from 'discord.js';
-import type { IntrinsicViewProps } from './MenuView';
-import { View } from './FunctionalMenuView';
-import { MenuController } from './MenuController';
+import type { IntrinsicViewProps } from './MenuView.js';
+import { View } from './FunctionalMenuView.js';
+import { MenuController } from './MenuController.js';
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 export interface Menu<Views extends ViewDefinitions = {}> {

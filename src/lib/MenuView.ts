@@ -5,11 +5,20 @@ import type {
   MessageComponentInteraction,
 } from 'discord.js';
 
+type Component = ActionRowBuilder<MessageActionRowComponentBuilder>;
+
+export interface ReactiveViewPayload {
+  ephemeral?: boolean;
+  content?: string | (() => string);
+  embeds?: EmbedBuilder[] | (() => EmbedBuilder[]);
+  components?: Component[] | (() => Component[]);
+}
+
 export interface ViewPayload {
   ephemeral?: boolean;
   content?: string;
   embeds?: EmbedBuilder[];
-  components?: ActionRowBuilder<MessageActionRowComponentBuilder>[];
+  components?: Component[];
 }
 
 export interface MessageComponentCallback<

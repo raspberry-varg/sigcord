@@ -1,5 +1,5 @@
-import { ViewPayload } from '../lib/MenuView';
-import { TimeoutEmbed } from '../lib/PrebuiltEmbeds';
+import { ViewPayload } from '../lib/MenuView.js';
+import { TimeoutEmbed } from '../lib/PrebuiltEmbeds.js';
 import { RepliableInteraction } from 'discord.js';
 
 export function appendTimeoutEmbed(payload: ViewPayload) {

@@ -5,8 +5,8 @@ import type {
   MessageActionRowComponentBuilder,
   RepliableInteraction,
 } from 'discord.js';
-import { safeRender } from '../util/RenderingUtil';
-import { ViewPayload } from './MenuView';
+import { safeRender } from '../util/RenderingUtil.js';
+import { ViewPayload } from './MenuView.js';
 
 interface RenderOptions {
   ephemeral: boolean;
