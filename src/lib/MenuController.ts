@@ -67,7 +67,7 @@ export const enum PatchTarget {
   None = 0,
   Embeds = 1,
   Components = 2,
-  Content = 3,
+  Content = 4,
   All = Embeds | Components | Content,
 }
 
@@ -290,7 +290,7 @@ export function MenuController<
           patchTargets |= effect.patch;
         }
       });
-      logger.debug({ patchTargets });
+      logger.debug({ patchTargetBitField: patchTargets });
       return patchTargets;
     }
     return PatchTarget.All;
@@ -418,7 +418,6 @@ export function MenuController<
 
     const patchTargets = getPatchTargets();
     if (patchTargets !== PatchTarget.None) {
-      logger.debug('Rerendering due to component call.');
       await update(patchTargets);
     }
     afterComponentHandled();
@@ -459,6 +458,7 @@ export function MenuController<
 
   async function patchTimeout() {
     renderer.appendEmbeds(TimeoutEmbed);
+    renderer.queueClear(PatchTarget.Components);
     const payload = await renderer.patch(
       props,
       PatchTarget.Embeds | PatchTarget.Content
