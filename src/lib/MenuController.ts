@@ -18,6 +18,7 @@ import { TimeoutEmbed } from './PrebuiltEmbeds.js';
 import { reactive } from '@reactively/core';
 import type { Signal } from '../index.js';
 import type { ReactiveOptions } from './Reactivity.js';
+import { PatchTarget, PatchTargetBitField } from './RenderingEngine.js';
 
 export interface ControllerContext {
   // onLoadCallbacks: OnLoadCallback[];
@@ -59,16 +60,6 @@ type MenuViewComponentId = string;
 interface MenuControllerListeners {
   onRender: Listener<void>;
   onEnd: Listener<string | null>;
-}
-
-export type PatchTargetBitField = number;
-
-export const enum PatchTarget {
-  None = 0,
-  Embeds = 1,
-  Components = 2,
-  Content = 4,
-  All = Embeds | Components | Content,
 }
 
 interface EffectInstance {
@@ -168,7 +159,19 @@ export function MenuController<
       },
       stop: (reason?: string) => stopMenu(reason),
       queueRender: (queueRender = true) => {
-        manualPatchQueued = queueRender;
+        if (queueRender) {
+          manualPatchQueued |= PatchTarget.All;
+        } else {
+          manualPatchQueued = 0;
+        }
+      },
+      patch: (targets) => {
+        manualPatchQueued |= targets.reduce<PatchTargetBitField>(
+          (bitField, target) => {
+            return bitField | target;
+          },
+          PatchTarget.None
+        );
       },
       createSignal: (fnOrValue, params) => {
         return reactive(fnOrValue, params);
@@ -262,7 +265,7 @@ export function MenuController<
     customId: '',
   };
   let skipRender = false;
-  let manualPatchQueued = false;
+  let manualPatchQueued: PatchTargetBitField = 0;
 
   function getPatchTargets(): PatchTargetBitField {
     logger.debug({
@@ -296,10 +299,6 @@ export function MenuController<
     return PatchTarget.All;
   }
 
-  function afterComponentHandled() {
-    manualPatchQueued = false;
-  }
-
   function beforeRender() {
     if (renderer.hasQueuedView()) {
       effects.length = 0;
@@ -308,7 +307,7 @@ export function MenuController<
 
   function afterRender() {
     skipRender = false;
-    manualPatchQueued = false;
+    manualPatchQueued = 0;
     listeners.onRender.fire();
   }
 
@@ -420,7 +419,6 @@ export function MenuController<
     if (patchTargets !== PatchTarget.None) {
       await update(patchTargets);
     }
-    afterComponentHandled();
   }
 
   async function initialRender(options: Partial<RenderOptions>) {
