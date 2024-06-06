@@ -12,7 +12,7 @@ import type { MenuContext } from './FunctionalMenuView.js';
 import type { MessageComponentCallback } from './MenuView.js';
 import type { MaybeSignal, ReactiveOptions } from './Reactivity.js';
 import type { PatchTarget } from './RenderingEngine.js';
-import type { Signal } from '../index.js';
+import type { Signal } from './Reactivity.js';
 
 type ModalRepliableInteraction =
   | CommandInteraction

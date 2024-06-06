@@ -28,7 +28,8 @@ export type ViewClosure<Props extends PropsBase = PropsBase> =
   | ((props: ViewProps<Props>) => ViewClosureReturn<Props>);
 
 export type ViewClosureReturn<Props extends PropsBase = PropsBase> =
-  MaybePromise<ClassicViewBody<Props> | ReactiveViewBody>;
+  | MaybePromise<ClassicViewBody<Props>>
+  | MaybePromise<ReactiveViewBody>;
 
 export interface ViewClosureBody<Props extends PropsBase = PropsBase> {
   closure: ViewClosure<Props>;
