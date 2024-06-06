@@ -66,11 +66,16 @@ export interface Synapse {
    * In reactive views, manually queue patches for specific pieces the message
    * instead of relying on reactivity.
    */
-  patch: (targets: PatchTarget[]) => void;
-  createSignal: <T>(
+  patch: (...targets: PatchTarget[]) => void;
+  createSignal<T>(): Reactive<T | undefined>;
+  createSignal<T>(
+    fnOrValue: undefined,
+    params?: ReactivelyParams
+  ): Reactive<T | undefined>;
+  createSignal<T>(
     fnOrValue: T | (() => T),
     params?: ReactivelyParams
-  ) => Reactive<T>;
+  ): Reactive<T>;
   /**
    * Create an effect that runs when the value of signals in the function are
    * changed.
