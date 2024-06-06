@@ -16,7 +16,7 @@ import { InteractionPatcher } from './InteractionPatcher.js';
 import { CollectorService } from './CollectorService.js';
 import { TimeoutEmbed } from './PrebuiltEmbeds.js';
 import { reactive } from '@reactively/core';
-import type { Signal } from '../index.js';
+import { Signal } from '../index.js';
 import type { ReactiveOptions } from './Reactivity.js';
 import { PatchTarget, PatchTargetBitField } from './RenderingEngine.js';
 
@@ -172,6 +172,12 @@ export function MenuController<
           },
           PatchTarget.None
         );
+      },
+      signalFrom: (fnOrMaybeSignal) => {
+        if (fnOrMaybeSignal instanceof Signal) {
+          return fnOrMaybeSignal;
+        }
+        return reactive(fnOrMaybeSignal, {});
       },
       createSignal<T>(
         fnOrValue: T | (() => T) | undefined = undefined,
