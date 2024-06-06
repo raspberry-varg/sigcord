@@ -4,14 +4,12 @@ export {
   DefineView,
   DefineSubView,
   View,
-  ViewBody,
-  Synapse,
-  Synapse as ViewSynapse,
   ViewClosure,
   ViewProps,
   ViewProps as Props,
-  ViewRender,
 } from './lib/FunctionalMenuView.js';
+export { ViewRender } from './lib/MenuView/ClassicView.js';
+export { Synapse, Synapse as ViewSynapse } from './lib/Synapse.js';
 export * from './lib/SmartComponents.js';
 export * from './lib/PrebuiltEmbeds.js';
 export * from './lib/Renderable.js';
