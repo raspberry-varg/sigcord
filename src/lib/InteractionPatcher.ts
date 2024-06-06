@@ -3,6 +3,7 @@ import type { ViewPayload } from './MenuView.js';
 import { safeRender } from '../util/RenderingUtil.js';
 import type { RenderOptions } from './MenuController.js';
 import type { IntrinsicMenuProps } from './InteractiveMenu.js';
+import { logger } from '../util/Logger.js';
 
 export class InteractionPatcher {
   message?: Message;
@@ -17,6 +18,10 @@ export class InteractionPatcher {
   }
 
   async patch(payload: ViewPayload, options: Partial<RenderOptions>) {
+    logger.debug(
+      `Patching interaction.id=${this.interaction.id} with the following payload: `,
+      payload
+    );
     this.message = await safeRender(
       this.interaction,
       { ...this.props, ...payload },
