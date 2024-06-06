@@ -17,6 +17,7 @@ import { CollectorService } from './CollectorService.js';
 import { TimeoutEmbed } from './PrebuiltEmbeds.js';
 import { reactive } from '@reactively/core';
 import type { Signal } from '../index.js';
+import type { ReactiveOptions } from './Reactivity.js';
 
 export interface ControllerContext {
   // onLoadCallbacks: OnLoadCallback[];
@@ -58,6 +59,22 @@ type MenuViewComponentId = string;
 interface MenuControllerListeners {
   onRender: Listener<void>;
   onEnd: Listener<string | null>;
+}
+
+export type PatchTargetBitField = number;
+
+export const enum PatchTarget {
+  None = 0,
+  Embeds = 1,
+  Components = 2,
+  Content = 3,
+  All = Embeds | Components | Content,
+}
+
+interface EffectInstance {
+  signal: Signal<number>;
+  previousVersion: number;
+  patch?: PatchTarget;
 }
 
 export function MenuController<
@@ -157,28 +174,44 @@ export function MenuController<
         return reactive(fnOrValue, params);
       },
       createEffect: (fn, params) => {
-        let version = 0;
-        const signal = reactive(
-          () => {
-            fn();
-            version++;
-            console.log(`returning version=${version}`);
-            return version;
-          },
-          { ...params }
-        );
-        signal.get();
-        effects.push(signal);
-        effectVersions.push(version);
+        registerEffect(fn, params);
+      },
+      createEmbedEffect: (fn, params) => {
+        registerEffect(fn, params, PatchTarget.Embeds);
+      },
+      createComponentEffect: (fn, params) => {
+        registerEffect(fn, params, PatchTarget.Components);
       },
     };
+  }
+  function registerEffect(
+    fn: () => void,
+    params: ReactiveOptions | undefined,
+    patchTarget?: PatchTarget
+  ): void {
+    let version = 0;
+    const signal = reactive(
+      () => {
+        fn();
+        version++;
+        console.log(`returning version=${version}`);
+        return version;
+      },
+      { ...params }
+    );
+    signal.get();
+    effects.push({
+      signal,
+      previousVersion: version,
+      patch: patchTarget,
+    });
   }
   function getView(id: string): View {
     const view = views.get(id);
     assert(view, `"${id}" is not a registered view.`);
     return view;
   }
-  function getPatchTarget(): RepliableInteraction {
+  function getInteractionToPatch(): RepliableInteraction {
     return props.renderAfterHandledInteraction && collector.lastCollected
       ? collector.lastCollected
       : interaction;
@@ -193,7 +226,7 @@ export function MenuController<
   }
   const ctx: MenuContext = {
     get interaction(): RepliableInteraction {
-      return getPatchTarget();
+      return getInteractionToPatch();
     },
     initialInteraction: interaction,
     get idleTimeMs(): number {
@@ -213,8 +246,7 @@ export function MenuController<
     MenuViewComponentId,
     MessageComponentCallback<any>
   >();
-  const effects: Signal<number>[] = [];
-  const effectVersions: number[] = [];
+  const effects: EffectInstance[] = [];
 
   let idle: number =
     props.idleTimeMs === undefined
@@ -232,7 +264,7 @@ export function MenuController<
   let skipRender = false;
   let manualPatchQueued = false;
 
-  function shouldRerender() {
+  function getPatchTargets(): PatchTargetBitField {
     logger.debug({
       skipRender,
       collectorEnded: collector.hasEnded(),
@@ -241,34 +273,41 @@ export function MenuController<
       manualPatchQueued,
     });
     if (skipRender || collector.hasEnded()) {
-      return false;
+      return PatchTarget.None;
     }
     // do not wait for reactivity to render a queued view
     if (manualPatchQueued || renderer.hasQueuedView()) {
-      return true;
+      return PatchTarget.All;
     }
     if (renderer.isCurrentViewReactive()) {
-      let reactiveGraphIsDirty = false;
-      effects.forEach((effect, i) => {
-        const oldVersion = effectVersions[i];
-        const newVersion = effect.get();
+      let patchTargets: PatchTargetBitField = 0;
+      effects.forEach((effect) => {
+        const oldVersion = effect.previousVersion;
+        const newVersion = effect.signal.get();
         const hasChanged = oldVersion !== newVersion;
-        effectVersions[i] = newVersion;
-        if (hasChanged) {
-          reactiveGraphIsDirty = true;
+        effect.previousVersion = newVersion;
+        if (hasChanged && effect.patch !== undefined) {
+          patchTargets |= effect.patch;
         }
       });
-      logger.debug({ reactiveGraphIsDirty });
-      return reactiveGraphIsDirty;
+      logger.debug({ patchTargets });
+      return patchTargets;
     }
-    return true;
+    return PatchTarget.All;
   }
 
   function afterComponentHandled() {
     manualPatchQueued = false;
   }
 
+  function beforeRender() {
+    if (renderer.hasQueuedView()) {
+      effects.length = 0;
+    }
+  }
+
   function afterRender() {
+    skipRender = false;
     manualPatchQueued = false;
     listeners.onRender.fire();
   }
@@ -377,9 +416,10 @@ export function MenuController<
     }
     await interactionCallback(collected);
 
-    if (shouldRerender()) {
+    const patchTargets = getPatchTargets();
+    if (patchTargets !== PatchTarget.None) {
       logger.debug('Rerendering due to component call.');
-      await update();
+      await update(patchTargets);
     }
     afterComponentHandled();
   }
@@ -393,15 +433,19 @@ export function MenuController<
     );
     renderer.queueViewSwap(initialView, []);
     renderer.queueRender();
-    patcher.mountInteraction(getPatchTarget());
+    patcher.mountInteraction(getInteractionToPatch());
+    beforeRender();
     const payload = await renderer.render(props);
     await patcher.patch(payload, options);
+    afterRender();
   }
 
   /** Handles subsequent rerenders. */
-  async function update(): Promise<void> {
-    const payload = await renderer.render(props);
+  async function update(patchTargets: PatchTargetBitField): Promise<void> {
+    beforeRender();
+    const payload = await renderer.patch(props, patchTargets);
     await patcher.patch(payload, {});
+    afterRender();
   }
 
   /**
@@ -415,7 +459,10 @@ export function MenuController<
 
   async function patchTimeout() {
     renderer.appendEmbeds(TimeoutEmbed);
-    const payload = await renderer.render(props);
+    const payload = await renderer.patch(
+      props,
+      PatchTarget.Embeds | PatchTarget.Content
+    );
     await patcher.patch(payload, {});
   }
 
@@ -426,7 +473,6 @@ export function MenuController<
     options = { ...DefaultRenderOptions, ...options };
     await initialRender(options);
     initCollector();
-    afterRender();
   }
 
   /*

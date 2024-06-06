@@ -10,6 +10,7 @@ import type {
 } from 'discord.js';
 import type { MenuContext } from './FunctionalMenuView.js';
 import type { MessageComponentCallback } from './MenuView.js';
+import type { ReactiveOptions } from './Reactivity.js';
 
 type ModalRepliableInteraction =
   | CommandInteraction
@@ -64,9 +65,37 @@ export interface Synapse {
     fnOrValue: T | (() => T),
     params?: ReactivelyParams
   ) => Reactive<T>;
-  createEffect: <T>(
-    fn: () => T,
-    params?: Omit<ReactivelyParams, 'effect'>
-  ) => void;
+  /**
+   * Create an effect that runs when the value of signals in the function are
+   * changed.
+   *
+   * **Note:** This does **not** queue a patch to the message content, embeds,
+   * or components. To have a patch queued on effect run, use
+   * {@link createEmbedEffect} or {@link createComponentEffect} instead. To
+   * queue a patch for content, set content to a function that returns a string.
+   * @param fn The effect to run.
+   * @param params Extra configuration for debugging.
+   */
+  createEffect: <T>(fn: () => T, params?: ReactiveOptions) => void;
+  /**
+   * Create an effect that runs when the value of signals in the function are
+   * changed.
+   *
+   * Automatically queues a patch to the menu's message embeds when the effect
+   * is run.
+   * @param fn The effect to run.
+   * @param params Extra configuration for debugging.
+   */
+  createEmbedEffect: (fn: () => void, params?: ReactiveOptions) => void;
+  /**
+   * Create an effect that runs when the value of signals in the function are
+   * changed.
+   *
+   * Automatically queues a patch to the menu's message components when the
+   * effect is run.
+   * @param fn The effect to run.
+   * @param params Extra configuration for debugging.
+   */
+  createComponentEffect: (fn: () => void, params?: ReactiveOptions) => void;
   ctx: MenuContext;
 }
