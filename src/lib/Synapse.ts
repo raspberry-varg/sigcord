@@ -11,6 +11,7 @@ import type {
 import type { MenuContext } from './FunctionalMenuView.js';
 import type { MessageComponentCallback } from './MenuView.js';
 import type { ReactiveOptions } from './Reactivity.js';
+import type { PatchTarget } from './RenderingEngine.js';
 
 type ModalRepliableInteraction =
   | CommandInteraction
@@ -61,6 +62,11 @@ export interface Synapse {
   stop: (reason?: string) => void;
   queueRender: () => void;
   skipRender: () => void;
+  /**
+   * In reactive views, manually queue patches for specific pieces the message
+   * instead of relying on reactivity.
+   */
+  patch: (targets: PatchTarget[]) => void;
   createSignal: <T>(
     fnOrValue: T | (() => T),
     params?: ReactivelyParams

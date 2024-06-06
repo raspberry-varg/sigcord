@@ -8,8 +8,17 @@ import {
   type ViewInstance,
 } from './FunctionalMenuView.js';
 import type { RenderedReactiveViewPayload, ViewPayload } from './MenuView.js';
-import { PatchTarget, type PatchTargetBitField } from './MenuController.js';
 import { logger } from '../util/Logger.js';
+
+export type PatchTargetBitField = number;
+
+export const enum PatchTarget {
+  None = 0,
+  Embeds = 1,
+  Components = 2,
+  Content = 4,
+  All = Embeds | Components | Content,
+}
 
 interface QueuedView {
   view: View;
