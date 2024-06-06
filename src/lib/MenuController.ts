@@ -15,10 +15,10 @@ import { RenderingEngine } from './RenderingEngine.js';
 import { InteractionPatcher } from './InteractionPatcher.js';
 import { CollectorService } from './CollectorService.js';
 import { TimeoutEmbed } from './PrebuiltEmbeds.js';
-import { reactive } from '@reactively/core';
-import { Signal } from '../index.js';
+import { Signal, createSignal } from './Reactivity.js';
 import type { ReactiveOptions } from './Reactivity.js';
 import { PatchTarget, PatchTargetBitField } from './RenderingEngine.js';
+import { Reactive } from '@reactively/core';
 
 export interface ControllerContext {
   // onLoadCallbacks: OnLoadCallback[];
@@ -174,16 +174,16 @@ export function MenuController<
         );
       },
       signalFrom: (fnOrMaybeSignal) => {
-        if (fnOrMaybeSignal instanceof Signal) {
+        if (fnOrMaybeSignal instanceof Reactive) {
           return fnOrMaybeSignal;
         }
-        return reactive(fnOrMaybeSignal, {});
+        return createSignal(fnOrMaybeSignal, {});
       },
       createSignal<T>(
         fnOrValue: T | (() => T) | undefined = undefined,
         params = undefined
       ) {
-        return reactive(fnOrValue, params);
+        return createSignal(fnOrValue, params);
       },
       createEffect: (fn, params) => {
         registerEffect(fn, params);
@@ -202,7 +202,7 @@ export function MenuController<
     patchTarget?: PatchTarget
   ): void {
     let version = 0;
-    const signal = reactive(
+    const signal = createSignal(
       () => {
         fn();
         version++;
