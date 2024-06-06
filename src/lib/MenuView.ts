@@ -4,8 +4,16 @@ import type {
   MessageActionRowComponentBuilder,
   MessageComponentInteraction,
 } from 'discord.js';
+import type { Signal } from '../index.js';
 
 type Component = ActionRowBuilder<MessageActionRowComponentBuilder>;
+
+export interface RenderedReactiveViewPayload {
+  ephemeral?: boolean;
+  content?: string | Signal<string>;
+  embeds?: EmbedBuilder[] | Signal<EmbedBuilder[]>;
+  components?: Component[] | Signal<Component[]>;
+}
 
 export interface ReactiveViewPayload {
   ephemeral?: boolean;

@@ -1,5 +1,5 @@
 import type { EmbedBuilder } from 'discord.js';
-import type { Props } from '../index.js';
+import { Signal, type Props } from '../index.js';
 import { assert } from '../util/Assertions.js';
 import {
   instantiateViewFromClosure,
@@ -7,7 +7,9 @@ import {
   type View,
   type ViewInstance,
 } from './FunctionalMenuView.js';
-import type { ViewPayload } from './MenuView.js';
+import type { RenderedReactiveViewPayload, ViewPayload } from './MenuView.js';
+import { PatchTarget, type PatchTargetBitField } from './MenuController.js';
+import { logger } from '../util/Logger.js';
 
 interface QueuedView {
   view: View;
@@ -18,6 +20,15 @@ interface QueuedEmbeds {
   prepend: EmbedBuilder[];
   append: EmbedBuilder[];
 }
+function resolveMaybeSignal<T>(maybeSignal: T | Signal<T>): T;
+function resolveMaybeSignal<T>(
+  maybeSignal: T | Signal<T> | undefined
+): T | undefined;
+function resolveMaybeSignal<T>(
+  maybeSignal: T | Signal<T> | undefined
+): T | undefined {
+  return maybeSignal instanceof Signal ? maybeSignal.get() : maybeSignal;
+}
 
 export class RenderingEngine {
   view?: View;
@@ -25,6 +36,7 @@ export class RenderingEngine {
   private closureViewCache = new Map<string, ViewInstance>();
   private wantRender = true;
   private queuedEmbeds?: Partial<QueuedEmbeds>;
+  private reactivePayload?: RenderedReactiveViewPayload;
 
   isCurrentViewReactive(): boolean {
     return !!this.view && isReactiveViewInstance(this.view);
@@ -52,7 +64,48 @@ export class RenderingEngine {
   }
 
   queueViewSwap(view: View, args: unknown[]) {
+    if (view === this.queuedView?.view) {
+      logger.warn(
+        `Tried to queue the currently-active view with id=${view.id}: `,
+        view
+      );
+      return;
+    }
     this.queuedView = { view, args };
+  }
+
+  async patch(
+    props: Props,
+    targets: PatchTargetBitField
+  ): Promise<ViewPayload> {
+    assert(this.view, 'Internal error: View was not set.');
+    if (
+      this.queuedView ||
+      !isReactiveViewInstance(this.view) ||
+      targets === PatchTarget.All
+    ) {
+      // do a full render instead
+      return await this.render(props);
+    }
+
+    // reactive patching
+    assert(
+      this.reactivePayload,
+      'Internal error: Reactive payload was not set.'
+    );
+    const payload: ViewPayload = {
+      ephemeral: this.reactivePayload.ephemeral,
+    };
+    if (targets & PatchTarget.Content) {
+      payload.content = resolveMaybeSignal(this.reactivePayload.content);
+    }
+    if (targets & PatchTarget.Embeds) {
+      payload.embeds = resolveMaybeSignal(this.reactivePayload.embeds);
+    }
+    if (targets & PatchTarget.Components) {
+      payload.components = resolveMaybeSignal(this.reactivePayload.components);
+    }
+    return payload;
   }
 
   async render(props: Props): Promise<ViewPayload> {
@@ -89,7 +142,7 @@ export class RenderingEngine {
   }
 
   private async getViewInstance(props: Props): Promise<ViewInstance> {
-    assert(this.view, 'Internal error, View was not set.');
+    assert(this.view, 'Internal error: View was not set.');
     let viewInstance: ViewInstance;
     if (!('closure' in this.view)) {
       viewInstance = this.view;
