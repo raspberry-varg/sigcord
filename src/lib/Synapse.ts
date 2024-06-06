@@ -1,4 +1,4 @@
-import type { ReactivelyParams, Reactive } from '@reactively/core';
+import type { ReactivelyParams } from '@reactively/core';
 import type {
   MessageActionRowComponentBuilder,
   MessageComponentInteraction,
@@ -68,15 +68,15 @@ export interface Synapse {
    * instead of relying on reactivity.
    */
   patch: (...targets: PatchTarget[]) => void;
-  createSignal<T>(): Reactive<T | undefined>;
+  createSignal<T>(): Signal<T | undefined>;
   createSignal<T>(
     fnOrValue: undefined,
     params?: ReactivelyParams
-  ): Reactive<T | undefined>;
+  ): Signal<T | undefined>;
   createSignal<T>(
     fnOrValue: T | (() => T),
     params?: ReactivelyParams
-  ): Reactive<T>;
+  ): Signal<T>;
   signalFrom<T>(fnOrMaybeSignal: MaybeSignal<T> | (() => T)): Signal<T>;
   /**
    * Create an effect that runs when the value of signals in the function are
