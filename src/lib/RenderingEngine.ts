@@ -102,7 +102,7 @@ export class RenderingEngine {
     if (targets & PatchTarget.Content) {
       if (this.isQueuedForClear(PatchTarget.Content)) {
         payload.content = '';
-      } else {
+      } else if (this.reactivePayload.content !== undefined) {
         payload.content = resolveMaybeSignal(this.reactivePayload.content);
       }
     }
@@ -118,7 +118,7 @@ export class RenderingEngine {
     if (targets & PatchTarget.Components) {
       if (this.isQueuedForClear(PatchTarget.Components)) {
         payload.components = [];
-      } else {
+      } else if (this.reactivePayload.components !== undefined) {
         payload.components = resolveMaybeSignal(
           this.reactivePayload.components
         );
