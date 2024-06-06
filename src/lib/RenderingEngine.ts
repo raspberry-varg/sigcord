@@ -12,7 +12,7 @@ import { logger } from '../util/Logger.js';
 
 export type PatchTargetBitField = number;
 
-export const enum PatchTarget {
+export enum PatchTarget {
   None = 0,
   Embeds = 1,
   Components = 2,
