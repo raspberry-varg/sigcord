@@ -9,6 +9,7 @@ import {
 } from './FunctionalMenuView.js';
 import type { RenderedReactiveViewPayload, ViewPayload } from './MenuView.js';
 import { logger } from '../util/Logger.js';
+import type { MaybeSignal } from './Reactivity.js';
 
 export type PatchTargetBitField = number;
 
@@ -29,12 +30,12 @@ interface QueuedEmbeds {
   prepend: EmbedBuilder[];
   append: EmbedBuilder[];
 }
-function resolveMaybeSignal<T>(maybeSignal: T | Signal<T>): T;
+function resolveMaybeSignal<T>(maybeSignal: MaybeSignal<T>): T;
 function resolveMaybeSignal<T>(
-  maybeSignal: T | Signal<T> | undefined
+  maybeSignal: MaybeSignal<T> | undefined
 ): T | undefined;
 function resolveMaybeSignal<T>(
-  maybeSignal: T | Signal<T> | undefined
+  maybeSignal: MaybeSignal<T> | undefined
 ): T | undefined {
   return maybeSignal instanceof Signal ? maybeSignal.get() : maybeSignal;
 }
