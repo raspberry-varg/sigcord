@@ -165,7 +165,7 @@ export function MenuController<
           manualPatchQueued = 0;
         }
       },
-      patch: (targets) => {
+      patch: (...targets) => {
         manualPatchQueued |= targets.reduce<PatchTargetBitField>(
           (bitField, target) => {
             return bitField | target;
@@ -173,7 +173,10 @@ export function MenuController<
           PatchTarget.None
         );
       },
-      createSignal: (fnOrValue, params) => {
+      createSignal<T>(
+        fnOrValue: T | (() => T) | undefined = undefined,
+        params = undefined
+      ) {
         return reactive(fnOrValue, params);
       },
       createEffect: (fn, params) => {
