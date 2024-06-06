@@ -10,8 +10,9 @@ import type {
 } from 'discord.js';
 import type { MenuContext } from './FunctionalMenuView.js';
 import type { MessageComponentCallback } from './MenuView.js';
-import type { ReactiveOptions } from './Reactivity.js';
+import type { MaybeSignal, ReactiveOptions } from './Reactivity.js';
 import type { PatchTarget } from './RenderingEngine.js';
+import type { Signal } from '../index.js';
 
 type ModalRepliableInteraction =
   | CommandInteraction
@@ -76,6 +77,7 @@ export interface Synapse {
     fnOrValue: T | (() => T),
     params?: ReactivelyParams
   ): Reactive<T>;
+  signalFrom<T>(fnOrMaybeSignal: MaybeSignal<T> | (() => T)): Signal<T>;
   /**
    * Create an effect that runs when the value of signals in the function are
    * changed.

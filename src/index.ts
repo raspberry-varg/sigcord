@@ -16,4 +16,4 @@ export * from './lib/Renderable.js';
 export { ModalBundle, useValues } from './lib/ModalBundle.js';
 export { Reactive as Signal } from '@reactively/core';
 export { PatchTarget } from './lib/RenderingEngine.js';
-export { MaybeSignal } from './lib/Reactivity.js';
+export { MaybeSignal, isSignal } from './lib/Reactivity.js';
