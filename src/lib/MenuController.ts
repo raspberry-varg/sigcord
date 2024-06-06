@@ -4,7 +4,8 @@ import type {
   MessageComponentInteraction,
   RepliableInteraction,
 } from 'discord.js';
-import { View, Synapse, ViewProps, MenuContext } from './FunctionalMenuView.js';
+import { Synapse } from './Synapse.js';
+import { View, ViewProps, MenuContext } from './FunctionalMenuView.js';
 import { IntrinsicMenuProps } from './InteractiveMenu.js';
 import { SmartComponentType } from './SmartComponents.js';
 import { assert, assertAndReturn } from '../util/Assertions.js';
@@ -157,12 +158,15 @@ export function MenuController<
       },
       createEffect: (fn, params) => {
         let version = 0;
-        const signal = reactive(() => {
-          fn();
-          version++;
-          console.log(`returning version=${version}`);
-          return version;
-        }, {...params});
+        const signal = reactive(
+          () => {
+            fn();
+            version++;
+            console.log(`returning version=${version}`);
+            return version;
+          },
+          { ...params }
+        );
         signal.get();
         effects.push(signal);
         effectVersions.push(version);
@@ -254,7 +258,7 @@ export function MenuController<
           reactiveGraphIsDirty = true;
         }
       });
-      logger.debug({reactiveGraphIsDirty});
+      logger.debug({ reactiveGraphIsDirty });
       return reactiveGraphIsDirty;
     }
     return true;
