@@ -124,6 +124,7 @@ export class RenderingEngine {
         );
       }
     }
+    this.postRender();
     return payload;
   }
 
