@@ -177,19 +177,38 @@ export function MenuController<
         if (fnOrMaybeSignal instanceof Reactive) {
           return fnOrMaybeSignal;
         }
-        return createSignal(fnOrMaybeSignal, {}, renderer.getPatchContext());
+        return createSignal(fnOrMaybeSignal, {}, PatchTarget.None);
       },
       createSignal<T>(
         fnOrValue: T | (() => T) | undefined = undefined,
-        params = {}
+        params = {},
+        patchTarget = PatchTarget.None
       ) {
-        return createSignal(fnOrValue, params, renderer.getPatchContext());
+        const s = createSignal(fnOrValue, params, patchTarget);
+        if (patchTarget !== PatchTarget.None) {
+          registerEffect(
+            () => {
+              s.get();
+            },
+            params,
+            patchTarget
+          );
+        }
+        return s;
       },
       createEmbedSignal: (closure, params = {}) => {
-        return createSignal(closure, params, PatchTarget.Embeds);
+        const s = createSignal(closure, params, PatchTarget.Embeds);
+        $.createEmbedEffect(() => {
+          s.get();
+        }, params);
+        return s;
       },
       createComponentSignal: (closure, params = {}) => {
-        return createSignal(closure, params, PatchTarget.Components);
+        const s = createSignal(closure, params, PatchTarget.Components);
+        $.createComponentEffect(() => {
+          s.get();
+        }, params);
+        return s;
       },
       createEffect: (fn, params) => {
         registerEffect(fn, params);
@@ -213,7 +232,6 @@ export function MenuController<
       () => {
         fn();
         version++;
-        console.log(`returning version=${version}`);
         return version;
       },
       { ...params },
