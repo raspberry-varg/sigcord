@@ -1,5 +1,5 @@
 import type { EmbedBuilder } from 'discord.js';
-import { isSignal, type Props } from '../index.js';
+import { flattenChildren, isSignal, type Props } from '../index.js';
 import { assert } from '../util/Assertions.js';
 import {
   instantiateViewFromClosure,
@@ -10,6 +10,7 @@ import {
 import type { RenderedReactiveViewPayload, ViewPayload } from './MenuView.js';
 import { logger } from '../util/Logger.js';
 import type { MaybeSignal } from './Reactivity.js';
+import { Reactive } from '@reactively/core';
 
 export type PatchTargetBitField = number;
 
@@ -48,6 +49,7 @@ export class RenderingEngine {
   private queuedEmbeds?: Partial<QueuedEmbeds>;
   private queuedClears: PatchTargetBitField = 0;
   private reactivePayload?: RenderedReactiveViewPayload;
+  private patchContext = PatchTarget.None;
 
   isCurrentViewReactive(): boolean {
     return !!this.view && isReactiveViewInstance(this.view);
@@ -59,6 +61,10 @@ export class RenderingEngine {
 
   hasQueuedEmbeds(): boolean {
     return !!this.queuedEmbeds;
+  }
+
+  getPatchContext(): PatchTarget {
+    return this.patchContext;
   }
 
   prependEmbeds(...embeds: EmbedBuilder[]): void {
@@ -108,32 +114,44 @@ export class RenderingEngine {
       this.reactivePayload,
       'Internal error: Reactive payload was not set.'
     );
+    const $ = props.$;
     targets |= this.queuedClears;
     const payload: ViewPayload = {};
     if (this.reactivePayload.ephemeral !== undefined) {
       payload.ephemeral = this.reactivePayload.ephemeral;
     }
     if (targets & PatchTarget.Content) {
+      this.patchContext = PatchTarget.Content;
+      const content = this.reactivePayload.content;
       if (this.isQueuedForClear(PatchTarget.Content)) {
         payload.content = '';
-      } else if (this.reactivePayload.content !== undefined) {
-        payload.content = resolveMaybeSignal(this.reactivePayload.content);
+      } else if (content !== undefined) {
+        if (typeof content === 'string' || content instanceof Reactive) {
+          payload.content = resolveMaybeSignal(content);
+        } else {
+          this.reactivePayload.content = $.createSignal(content);
+          payload.content = this.reactivePayload.content.get();
+        }
       }
     }
     if (targets & PatchTarget.Embeds || this.hasQueuedEmbeds()) {
-      payload.embeds = resolveMaybeSignal(this.reactivePayload.embeds);
+      this.patchContext = PatchTarget.Embeds;
       if (this.isQueuedForClear(PatchTarget.Embeds)) {
         payload.embeds = [];
+      } else {
+        payload.embeds = flattenChildren($, this.reactivePayload.embeds);
       }
       if (this.queuedEmbeds) {
         payload.embeds = this.attachEnqueuedEmbeds(payload.embeds ?? []);
       }
     }
     if (targets & PatchTarget.Components) {
+      this.patchContext = PatchTarget.Components;
       if (this.isQueuedForClear(PatchTarget.Components)) {
         payload.components = [];
       } else if (this.reactivePayload.components !== undefined) {
-        payload.components = resolveMaybeSignal(
+        payload.components = flattenChildren(
+          $,
           this.reactivePayload.components
         );
       }
@@ -152,22 +170,11 @@ export class RenderingEngine {
       this.queuedView = undefined;
       this.reactivePayload = undefined;
     }
-    let payload: ViewPayload;
     if (isReactiveViewInstance(view)) {
-      payload = {
-        ephemeral: view.ephemeral,
-        content:
-          typeof view.content === 'string' ? view.content : view.content?.(),
-        embeds: maybeCallArray(view.embeds),
-        components: maybeCallArray(view.components),
-      };
-      this.reactivePayload = {
-        ...payload,
-        embeds: [...(payload.embeds ? payload.embeds : [])],
-      };
-    } else {
-      payload = await view.render(props);
+      this.reactivePayload = view;
+      return await this.patch(props, PatchTarget.All);
     }
+    const payload = await view.render(props);
     if (this.queuedEmbeds) {
       payload.embeds = this.attachEnqueuedEmbeds(payload.embeds ?? []);
     }
@@ -179,6 +186,7 @@ export class RenderingEngine {
     this.wantRender = true;
     this.queuedEmbeds = undefined;
     this.queuedClears = 0;
+    this.patchContext = PatchTarget.None;
   }
 
   private async getViewInstance(props: Props): Promise<ViewInstance> {
@@ -220,11 +228,4 @@ export class RenderingEngine {
   private isQueuedForClear(target: PatchTargetBitField): boolean {
     return !!(target & this.queuedClears);
   }
-}
-
-function maybeCallArray<T>(fnOrArray?: T[] | (() => T[])): T[] | undefined {
-  if (fnOrArray === undefined) {
-    return fnOrArray;
-  }
-  return Array.isArray(fnOrArray) ? fnOrArray : fnOrArray();
 }
