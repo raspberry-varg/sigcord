@@ -1,15 +1,14 @@
-import {
-  Reactive as Signal,
-  reactive,
-  type ReactivelyParams,
-} from '@reactively/core';
+import { Reactive, reactive, type ReactivelyParams } from '@reactively/core';
 
 export type ReactiveOptions = Omit<ReactivelyParams, 'effect'>;
 export type MaybeSignal<T> = T | Signal<T>;
-export function isSignal<T>(value: MaybeSignal<T>): value is Signal<T> {
-  return value instanceof Signal;
+export function isSignal<T>(value?: MaybeSignal<T>): value is Signal<T> {
+  return value instanceof Reactive;
 }
-export { Signal };
+
+export interface Signal<T> extends Reactive<T> {
+  isDefined(): this is Signal<NonNullable<T>>;
+}
 
 export function createSignal<T>(): Signal<T | undefined>;
 export function createSignal<T>(
@@ -24,5 +23,7 @@ export function createSignal<T>(
   fnOrValue?: T | (() => T) | undefined,
   params?: ReactiveOptions
 ): Signal<T | undefined> {
-  return reactive(fnOrValue, params);
+  const signal = reactive(fnOrValue, params) as Signal<T | undefined>;
+  signal.isDefined = () => signal.get() !== null && signal.get() !== undefined;
+  return signal;
 }
