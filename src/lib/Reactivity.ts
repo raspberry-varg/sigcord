@@ -1,4 +1,5 @@
 import { Reactive, reactive, type ReactivelyParams } from '@reactively/core';
+import type { PatchTarget } from './RenderingEngine.js';
 
 export type ReactiveOptions = Omit<ReactivelyParams, 'effect'>;
 export type MaybeSignal<T> = T | Signal<T>;
@@ -7,23 +8,27 @@ export function isSignal<T>(value?: MaybeSignal<T>): value is Signal<T> {
 }
 
 export interface Signal<T> extends Reactive<T> {
+  readonly _patchContext: PatchTarget;
   isDefined(): this is Signal<NonNullable<T>>;
 }
 
-export function createSignal<T>(): Signal<T | undefined>;
-export function createSignal<T>(
-  fnOrValue: undefined,
-  params?: ReactivelyParams
-): Signal<T | undefined>;
 export function createSignal<T>(
   fnOrValue: T | (() => T),
-  params?: ReactivelyParams
+  params: ReactiveOptions,
+  patchContext: PatchTarget
 ): Signal<T>;
 export function createSignal<T>(
-  fnOrValue?: T | (() => T) | undefined,
-  params?: ReactiveOptions
+  fnOrValue: T | (() => T) | undefined,
+  params: ReactiveOptions,
+  patchContext: PatchTarget
+): Signal<T | undefined>;
+export function createSignal<T>(
+  fnOrValue: T | (() => T) | undefined,
+  params: ReactiveOptions,
+  patchContext: PatchTarget
 ): Signal<T | undefined> {
   const signal = reactive(fnOrValue, params) as Signal<T | undefined>;
   signal.isDefined = () => signal.get() !== null && signal.get() !== undefined;
-  return signal;
+  (signal as { _patchContext: PatchTarget })._patchContext = patchContext;
+  return signal as Signal<T | undefined>;
 }

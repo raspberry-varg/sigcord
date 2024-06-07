@@ -1,4 +1,3 @@
-import type { ReactivelyParams } from '@reactively/core';
 import type {
   MessageActionRowComponentBuilder,
   MessageComponentInteraction,
@@ -71,12 +70,20 @@ export interface Synapse {
   createSignal<T>(): Signal<T | undefined>;
   createSignal<T>(
     fnOrValue: undefined,
-    params?: ReactivelyParams
+    params?: ReactiveOptions
   ): Signal<T | undefined>;
   createSignal<T>(
     fnOrValue: T | (() => T),
-    params?: ReactivelyParams
+    params?: ReactiveOptions
   ): Signal<T>;
+  createEmbedSignal(
+    closure: () => EmbedBuilder,
+    params?: ReactiveOptions
+  ): Signal<EmbedBuilder>;
+  createComponentSignal(
+    closure: () => EmbedBuilder,
+    params?: ReactiveOptions
+  ): Signal<EmbedBuilder>;
   signalFrom<T>(fnOrMaybeSignal: MaybeSignal<T> | (() => T)): Signal<T>;
   /**
    * Create an effect that runs when the value of signals in the function are
