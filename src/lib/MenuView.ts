@@ -1,32 +1,28 @@
-import type {
+import {
   ActionRowBuilder,
   EmbedBuilder,
   MessageActionRowComponentBuilder,
   MessageComponentInteraction,
 } from 'discord.js';
-import type { Signal } from '../index.js';
+import type { Signal, Synapse } from '../index.js';
+import { Reactive } from '@reactively/core';
 
-type Component = ActionRowBuilder<MessageActionRowComponentBuilder>;
+export type ViewComponent = ActionRowBuilder<MessageActionRowComponentBuilder>;
 
-export interface RenderedReactiveViewPayload {
-  ephemeral?: boolean;
-  content?: string | Signal<string>;
-  embeds?: EmbedBuilder[] | Signal<EmbedBuilder[]>;
-  components?: Component[] | Signal<Component[]>;
-}
+export type RenderedReactiveViewPayload = ReactiveViewPayload;
 
 export interface ReactiveViewPayload {
   ephemeral?: boolean;
-  content?: string | (() => string);
-  embeds?: EmbedBuilder[] | (() => EmbedBuilder[]);
-  components?: Component[] | (() => Component[]);
+  content?: string | Signal<string> | (() => string);
+  embeds?: EmbedChildren;
+  components?: ComponentChildren;
 }
 
 export interface ViewPayload {
   ephemeral?: boolean;
   content?: string;
   embeds?: EmbedBuilder[];
-  components?: Component[];
+  components?: ViewComponent[];
 }
 
 export interface MessageComponentCallback<
@@ -37,4 +33,46 @@ export interface MessageComponentCallback<
 
 export interface IntrinsicViewProps {
   ephemeral: boolean | false;
+}
+
+type Children<T> =
+  | Children<T>[]
+  | (() => Children<T>)
+  | Signal<Children<T>>
+  | T
+  | null
+  | undefined;
+
+type EmbedChildren = Children<EmbedBuilder>;
+type ComponentChildren = Children<ViewComponent>;
+
+export function flattenChildren<T extends EmbedBuilder | ViewComponent>(
+  $: Synapse,
+  c: Children<T>,
+  out: T[] | undefined = undefined
+): T[] | undefined {
+  if (c === null || c === undefined) {
+    return out;
+  }
+  out ??= [];
+
+  // resolve nested
+  if (Array.isArray(c)) {
+    for (const nested of c) {
+      flattenChildren($, nested, out);
+    }
+  }
+  // resolve signal
+  else if (c instanceof Reactive) {
+    flattenChildren($, c.get(), out);
+  }
+  // resolve function call
+  else if (typeof c === 'function') {
+    // wrap fn in a signal hooked to the current patch ctx
+    c = $.createSignal(c, {});
+    flattenChildren($, c.get(), out);
+  } else {
+    out.push(c);
+  }
+  return out;
 }
