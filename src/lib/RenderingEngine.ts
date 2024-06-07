@@ -139,7 +139,11 @@ export class RenderingEngine {
       if (this.isQueuedForClear(PatchTarget.Embeds)) {
         payload.embeds = [];
       } else {
-        payload.embeds = flattenChildren($, this.reactivePayload.embeds);
+        payload.embeds = flattenChildren(
+          $,
+          this.reactivePayload.embeds,
+          this.patchContext
+        );
       }
       if (this.queuedEmbeds) {
         payload.embeds = this.attachEnqueuedEmbeds(payload.embeds ?? []);
@@ -152,7 +156,8 @@ export class RenderingEngine {
       } else if (this.reactivePayload.components !== undefined) {
         payload.components = flattenChildren(
           $,
-          this.reactivePayload.components
+          this.reactivePayload.components,
+          this.patchContext
         );
       }
     }

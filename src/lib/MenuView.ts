@@ -4,7 +4,7 @@ import {
   MessageActionRowComponentBuilder,
   MessageComponentInteraction,
 } from 'discord.js';
-import type { Signal, Synapse } from '../index.js';
+import { PatchTarget, type Signal, type Synapse } from '../index.js';
 import { Reactive } from '@reactively/core';
 
 export type ViewComponent = ActionRowBuilder<MessageActionRowComponentBuilder>;
@@ -49,6 +49,7 @@ type ComponentChildren = Children<ViewComponent>;
 export function flattenChildren<T extends EmbedBuilder | ViewComponent>(
   $: Synapse,
   c: Children<T>,
+  patchTarget: PatchTarget,
   out: T[] | undefined = undefined
 ): T[] | undefined {
   if (c === null || c === undefined) {
@@ -59,18 +60,18 @@ export function flattenChildren<T extends EmbedBuilder | ViewComponent>(
   // resolve nested
   if (Array.isArray(c)) {
     for (const nested of c) {
-      flattenChildren($, nested, out);
+      flattenChildren($, nested, patchTarget, out);
     }
   }
   // resolve signal
   else if (c instanceof Reactive) {
-    flattenChildren($, c.get(), out);
+    flattenChildren($, c.get(), patchTarget, out);
   }
   // resolve function call
   else if (typeof c === 'function') {
     // wrap fn in a signal hooked to the current patch ctx
-    c = $.createSignal(c, {});
-    flattenChildren($, c.get(), out);
+    c = $.createSignal(c, {}, patchTarget);
+    flattenChildren($, c.get(), patchTarget, out);
   } else {
     out.push(c);
   }

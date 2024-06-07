@@ -70,19 +70,23 @@ export interface Synapse {
   createSignal<T>(): Signal<T | undefined>;
   createSignal<T>(
     fnOrValue: undefined,
-    params?: ReactiveOptions
+    params?: ReactiveOptions,
+    patchTarget?: PatchTarget
   ): Signal<T | undefined>;
   createSignal<T>(
     fnOrValue: T | (() => T),
-    params?: ReactiveOptions
+    params?: ReactiveOptions,
+    patchTarget?: PatchTarget
   ): Signal<T>;
   createEmbedSignal(
     closure: () => EmbedBuilder,
-    params?: ReactiveOptions
+    params?: ReactiveOptions,
+    patchTarget?: PatchTarget
   ): Signal<EmbedBuilder>;
   createComponentSignal(
     closure: () => EmbedBuilder,
-    params?: ReactiveOptions
+    params?: ReactiveOptions,
+    patchTarget?: PatchTarget
   ): Signal<EmbedBuilder>;
   signalFrom<T>(fnOrMaybeSignal: MaybeSignal<T> | (() => T)): Signal<T>;
   /**
