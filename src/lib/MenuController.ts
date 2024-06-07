@@ -79,7 +79,7 @@ export function MenuController<
   initProps: MenuProps
 ) {
   function createSynapse(): Synapse {
-    return {
+    const $: Synapse = {
       ctx,
       appendEmbeds: (...embeds: EmbedBuilder[]) =>
         renderer.appendEmbeds(...embeds),
@@ -177,13 +177,19 @@ export function MenuController<
         if (fnOrMaybeSignal instanceof Reactive) {
           return fnOrMaybeSignal;
         }
-        return createSignal(fnOrMaybeSignal, {});
+        return createSignal(fnOrMaybeSignal, {}, renderer.getPatchContext());
       },
       createSignal<T>(
         fnOrValue: T | (() => T) | undefined = undefined,
-        params = undefined
+        params = {}
       ) {
-        return createSignal(fnOrValue, params);
+        return createSignal(fnOrValue, params, renderer.getPatchContext());
+      },
+      createEmbedSignal: (closure, params = {}) => {
+        return createSignal(closure, params, PatchTarget.Embeds);
+      },
+      createComponentSignal: (closure, params = {}) => {
+        return createSignal(closure, params, PatchTarget.Components);
       },
       createEffect: (fn, params) => {
         registerEffect(fn, params);
@@ -195,11 +201,12 @@ export function MenuController<
         registerEffect(fn, params, PatchTarget.Components);
       },
     };
+    return $;
   }
   function registerEffect(
     fn: () => void,
     params: ReactiveOptions | undefined,
-    patchTarget?: PatchTarget
+    patchTarget = PatchTarget.None
   ): void {
     let version = 0;
     const signal = createSignal(
@@ -209,7 +216,8 @@ export function MenuController<
         console.log(`returning version=${version}`);
         return version;
       },
-      { ...params }
+      { ...params },
+      patchTarget
     );
     signal.get();
     effects.push({
