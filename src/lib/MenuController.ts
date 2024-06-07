@@ -303,6 +303,9 @@ export function MenuController<
         }
       });
       logger.debug({ patchTargetBitField: patchTargets });
+      if (renderer.hasQueuedEmbeds()) {
+        patchTargets |= PatchTarget.Embeds;
+      }
       return patchTargets;
     }
     return PatchTarget.All;

@@ -1,5 +1,5 @@
 import type { EmbedBuilder } from 'discord.js';
-import { Signal, type Props } from '../index.js';
+import { isSignal, type Props } from '../index.js';
 import { assert } from '../util/Assertions.js';
 import {
   instantiateViewFromClosure,
@@ -37,7 +37,7 @@ function resolveMaybeSignal<T>(
 function resolveMaybeSignal<T>(
   maybeSignal: MaybeSignal<T> | undefined
 ): T | undefined {
-  return maybeSignal instanceof Signal ? maybeSignal.get() : maybeSignal;
+  return isSignal(maybeSignal) ? maybeSignal.get() : maybeSignal;
 }
 
 export class RenderingEngine {
@@ -55,6 +55,10 @@ export class RenderingEngine {
 
   hasQueuedView(): boolean {
     return !!this.queuedView;
+  }
+
+  hasQueuedEmbeds(): boolean {
+    return !!this.queuedEmbeds;
   }
 
   prependEmbeds(...embeds: EmbedBuilder[]): void {
@@ -116,7 +120,7 @@ export class RenderingEngine {
         payload.content = resolveMaybeSignal(this.reactivePayload.content);
       }
     }
-    if (targets & PatchTarget.Embeds || this.queuedEmbeds) {
+    if (targets & PatchTarget.Embeds || this.hasQueuedEmbeds()) {
       payload.embeds = resolveMaybeSignal(this.reactivePayload.embeds);
       if (this.isQueuedForClear(PatchTarget.Embeds)) {
         payload.embeds = [];
