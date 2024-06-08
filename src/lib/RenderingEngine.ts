@@ -12,6 +12,7 @@ import { logger } from '../util/Logger.js';
 import type { MaybeSignal } from './Reactivity.js';
 import { Reactive } from '@reactively/core';
 import type { PropsBase } from './MenuView/ViewBase.js';
+import type { NavigationPayload } from './Navigation.js';
 
 export type PatchTargetBitField = number;
 
@@ -57,9 +58,14 @@ export class RenderingEngine {
   private queuedClears: PatchTargetBitField = 0;
   private reactivePayload?: RenderedReactiveViewPayload;
   private patchContext = PatchTarget.None;
+  private queuedNavigation?: NavigationPayload;
 
   isCurrentViewReactive(): boolean {
     return !!this.view && isReactiveViewInstance(this.view);
+  }
+
+  hasQueuedNavigation(): boolean {
+    return !!this.queuedNavigation;
   }
 
   hasQueuedView(): boolean {
@@ -72,6 +78,14 @@ export class RenderingEngine {
 
   getPatchContext(): PatchTarget {
     return this.patchContext;
+  }
+
+  getCurrentView(): View | undefined {
+    return this.view;
+  }
+
+  getReactivePayload(): RenderedReactiveViewPayload | undefined {
+    return this.reactivePayload;
   }
 
   prependEmbeds(...embeds: EmbedBuilder[]): void {
@@ -110,14 +124,33 @@ export class RenderingEngine {
     this.queuedView = { view, args };
   }
 
+  queueNavigation(navigationPayload: NavigationPayload): void {
+    this.queuedNavigation = navigationPayload;
+  }
+
   async patch(
     props: Props,
     targets: PatchTargetBitField
   ): Promise<ViewPayload> {
     assert(this.view, 'Internal error: View was not set.');
-    if (this.queuedView || !isReactiveViewInstance(this.view)) {
+    const queuedNav = this.queuedNavigation;
+    console.log({
+      queuedView: this.queuedView,
+      queuedNav,
+      '!isReactiveViewInstance(this.view)': !isReactiveViewInstance(this.view),
+    });
+    if (
+      this.queuedView ||
+      (queuedNav && !queuedNav.reactive) ||
+      !isReactiveViewInstance(this.view)
+    ) {
       // do a full render instead
       return await this.render(props);
+    }
+
+    if (queuedNav && queuedNav.reactive) {
+      this.applyQueuedNavigation();
+      targets |= PatchTarget.All;
     }
 
     // reactive patching
@@ -177,8 +210,18 @@ export class RenderingEngine {
   }
 
   async render(props: Props): Promise<ViewPayload> {
+    console.log('render called');
     if (this.queuedView) {
+      console.log('this.queuedView exists');
       this.view = this.queuedView.view;
+    }
+    if (this.queuedNavigation) {
+      console.log('queuedNavigation exists');
+      this.applyQueuedNavigation();
+      if (this.reactivePayload) {
+        console.log('queuedNavigation + reactivePayload exists- patching');
+        return await this.patch(props, PatchTarget.All);
+      }
     }
     const view = await this.getViewInstance(
       !this.queuedView || 'args' in this.queuedView
@@ -193,6 +236,7 @@ export class RenderingEngine {
       this.reactivePayload = undefined;
     }
     if (isReactiveViewInstance(view)) {
+      console.log('isReactive, calling patch');
       this.reactivePayload = view;
       return await this.patch(props, PatchTarget.All);
     }
@@ -207,6 +251,7 @@ export class RenderingEngine {
   private postRender() {
     this.wantRender = true;
     this.queuedEmbeds = undefined;
+    this.queuedNavigation = undefined;
     this.queuedClears = 0;
     this.patchContext = PatchTarget.None;
   }
@@ -230,6 +275,16 @@ export class RenderingEngine {
       viewInstance = this.closureViewCache.get(id)!;
     }
     return viewInstance;
+  }
+
+  private applyQueuedNavigation(): void {
+    assert(
+      this.queuedNavigation,
+      'Internal error: Tried to apply queuedNavigation before being assigned a value.'
+    );
+    this.view = this.queuedNavigation.view;
+    this.reactivePayload = this.queuedNavigation.reactive;
+    this.queuedNavigation = undefined;
   }
 
   private attachEnqueuedEmbeds(embeds: EmbedBuilder[]): EmbedBuilder[] {
