@@ -11,6 +11,7 @@ import type { RenderedReactiveViewPayload, ViewPayload } from './MenuView.js';
 import { logger } from '../util/Logger.js';
 import type { MaybeSignal } from './Reactivity.js';
 import { Reactive } from '@reactively/core';
+import type { PropsBase } from './MenuView/ViewBase.js';
 
 export type PatchTargetBitField = number;
 
@@ -22,10 +23,16 @@ export enum PatchTarget {
   All = Embeds | Components | Content,
 }
 
-interface QueuedView {
+type QueuedView = {
   view: View;
-  args: unknown[];
-}
+} & (
+  | {
+      args: unknown[];
+    }
+  | {
+      props: PropsBase;
+    }
+);
 
 interface QueuedEmbeds {
   prepend: EmbedBuilder[];
@@ -88,7 +95,11 @@ export class RenderingEngine {
     this.queuedClears |= patchTargets;
   }
 
-  queueViewSwap(view: View, args: unknown[]) {
+  queueViewSwapWithProps(view: View, props: PropsBase): void {
+    this.queuedView = { view, props };
+  }
+
+  queueViewSwap(view: View, args: unknown[]): void {
     if (view === this.queuedView?.view) {
       logger.warn(
         `Tried to queue the currently-active view with id=${view.id}: `,
@@ -169,9 +180,15 @@ export class RenderingEngine {
     if (this.queuedView) {
       this.view = this.queuedView.view;
     }
-    const view = await this.getViewInstance(props);
+    const view = await this.getViewInstance(
+      !this.queuedView || 'args' in this.queuedView
+        ? props
+        : { $: props.$, ...this.queuedView.props }
+    );
     if (this.queuedView) {
-      await view.onSwap?.(...this.queuedView.args);
+      if ('args' in this.queuedView) {
+        await view.onSwap?.(...this.queuedView.args);
+      }
       this.queuedView = undefined;
       this.reactivePayload = undefined;
     }

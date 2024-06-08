@@ -19,6 +19,7 @@ import { Signal, createSignal } from './Reactivity.js';
 import type { ReactiveOptions } from './Reactivity.js';
 import { PatchTarget, PatchTargetBitField } from './RenderingEngine.js';
 import { Reactive } from '@reactively/core';
+import type { PropsBase } from './MenuView/ViewBase.js';
 
 export interface ControllerContext {
   // onLoadCallbacks: OnLoadCallback[];
@@ -85,9 +86,16 @@ export function MenuController<
         renderer.appendEmbeds(...embeds),
       prependEmbeds: (...embeds: EmbedBuilder[]) =>
         renderer.prependEmbeds(...embeds),
-      swap: (id: string, ...args: unknown[]) => {
+      swap: (idOrView: string | View, ...args: unknown[] | [PropsBase]) => {
         clearViewArtifacts();
-        renderer.queueViewSwap(getView(id), args);
+
+        const incomingIsView = typeof idOrView !== 'string';
+        const view = incomingIsView ? idOrView : getView(idOrView);
+        if (incomingIsView) {
+          renderer.queueViewSwapWithProps(view, args[0] as PropsBase);
+        } else {
+          renderer.queueViewSwap(view, args);
+        }
       },
       component: ({ id, component, controller }) => {
         const componentId = createComponentId(id);

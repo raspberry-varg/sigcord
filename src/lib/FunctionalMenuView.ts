@@ -56,7 +56,7 @@ export interface MenuContext {
 }
 
 export type ViewProps<
-  Props extends NonNullable<unknown> = NonNullable<unknown>
+  Props extends PropsBase = PropsBase
 > = Props & { $: Synapse };
 
 export function DefineView<Props extends PropsBase = PropsBase>(
