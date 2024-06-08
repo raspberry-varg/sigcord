@@ -32,3 +32,8 @@ export function createSignal<T>(
   (signal as { _patchContext: PatchTarget })._patchContext = patchContext;
   return signal as Signal<T | undefined>;
 }
+export interface EffectInstance {
+  signal: Signal<number>;
+  previousVersion: number;
+  patch?: PatchTarget;
+}

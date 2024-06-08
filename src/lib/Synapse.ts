@@ -127,5 +127,11 @@ export interface Synapse {
    * @param params Extra configuration for debugging.
    */
   createComponentEffect: (fn: () => void, params?: ReactiveOptions) => void;
+  goTo<ViewDef extends View>(
+    view: ViewDef,
+    props: ViewDef extends View<infer P> ? P : never
+  ): void;
+  goBack(): void;
+  canGoBack(): boolean;
   ctx: MenuContext;
 }

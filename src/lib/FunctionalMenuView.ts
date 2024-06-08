@@ -55,9 +55,9 @@ export interface MenuContext {
   get idleTimeMs(): number;
 }
 
-export type ViewProps<
-  Props extends PropsBase = PropsBase
-> = Props & { $: Synapse };
+export type ViewProps<Props extends PropsBase = PropsBase> = Props & {
+  $: Synapse;
+};
 
 export function DefineView<Props extends PropsBase = PropsBase>(
   id: string,

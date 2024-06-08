@@ -15,11 +15,13 @@ import { RenderingEngine } from './RenderingEngine.js';
 import { InteractionPatcher } from './InteractionPatcher.js';
 import { CollectorService } from './CollectorService.js';
 import { TimeoutEmbed } from './PrebuiltEmbeds.js';
-import { Signal, createSignal } from './Reactivity.js';
+import { createSignal } from './Reactivity.js';
 import type { ReactiveOptions } from './Reactivity.js';
 import { PatchTarget, PatchTargetBitField } from './RenderingEngine.js';
 import { Reactive } from '@reactively/core';
 import type { PropsBase } from './MenuView/ViewBase.js';
+import { EffectInstance } from './Reactivity.js';
+import { Navigation } from './Navigation.js';
 
 export interface ControllerContext {
   // onLoadCallbacks: OnLoadCallback[];
@@ -61,12 +63,6 @@ type MenuViewComponentId = string;
 interface MenuControllerListeners {
   onRender: Listener<void>;
   onEnd: Listener<string | null>;
-}
-
-interface EffectInstance {
-  signal: Signal<number>;
-  previousVersion: number;
-  patch?: PatchTarget;
 }
 
 export function MenuController<
@@ -227,6 +223,37 @@ export function MenuController<
       createComponentEffect: (fn, params) => {
         registerEffect(fn, params, PatchTarget.Components);
       },
+      goTo: (view, props) => {
+        const currentView = renderer.getCurrentView();
+        assert(
+          currentView,
+          'Tried to navigate before initial render in a reactive view.'
+        );
+        if (renderer.isCurrentViewReactive()) {
+          const reactivePayload = renderer.getReactivePayload();
+          assert(
+            reactivePayload,
+            'Tried to navigate before initial render in a reactive view.'
+          );
+          navigation.pushReactive(currentView, reactivePayload, effects);
+          effects = [];
+        } else {
+          navigation.push(currentView);
+        }
+        renderer.queueViewSwapWithProps(view, props);
+      },
+      goBack: () => {
+        assert(
+          !navigation.empty(),
+          'Tried to navigate backwards without a parent view. Have you called goTo() in the parent view?'
+        );
+        const payload = navigation.pop();
+        effects = payload.effects;
+        renderer.queueNavigation(payload);
+      },
+      canGoBack: () => {
+        return !navigation.empty();
+      },
     };
     return $;
   }
@@ -288,11 +315,12 @@ export function MenuController<
     onRender: new Listener(),
     onEnd: new Listener(),
   };
+  const navigation = new Navigation();
   const componentCallbacks = new Map<
     MenuViewComponentId,
     MessageComponentCallback<any>
   >();
-  const effects: EffectInstance[] = [];
+  let effects: EffectInstance[] = [];
 
   let idle: number =
     props.idleTimeMs === undefined
@@ -339,6 +367,9 @@ export function MenuController<
       logger.debug({ patchTargetBitField: patchTargets });
       if (renderer.hasQueuedEmbeds()) {
         patchTargets |= PatchTarget.Embeds;
+      }
+      if (renderer.hasQueuedNavigation()) {
+        patchTargets |= PatchTarget.All;
       }
       return patchTargets;
     }
