@@ -33,7 +33,7 @@ export interface IntrinsicMenuProps extends IntrinsicViewProps {
 }
 
 // To whoever just Ctrl+Clicked, I'm so sorry for all this type mangling, but it works.
-type UnionToIntersection<U> = (U extends any ? (x: U) => void : never) extends (
+export type UnionToIntersection<U> = (U extends any ? (x: U) => void : never) extends (
   x: infer I
 ) => void
   ? I

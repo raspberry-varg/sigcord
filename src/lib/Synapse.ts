@@ -7,11 +7,13 @@ import type {
   ModalSubmitInteraction,
   CommandInteraction,
 } from 'discord.js';
-import type { MenuContext } from './FunctionalMenuView.js';
+import type { MenuContext, View } from './FunctionalMenuView.js';
 import type { MessageComponentCallback } from './MenuView.js';
 import type { MaybeSignal, ReactiveOptions } from './Reactivity.js';
 import type { PatchTarget } from './RenderingEngine.js';
 import type { Signal } from './Reactivity.js';
+import type { PropsBase } from './MenuView/ViewBase.js';
+import type { UnionToIntersection } from './InteractiveMenu.js';
 
 type ModalRepliableInteraction =
   | CommandInteraction
@@ -41,6 +43,10 @@ export interface Synapse {
     controller: MessageComponentCallback<ComponentInteractionType>;
   }): ComponentType;
   swap(toViewId: string, ...args: any[]): void;
+  swap<ViewDefinition extends View<P>, P extends PropsBase>(
+    viewDefinition: ViewDefinition & View<P>,
+    props: UnionToIntersection<P>
+  ): void;
   appendEmbeds(...embeds: EmbedBuilder[]): void;
   prependEmbeds(...embeds: EmbedBuilder[]): void;
   showModal(
