@@ -134,11 +134,6 @@ export class RenderingEngine {
   ): Promise<ViewPayload> {
     assert(this.view, 'Internal error: View was not set.');
     const queuedNav = this.queuedNavigation;
-    console.log({
-      queuedView: this.queuedView,
-      queuedNav,
-      '!isReactiveViewInstance(this.view)': !isReactiveViewInstance(this.view),
-    });
     if (
       this.queuedView ||
       (queuedNav && !queuedNav.reactive) ||
@@ -210,16 +205,12 @@ export class RenderingEngine {
   }
 
   async render(props: Props): Promise<ViewPayload> {
-    console.log('render called');
     if (this.queuedView) {
-      console.log('this.queuedView exists');
       this.view = this.queuedView.view;
     }
     if (this.queuedNavigation) {
-      console.log('queuedNavigation exists');
       this.applyQueuedNavigation();
       if (this.reactivePayload) {
-        console.log('queuedNavigation + reactivePayload exists- patching');
         return await this.patch(props, PatchTarget.All);
       }
     }
@@ -236,7 +227,6 @@ export class RenderingEngine {
       this.reactivePayload = undefined;
     }
     if (isReactiveViewInstance(view)) {
-      console.log('isReactive, calling patch');
       this.reactivePayload = view;
       return await this.patch(props, PatchTarget.All);
     }
