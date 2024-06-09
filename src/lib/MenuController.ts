@@ -346,15 +346,15 @@ export function MenuController<
       rendererHasQueuedView: renderer.hasQueuedView(),
       manualPatchQueued,
     });
-    if (skipRender || collector.hasEnded()) {
+    if (collector.hasEnded()) {
       return PatchTarget.None;
     }
     // do not wait for reactivity to render a queued view
-    if (manualPatchQueued || renderer.hasQueuedView()) {
+    if (renderer.hasQueuedView()) {
       return PatchTarget.All;
     }
     if (renderer.isCurrentViewReactive()) {
-      let patchTargets: PatchTargetBitField = 0;
+      let patchTargets: PatchTargetBitField = manualPatchQueued;
       effects.forEach((effect) => {
         const oldVersion = effect.previousVersion;
         const newVersion = effect.signal.get();
