@@ -61,7 +61,7 @@ export class RenderingEngine {
   private queuedNavigation?: NavigationPayload;
 
   isCurrentViewReactive(): boolean {
-    return !!this.view && isReactiveViewInstance(this.view);
+    return !!this.view && !!this.reactivePayload;
   }
 
   hasQueuedNavigation(): boolean {
@@ -137,7 +137,7 @@ export class RenderingEngine {
     if (
       this.queuedView ||
       (queuedNav && !queuedNav.reactive) ||
-      !isReactiveViewInstance(this.view)
+      !this.isCurrentViewReactive()
     ) {
       // do a full render instead
       return await this.render(props);
