@@ -10,7 +10,6 @@ export function isSignal<T>(value?: MaybeSignal<T>): value is Signal<T> {
 export interface Signal<T> extends Reactive<T> {
   readonly _patchContext: PatchTarget;
   isDefined(): this is Signal<NonNullable<T>>;
-  (): ReturnType<this['get']>;
 }
 
 export function createSignal<T>(

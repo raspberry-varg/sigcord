@@ -76,6 +76,10 @@ export class RenderingEngine {
     return !!this.queuedEmbeds;
   }
 
+  clearCachedView(id: string): void {
+    this.closureViewCache.delete(id);
+  }
+
   getPatchContext(): PatchTarget {
     return this.patchContext;
   }

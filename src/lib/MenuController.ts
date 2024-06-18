@@ -241,6 +241,7 @@ export function MenuController<
           navigation.push(currentView);
         }
         renderer.queueViewSwapWithProps(view, props);
+        renderer.clearCachedView(view.id);
       },
       goBack: () => {
         assert(
