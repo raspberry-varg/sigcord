@@ -131,6 +131,10 @@ export interface Synapse {
     view: ViewDef,
     props: ViewDef extends View<infer P> ? P : never
   ): void;
+  goToCached<ViewDef extends View>(
+    view: ViewDef,
+    props: ViewDef extends View<infer P> ? P : never
+  ): void;
   goBack(): void;
   canGoBack(): boolean;
   ctx: MenuContext;
