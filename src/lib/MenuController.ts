@@ -223,7 +223,11 @@ export function MenuController<
       createComponentEffect: (fn, params) => {
         registerEffect(fn, params, PatchTarget.Components);
       },
-      goTo: (view, props) => {
+      goTo(view, props) {
+        this.goToCached(view, props);
+        renderer.clearCachedView(view.id);
+      },
+      goToCached: (view, props) => {
         const currentView = renderer.getCurrentView();
         assert(
           currentView,
@@ -241,7 +245,6 @@ export function MenuController<
           navigation.push(currentView);
         }
         renderer.queueViewSwapWithProps(view, props);
-        renderer.clearCachedView(view.id);
       },
       goBack: () => {
         assert(
