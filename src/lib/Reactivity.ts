@@ -30,11 +30,7 @@ export function createSignal<T>(
   const signal = reactive(fnOrValue, params) as Signal<T | undefined>;
   signal.isDefined = () => signal.get() !== null && signal.get() !== undefined;
   (signal as { _patchContext: PatchTarget })._patchContext = patchContext;
-
-  Object.assign(signal.get, signal);
-  Object.setPrototypeOf(signal.get, Object.getPrototypeOf(signal));
-
-  return signal.get as unknown as Signal<T | undefined>;
+  return signal as Signal<T | undefined>;
 }
 export interface EffectInstance {
   signal: Signal<number>;

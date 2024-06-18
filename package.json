@@ -1,7 +1,7 @@
 {
   "name": "@raspberry-varg/discord-interactive-menus",
   "repository": "https://github.com/raspberry-varg/discord-interactive-menus.git",
-  "version": "3.0.5",
+  "version": "3.0.6",
   "description": "Simple utility to have reactive, routed, and interactive Discord menus.",
   "directories": {
     "lib": "dist"
