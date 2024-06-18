@@ -40,6 +40,7 @@ type Children<T> =
   | (() => Children<T>)
   | Signal<Children<T>>
   | T
+  | false
   | null
   | undefined;
 
@@ -52,7 +53,7 @@ export function flattenChildren<T extends EmbedBuilder | ViewComponent>(
   patchTarget: PatchTarget,
   out: T[] | undefined = undefined
 ): T[] | undefined {
-  if (c === null || c === undefined) {
+  if (c === null || c === undefined || c === false) {
     return out;
   }
   out ??= [];
@@ -72,7 +73,7 @@ export function flattenChildren<T extends EmbedBuilder | ViewComponent>(
     // wrap fn in a signal hooked to the current patch ctx
     c = $.createSignal(c, {}, patchTarget);
     flattenChildren($, c.get(), patchTarget, out);
-  } else {
+  } else if (c) {
     out.push(c);
   }
   return out;
