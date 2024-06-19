@@ -224,8 +224,23 @@ export function MenuController<
         registerEffect(fn, params, PatchTarget.Components);
       },
       goTo(view, props) {
-        this.goToCached(view, props);
-        renderer.clearCachedView(view.id);
+        const currentView = renderer.getCurrentView();
+        assert(
+          currentView,
+          'Tried to navigate before initial render in a reactive view.'
+        );
+        if (renderer.isCurrentViewReactive()) {
+          const reactivePayload = renderer.getReactivePayload();
+          assert(
+            reactivePayload,
+            'Tried to navigate before initial render in a reactive view.'
+          );
+          navigation.pushReactive(currentView, reactivePayload, effects);
+          effects = [];
+        } else {
+          navigation.push(currentView);
+        }
+        renderer.queueViewSwapWithProps(view, props, true);
       },
       goToCached: (view, props) => {
         const currentView = renderer.getCurrentView();
