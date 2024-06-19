@@ -26,6 +26,7 @@ export enum PatchTarget {
 
 type QueuedView = {
   view: View;
+  skipCache: boolean;
 } & (
   | {
       args: unknown[];
@@ -113,8 +114,12 @@ export class RenderingEngine {
     this.queuedClears |= patchTargets;
   }
 
-  queueViewSwapWithProps(view: View, props: PropsBase): void {
-    this.queuedView = { view, props };
+  queueViewSwapWithProps(
+    view: View,
+    props: PropsBase,
+    skipCache = false
+  ): void {
+    this.queuedView = { view, props, skipCache };
   }
 
   queueViewSwap(view: View, args: unknown[]): void {
@@ -125,7 +130,7 @@ export class RenderingEngine {
       );
       return;
     }
-    this.queuedView = { view, args };
+    this.queuedView = { view, args, skipCache: false };
   }
 
   queueNavigation(navigationPayload: NavigationPayload): void {
@@ -258,7 +263,10 @@ export class RenderingEngine {
     } else {
       // try cache for instantiated view
       const id = this.view.id;
-      if (!this.closureViewCache.has(id)) {
+      if (!this.closureViewCache.has(id) || this.queuedView?.skipCache) {
+        if (this.queuedView) {
+          this.queuedView.skipCache = false;
+        }
         this.closureViewCache.set(
           id,
           // eslint-disable-next-line @typescript-eslint/ban-types
