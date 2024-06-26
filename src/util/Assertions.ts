@@ -1,5 +1,5 @@
 export function assert(
-  condition: any,
+  condition: unknown,
   msg?: string
 ): asserts condition is true {
   if (!condition) {

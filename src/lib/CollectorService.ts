@@ -3,10 +3,10 @@ import type {
   Interaction,
   Message,
 } from 'discord.js';
-import type { Listener } from './Listener';
-import { logger } from '../util/Logger';
-import type { MessageComponentCallback } from './MenuView';
-import { endReasonIsTimeout } from '../util/CollectorUtil';
+import type { Listener } from './Listener.js';
+import { logger } from '../util/Logger.js';
+import type { MessageComponentCallback } from './MenuView.js';
+import { endReasonIsTimeout } from '../util/CollectorUtil.js';
 
 type ComponentId = string;
 type ComponentCallbackMap = Map<ComponentId, MessageComponentCallback<any>>;

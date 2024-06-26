@@ -1,15 +1,28 @@
-import type {
+import {
   ActionRowBuilder,
   EmbedBuilder,
   MessageActionRowComponentBuilder,
   MessageComponentInteraction,
 } from 'discord.js';
+import { PatchTarget, type Signal, type Synapse } from '../index.js';
+import { Reactive } from '@reactively/core';
+
+export type ViewComponent = ActionRowBuilder<MessageActionRowComponentBuilder>;
+
+export type RenderedReactiveViewPayload = ReactiveViewPayload;
+
+export interface ReactiveViewPayload {
+  ephemeral?: boolean;
+  content?: string | Signal<string> | (() => string);
+  embeds?: EmbedChildren;
+  components?: ComponentChildren;
+}
 
 export interface ViewPayload {
   ephemeral?: boolean;
   content?: string;
   embeds?: EmbedBuilder[];
-  components?: ActionRowBuilder<MessageActionRowComponentBuilder>[];
+  components?: ViewComponent[];
 }
 
 export interface MessageComponentCallback<
@@ -20,4 +33,48 @@ export interface MessageComponentCallback<
 
 export interface IntrinsicViewProps {
   ephemeral: boolean | false;
+}
+
+type Children<T> =
+  | Children<T>[]
+  | (() => Children<T>)
+  | Signal<Children<T>>
+  | T
+  | false
+  | null
+  | undefined;
+
+type EmbedChildren = Children<EmbedBuilder>;
+type ComponentChildren = Children<ViewComponent>;
+
+export function flattenChildren<T extends EmbedBuilder | ViewComponent>(
+  $: Synapse,
+  c: Children<T>,
+  patchTarget: PatchTarget,
+  out: T[] | undefined = undefined
+): T[] | undefined {
+  if (c === null || c === undefined || c === false) {
+    return out;
+  }
+  out ??= [];
+
+  // resolve nested
+  if (Array.isArray(c)) {
+    for (const nested of c) {
+      flattenChildren($, nested, patchTarget, out);
+    }
+  }
+  // resolve signal
+  else if (c instanceof Reactive) {
+    flattenChildren($, c.get(), patchTarget, out);
+  }
+  // resolve function call
+  else if (typeof c === 'function') {
+    // wrap fn in a signal hooked to the current patch ctx
+    c = $.createSignal(c, {}, patchTarget);
+    flattenChildren($, c.get(), patchTarget, out);
+  } else if (c) {
+    out.push(c);
+  }
+  return out;
 }

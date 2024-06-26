@@ -4,16 +4,24 @@ import type {
   MessageComponentInteraction,
   RepliableInteraction,
 } from 'discord.js';
-import { View, Synapse, ViewProps, MenuContext } from './FunctionalMenuView';
-import { IntrinsicMenuProps } from './InteractiveMenu';
-import { SmartComponentType } from './SmartComponents';
-import { assert, assertAndReturn } from '../util/Assertions';
-import { Listener } from './Listener';
-import { logger } from '../util/Logger';
-import { RenderingEngine } from './RenderingEngine';
-import { InteractionPatcher } from './InteractionPatcher';
-import { CollectorService } from './CollectorService';
-import { TimeoutEmbed } from './PrebuiltEmbeds';
+import { Synapse } from './Synapse.js';
+import { View, ViewProps, MenuContext } from './FunctionalMenuView.js';
+import { IntrinsicMenuProps } from './InteractiveMenu.js';
+import { SmartComponentType } from './SmartComponents.js';
+import { assert, assertAndReturn } from '../util/Assertions.js';
+import { Listener } from './Listener.js';
+import { logger } from '../util/Logger.js';
+import { RenderingEngine } from './RenderingEngine.js';
+import { InteractionPatcher } from './InteractionPatcher.js';
+import { CollectorService } from './CollectorService.js';
+import { TimeoutEmbed } from './PrebuiltEmbeds.js';
+import { createSignal } from './Reactivity.js';
+import type { ReactiveOptions } from './Reactivity.js';
+import { PatchTarget, PatchTargetBitField } from './RenderingEngine.js';
+import { Reactive } from '@reactively/core';
+import type { PropsBase } from './MenuView/ViewBase.js';
+import { EffectInstance } from './Reactivity.js';
+import { Navigation } from './Navigation.js';
 
 export interface ControllerContext {
   // onLoadCallbacks: OnLoadCallback[];
@@ -68,15 +76,22 @@ export function MenuController<
   initProps: MenuProps
 ) {
   function createSynapse(): Synapse {
-    return {
+    const $: Synapse = {
       ctx,
       appendEmbeds: (...embeds: EmbedBuilder[]) =>
         renderer.appendEmbeds(...embeds),
       prependEmbeds: (...embeds: EmbedBuilder[]) =>
         renderer.prependEmbeds(...embeds),
-      swap: (id: string, ...args: unknown[]) => {
+      swap: (idOrView: string | View, ...args: unknown[] | [PropsBase]) => {
         clearViewArtifacts();
-        renderer.queueViewSwap(getView(id), args);
+
+        const incomingIsView = typeof idOrView !== 'string';
+        const view = incomingIsView ? idOrView : getView(idOrView);
+        if (incomingIsView) {
+          renderer.queueViewSwapWithProps(view, args[0] as PropsBase);
+        } else {
+          renderer.queueViewSwap(view, args);
+        }
       },
       component: ({ id, component, controller }) => {
         const componentId = createComponentId(id);
@@ -147,14 +162,148 @@ export function MenuController<
         skipRender = shouldSkip;
       },
       stop: (reason?: string) => stopMenu(reason),
+      queueRender: (queueRender = true) => {
+        if (queueRender) {
+          manualPatchQueued |= PatchTarget.All;
+        } else {
+          manualPatchQueued = 0;
+        }
+      },
+      patch: (...targets) => {
+        manualPatchQueued |= targets.reduce<PatchTargetBitField>(
+          (bitField, target) => {
+            return bitField | target;
+          },
+          PatchTarget.None
+        );
+      },
+      signalFrom: (fnOrMaybeSignal) => {
+        if (fnOrMaybeSignal instanceof Reactive) {
+          return fnOrMaybeSignal;
+        }
+        return createSignal(fnOrMaybeSignal, {}, PatchTarget.None);
+      },
+      createSignal<T>(
+        fnOrValue: T | (() => T) | undefined = undefined,
+        params = {},
+        patchTarget = PatchTarget.None
+      ) {
+        const s = createSignal(fnOrValue, params, patchTarget);
+        if (patchTarget !== PatchTarget.None) {
+          registerEffect(
+            () => {
+              s.get();
+            },
+            params,
+            patchTarget
+          );
+        }
+        return s;
+      },
+      createEmbedSignal: (closure, params = {}) => {
+        const s = createSignal(closure, params, PatchTarget.Embeds);
+        $.createEmbedEffect(() => {
+          s.get();
+        }, params);
+        return s;
+      },
+      createComponentSignal: (closure, params = {}) => {
+        const s = createSignal(closure, params, PatchTarget.Components);
+        $.createComponentEffect(() => {
+          s.get();
+        }, params);
+        return s;
+      },
+      createEffect: (fn, params) => {
+        registerEffect(fn, params);
+      },
+      createEmbedEffect: (fn, params) => {
+        registerEffect(fn, params, PatchTarget.Embeds);
+      },
+      createComponentEffect: (fn, params) => {
+        registerEffect(fn, params, PatchTarget.Components);
+      },
+      goTo(view, props) {
+        const currentView = renderer.getCurrentView();
+        assert(
+          currentView,
+          'Tried to navigate before initial render in a reactive view.'
+        );
+        if (renderer.isCurrentViewReactive()) {
+          const reactivePayload = renderer.getReactivePayload();
+          assert(
+            reactivePayload,
+            'Tried to navigate before initial render in a reactive view.'
+          );
+          navigation.pushReactive(currentView, reactivePayload, effects);
+          effects = [];
+        } else {
+          navigation.push(currentView);
+        }
+        renderer.queueViewSwapWithProps(view, props, true);
+      },
+      goToCached: (view, props) => {
+        const currentView = renderer.getCurrentView();
+        assert(
+          currentView,
+          'Tried to navigate before initial render in a reactive view.'
+        );
+        if (renderer.isCurrentViewReactive()) {
+          const reactivePayload = renderer.getReactivePayload();
+          assert(
+            reactivePayload,
+            'Tried to navigate before initial render in a reactive view.'
+          );
+          navigation.pushReactive(currentView, reactivePayload, effects);
+          effects = [];
+        } else {
+          navigation.push(currentView);
+        }
+        renderer.queueViewSwapWithProps(view, props);
+      },
+      goBack: () => {
+        assert(
+          !navigation.empty(),
+          'Tried to navigate backwards without a parent view. Have you called goTo() in the parent view?'
+        );
+        const payload = navigation.pop();
+        effects = payload.effects;
+        renderer.queueNavigation(payload);
+      },
+      canGoBack: () => {
+        return !navigation.empty();
+      },
     };
+    return $;
+  }
+  function registerEffect(
+    fn: () => void,
+    params: ReactiveOptions | undefined,
+    patchTarget = PatchTarget.None
+  ): void {
+    let version = 0;
+    const signal = createSignal(
+      () => {
+        fn();
+        version++;
+        return version;
+      },
+      { ...params },
+      patchTarget
+    );
+    signal.get();
+    effects.push({
+      signal,
+      previousVersion: version,
+      patch: patchTarget,
+    });
   }
   function getView(id: string): View {
     const view = views.get(id);
     assert(view, `"${id}" is not a registered view.`);
     return view;
   }
-  function getPatchTarget(): RepliableInteraction {
+  function getInteractionToPatch(): RepliableInteraction {
     return props.renderAfterHandledInteraction && collector.lastCollected
       ? collector.lastCollected
       : interaction;
@@ -169,7 +318,7 @@ export function MenuController<
   }
   const ctx: MenuContext = {
     get interaction(): RepliableInteraction {
-      return getPatchTarget();
+      return getInteractionToPatch();
     },
     initialInteraction: interaction,
     get idleTimeMs(): number {
@@ -185,10 +334,12 @@ export function MenuController<
     onRender: new Listener(),
     onEnd: new Listener(),
   };
+  const navigation = new Navigation();
   const componentCallbacks = new Map<
     MenuViewComponentId,
     MessageComponentCallback<any>
   >();
+  let effects: EffectInstance[] = [];
 
   let idle: number =
     props.idleTimeMs === undefined
@@ -204,17 +355,55 @@ export function MenuController<
     customId: '',
   };
   let skipRender = false;
+  let manualPatchQueued: PatchTargetBitField = 0;
 
-  function shouldRerender() {
-    return !collector.hasEnded() && skipRender === false;
+  function getPatchTargets(): PatchTargetBitField {
+    logger.debug({
+      skipRender,
+      collectorEnded: collector.hasEnded(),
+      isCurrentViewReactive: renderer.isCurrentViewReactive(),
+      rendererHasQueuedView: renderer.hasQueuedView(),
+      manualPatchQueued,
+    });
+    if (collector.hasEnded()) {
+      return PatchTarget.None;
+    }
+    // do not wait for reactivity to render a queued view
+    if (renderer.hasQueuedView()) {
+      return PatchTarget.All;
+    }
+    if (renderer.isCurrentViewReactive()) {
+      let patchTargets: PatchTargetBitField = manualPatchQueued;
+      effects.forEach((effect) => {
+        const oldVersion = effect.previousVersion;
+        const newVersion = effect.signal.get();
+        const hasChanged = oldVersion !== newVersion;
+        effect.previousVersion = newVersion;
+        if (hasChanged && effect.patch !== undefined) {
+          patchTargets |= effect.patch;
+        }
+      });
+      logger.debug({ patchTargetBitField: patchTargets });
+      if (renderer.hasQueuedEmbeds()) {
+        patchTargets |= PatchTarget.Embeds;
+      }
+      if (renderer.hasQueuedNavigation()) {
+        patchTargets |= PatchTarget.All;
+      }
+      return patchTargets;
+    }
+    return PatchTarget.All;
   }
 
-  function afterComponentHandled() {
-    skipRender = false;
+  function beforeRender() {
+    if (renderer.hasQueuedView()) {
+      effects.length = 0;
+    }
   }
 
   function afterRender() {
     skipRender = false;
+    manualPatchQueued = 0;
     listeners.onRender.fire();
   }
 
@@ -322,10 +511,10 @@ export function MenuController<
     }
     await interactionCallback(collected);
 
-    if (shouldRerender()) {
-      await update();
+    const patchTargets = getPatchTargets();
+    if (patchTargets !== PatchTarget.None) {
+      await update(patchTargets);
     }
-    afterComponentHandled();
   }
 
   async function initialRender(options: Partial<RenderOptions>) {
@@ -337,15 +526,19 @@ export function MenuController<
     );
     renderer.queueViewSwap(initialView, []);
     renderer.queueRender();
-    patcher.mountInteraction(getPatchTarget());
+    patcher.mountInteraction(getInteractionToPatch());
+    beforeRender();
     const payload = await renderer.render(props);
     await patcher.patch(payload, options);
+    afterRender();
   }
 
   /** Handles subsequent rerenders. */
-  async function update(): Promise<void> {
-    const payload = await renderer.render(props);
+  async function update(patchTargets: PatchTargetBitField): Promise<void> {
+    beforeRender();
+    const payload = await renderer.patch(props, patchTargets);
     await patcher.patch(payload, {});
+    afterRender();
   }
 
   /**
@@ -359,7 +552,11 @@ export function MenuController<
 
   async function patchTimeout() {
     renderer.appendEmbeds(TimeoutEmbed);
-    const payload = await renderer.render(props);
+    renderer.queueClear(PatchTarget.Components);
+    const payload = await renderer.patch(
+      props,
+      PatchTarget.Embeds | PatchTarget.Content
+    );
     await patcher.patch(payload, {});
   }
 
@@ -370,7 +567,6 @@ export function MenuController<
     options = { ...DefaultRenderOptions, ...options };
     await initialRender(options);
     initCollector();
-    afterRender();
   }
 
   /*
