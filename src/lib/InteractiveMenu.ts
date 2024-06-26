@@ -1,7 +1,7 @@
 import type { Message, RepliableInteraction } from 'discord.js';
-import type { IntrinsicViewProps } from './MenuView';
-import { View } from './FunctionalMenuView';
-import { MenuController } from './MenuController';
+import type { IntrinsicViewProps } from './MenuView.js';
+import { View } from './FunctionalMenuView.js';
+import { MenuController } from './MenuController.js';
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 export interface Menu<Views extends ViewDefinitions = {}> {
@@ -33,9 +33,9 @@ export interface IntrinsicMenuProps extends IntrinsicViewProps {
 }
 
 // To whoever just Ctrl+Clicked, I'm so sorry for all this type mangling, but it works.
-type UnionToIntersection<U> = (U extends any ? (x: U) => void : never) extends (
-  x: infer I
-) => void
+export type UnionToIntersection<U> = (
+  U extends any ? (x: U) => void : never
+) extends (x: infer I) => void
   ? I
   : never;
 type ArrayUnionToIntersection<U> = U extends Array<infer T>
