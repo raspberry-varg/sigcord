@@ -38,18 +38,6 @@ export const signal: Synapse['createSignal'] = <T>(
   patchTarget = PatchTarget.None
 ) => useSynapse().createSignal(fnOrValue, params, patchTarget);
 
-export const componentSignal: Synapse['createComponentSignal'] = (
-  closure,
-  params,
-  patchTarget
-) => useSynapse().createComponentSignal(closure, params, patchTarget);
-
-export const embedSignal: Synapse['createEmbedSignal'] = (
-  closure,
-  params,
-  patchTarget
-) => useSynapse().createEmbedSignal(closure, params, patchTarget);
-
 // Signal effects
 
 /**
@@ -62,9 +50,11 @@ export const embedSignal: Synapse['createEmbedSignal'] = (
  * queue a patch for content, set content to a function that returns a string.
  * @param fn The effect to run.
  * @param params Extra configuration for debugging.
+ * @param patchTarget Bitfield of {@link PatchTarget} to queue for rendering
+ * when this effect runs.
  */
-export const effect: Synapse['createEffect'] = (fn, params) =>
-  useSynapse().createEffect(fn, params);
+export const effect: Synapse['createEffect'] = (fn, params, patchTarget) =>
+  useSynapse().createEffect(fn, params, patchTarget);
 
 /**
  * Create an effect that runs when the value of signals in the function are
