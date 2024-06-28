@@ -6,7 +6,7 @@ import type {
   RepliableInteraction,
 } from 'discord.js';
 import { safeRender } from '../util/RenderingUtil.js';
-import { ViewPayload } from './MenuView.js';
+import { ViewMessagePayload } from './MenuView.js';
 
 interface RenderOptions {
   ephemeral: boolean;
@@ -29,7 +29,7 @@ export class Renderable {
     return this.onLoad();
   }
 
-  messagePayload(): ViewPayload {
+  messagePayload(): ViewMessagePayload {
     return {
       embeds: this.embeds(),
       ephemeral: this.options.ephemeral,

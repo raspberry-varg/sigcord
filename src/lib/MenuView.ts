@@ -6,10 +6,13 @@ import {
 } from 'discord.js';
 import { PatchTarget, type Signal, type Synapse } from '../index.js';
 import { Reactive } from '@reactively/core';
+import type { IS_REACTIVE_SYMBOL } from './MenuView/ReactiveView.js';
 
 export type ViewComponent = ActionRowBuilder<MessageActionRowComponentBuilder>;
 
-export type RenderedReactiveViewPayload = ReactiveViewPayload;
+export type RenderedReactiveView = ReactiveViewPayload & {
+  [IS_REACTIVE_SYMBOL]: true;
+};
 
 export interface ReactiveViewPayload {
   ephemeral?: boolean;
@@ -18,7 +21,7 @@ export interface ReactiveViewPayload {
   components?: ComponentChildren;
 }
 
-export interface ViewPayload {
+export interface ViewMessagePayload {
   ephemeral?: boolean;
   content?: string;
   embeds?: EmbedBuilder[];

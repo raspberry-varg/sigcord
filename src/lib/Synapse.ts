@@ -7,13 +7,13 @@ import type {
   ModalSubmitInteraction,
   CommandInteraction,
 } from 'discord.js';
-import type { MenuContext, View } from './FunctionalMenuView.js';
+import type { DefinedView, MenuContext, View } from './FunctionalMenuView.js';
 import type { MessageComponentCallback } from './MenuView.js';
 import type { MaybeSignal, ReactiveOptions } from './Reactivity.js';
 import type { PatchTarget } from './RenderingEngine.js';
 import type { Signal } from './Reactivity.js';
 import type { PropsBase } from './MenuView/ViewBase.js';
-import type { UnionToIntersection } from './InteractiveMenu.js';
+import type { UnionToIntersection } from '../util/TypesUtil.js';
 
 type ModalRepliableInteraction =
   | CommandInteraction
@@ -127,13 +127,16 @@ export interface Synapse {
    * @param params Extra configuration for debugging.
    */
   createComponentEffect: (fn: () => void, params?: ReactiveOptions) => void;
-  goTo<ViewDef extends View>(
+  goTo<
+    ViewDef extends DefinedView<any>,
+    Props extends ViewDef extends DefinedView<infer P> ? P : never
+  >(
     view: ViewDef,
-    props: ViewDef extends View<infer P> ? P : never
+    props: Props
   ): void;
-  goToCached<ViewDef extends View>(
-    view: ViewDef,
-    props: ViewDef extends View<infer P> ? P : never
+  goToCached<View extends DefinedView<any>>(
+    view: View,
+    props: View extends DefinedView<infer P> ? P : never
   ): void;
   goBack(): void;
   canGoBack(): boolean;
