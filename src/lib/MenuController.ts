@@ -22,6 +22,10 @@ import { Reactive } from '@reactively/core';
 import type { PropsBase } from './MenuView/ViewBase.js';
 import { EffectInstance } from './Reactivity.js';
 import { Navigation } from './Navigation.js';
+import {
+  clearReactiveContext,
+  setReactiveContext,
+} from './ReactiveBuiltIns.js';
 
 export interface MenuControllerAPI {
   // render API
@@ -158,7 +162,14 @@ export function MenuController<
           return;
         }
         flushModal();
-        await callback(response);
+        try {
+          if (renderer.isCurrentViewReactive()) {
+            setReactiveContext(props.$);
+          }
+          await callback(response);
+        } finally {
+          clearReactiveContext();
+        }
       },
       setIdleMs: (idleMilliseconds: number) => {
         assert(
@@ -532,7 +543,14 @@ export function MenuController<
       );
       return;
     }
-    await interactionCallback(collected);
+    try {
+      if (renderer.isCurrentViewReactive()) {
+        setReactiveContext(props.$);
+      }
+      await interactionCallback(collected);
+    } finally {
+      clearReactiveContext();
+    }
 
     const patchTargets = getPatchTargets();
     if (patchTargets !== PatchTarget.None) {
