@@ -92,7 +92,7 @@ export function defineMenu<
 
 export type MenuFactory<Props extends PropsBase> = (
   interaction: RepliableInteraction,
-  props: Props
+  props: Props & Partial<IntrinsicMenuProps>
 ) => MenuControllerAPI;
 
 class InteractiveMenuError extends Error {
