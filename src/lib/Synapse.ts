@@ -27,9 +27,10 @@ type ModalRepliableInteraction =
  */
 export interface Synapse {
   /**
-   * Configures a reactive message component.
+   * Configures an interactive message component.
    *
    * - Passed component id is auto-formatted to `menuId:viewId:componentId`.
+   *   - `viewId:viewId:componentId` if standalone.
    * - Calls the passed component builder's `setCustomId` with the provided id.
    * - Binds a given handler to a component via its id.
    * @returns The provided component builder.
