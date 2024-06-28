@@ -28,6 +28,8 @@ export function createSignal<T>(
   patchContext: PatchTarget
 ): Signal<T | undefined> {
   const signal = reactive(fnOrValue, params) as Signal<T | undefined>;
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   signal.isDefined = () => signal.get() !== null && signal.get() !== undefined;
   (signal as { _patchContext: PatchTarget })._patchContext = patchContext;
   return signal as Signal<T | undefined>;
