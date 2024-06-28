@@ -6,7 +6,7 @@ import type { EffectInstance } from './Reactivity.js';
 export interface NavigationPayload {
   view: View;
   effects: EffectInstance[];
-  reactive: RenderedReactiveView | undefined;
+  reactiveInstance: RenderedReactiveView | undefined;
 }
 
 export class Navigation {
@@ -42,7 +42,7 @@ export class Navigation {
     return {
       view,
       effects,
-      reactive: this.reactive.pop(),
+      reactiveInstance: this.reactive.pop(),
     };
   }
 
@@ -54,7 +54,7 @@ export class Navigation {
     return {
       view,
       effects,
-      reactive: this.reactive.pop(),
+      reactiveInstance: this.reactive.pop(),
     };
   }
 }

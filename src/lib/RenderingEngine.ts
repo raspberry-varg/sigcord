@@ -72,7 +72,9 @@ export class RenderingEngine {
   private queuedNavigation?: NavigationPayload;
 
   isCurrentViewReactive(): boolean {
-    return !!this.viewDefinition && !!this.reactiveViewInstance;
+    return (
+      !!this.viewDefinition && isReactiveViewDefinition(this.viewDefinition)
+    );
   }
 
   hasQueuedNavigation(): boolean {
@@ -155,14 +157,14 @@ export class RenderingEngine {
     const queuedNav = this.queuedNavigation;
     if (
       this.queuedView ||
-      (queuedNav && !queuedNav.reactive) ||
+      (queuedNav && !queuedNav.reactiveInstance) ||
       !this.isCurrentViewReactive()
     ) {
       // do a full render instead
       return await this.render(props);
     }
 
-    if (queuedNav && queuedNav.reactive) {
+    if (queuedNav && queuedNav.reactiveInstance) {
       this.applyQueuedNavigation();
       targets |= PatchTarget.All;
     }
@@ -173,53 +175,58 @@ export class RenderingEngine {
       'Internal error: Reactive payload was not set.'
     );
     const $ = props.$;
+    setReactiveContext($);
     targets |= this.queuedClears;
     const payload: ViewMessagePayload = {};
-    if (this.reactiveViewInstance.ephemeral !== undefined) {
-      payload.ephemeral = this.reactiveViewInstance.ephemeral;
-    }
-    if (targets & PatchTarget.Content) {
-      this.patchContext = PatchTarget.Content;
-      const content = this.reactiveViewInstance.content;
-      if (this.isQueuedForClear(PatchTarget.Content)) {
-        payload.content = '';
-      } else if (content !== undefined) {
-        if (typeof content === 'string' || content instanceof Reactive) {
-          payload.content = resolveMaybeSignal(content);
-        } else {
-          this.reactiveViewInstance.content = $.createSignal(content);
-          payload.content = this.reactiveViewInstance.content.get();
+    try {
+      if (this.reactiveViewInstance.ephemeral !== undefined) {
+        payload.ephemeral = this.reactiveViewInstance.ephemeral;
+      }
+      if (targets & PatchTarget.Content) {
+        this.patchContext = PatchTarget.Content;
+        const content = this.reactiveViewInstance.content;
+        if (this.isQueuedForClear(PatchTarget.Content)) {
+          payload.content = '';
+        } else if (content !== undefined) {
+          if (typeof content === 'string' || content instanceof Reactive) {
+            payload.content = resolveMaybeSignal(content);
+          } else {
+            this.reactiveViewInstance.content = $.createSignal(content);
+            payload.content = this.reactiveViewInstance.content.get();
+          }
         }
       }
-    }
-    if (targets & PatchTarget.Embeds || this.hasQueuedEmbeds()) {
-      this.patchContext = PatchTarget.Embeds;
-      if (this.isQueuedForClear(PatchTarget.Embeds)) {
-        payload.embeds = [];
-      } else {
-        payload.embeds = flattenChildren(
-          $,
-          this.reactiveViewInstance.embeds,
-          this.patchContext
-        );
+      if (targets & PatchTarget.Embeds || this.hasQueuedEmbeds()) {
+        this.patchContext = PatchTarget.Embeds;
+        if (this.isQueuedForClear(PatchTarget.Embeds)) {
+          payload.embeds = [];
+        } else {
+          payload.embeds = flattenChildren(
+            $,
+            this.reactiveViewInstance.embeds,
+            this.patchContext
+          );
+        }
+        if (this.queuedEmbeds) {
+          payload.embeds = this.attachEnqueuedEmbeds(payload.embeds ?? []);
+        }
       }
-      if (this.queuedEmbeds) {
-        payload.embeds = this.attachEnqueuedEmbeds(payload.embeds ?? []);
+      if (targets & PatchTarget.Components) {
+        this.patchContext = PatchTarget.Components;
+        if (this.isQueuedForClear(PatchTarget.Components)) {
+          payload.components = [];
+        } else if (this.reactiveViewInstance.components !== undefined) {
+          payload.components = flattenChildren(
+            $,
+            this.reactiveViewInstance.components,
+            this.patchContext
+          );
+        }
       }
+    } finally {
+      this.postRender();
+      clearReactiveContext();
     }
-    if (targets & PatchTarget.Components) {
-      this.patchContext = PatchTarget.Components;
-      if (this.isQueuedForClear(PatchTarget.Components)) {
-        payload.components = [];
-      } else if (this.reactiveViewInstance.components !== undefined) {
-        payload.components = flattenChildren(
-          $,
-          this.reactiveViewInstance.components,
-          this.patchContext
-        );
-      }
-    }
-    this.postRender();
     return payload;
   }
 
@@ -306,9 +313,9 @@ export class RenderingEngine {
       'Internal error: Tried to apply queuedNavigation before being assigned a value.'
     );
     this.viewDefinition = this.queuedNavigation.view;
-    this.reactiveViewInstance = this.queuedNavigation.reactive
+    this.reactiveViewInstance = this.queuedNavigation.reactiveInstance
       ? {
-          ...this.queuedNavigation.reactive,
+          ...this.queuedNavigation.reactiveInstance,
           id: this.queuedNavigation.view.id,
         }
       : undefined;
