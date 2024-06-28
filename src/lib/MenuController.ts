@@ -343,9 +343,12 @@ export function MenuController<
     },
   };
   const builtins = createSynapse();
-  const props = buildProps(initProps, builtins);
   const views = new Map<string, View<AllProps>>(
     registeredViews.map((v) => [v.id, v])
+  );
+  const props = buildProps(
+    { ...views.get(initialViewId)!.defaults, ...initProps },
+    builtins
   );
   const renderer = new RenderingEngine();
   const patcher = new InteractionPatcher(interaction, props);
@@ -475,7 +478,6 @@ export function MenuController<
     return patchTimeout();
   }
 
-  // TODO: Move collector into a microservice outside of this file.
   function initCollector() {
     const message = patcher.message;
     assert(message, `Unable to initialize collectors; 'message' is undefined.`);
