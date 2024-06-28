@@ -4,36 +4,29 @@
 
 import type { RepliableInteraction } from 'discord.js';
 import type { Synapse } from './Synapse.js';
-import { PropsBase, ViewDefinitionBase } from './MenuView/ViewBase.js';
-import { ClassicViewClosureDefinition } from './MenuView/ClassicView.js';
-import { ReactiveViewBody } from './MenuView/ReactiveView.js';
-import { ClassicViewBody } from './MenuView/ClassicView.js';
+import { PropsBase, type ViewDefinitionBase } from './MenuView/ViewBase.js';
+import {
+  IS_REACTIVE_SYMBOL,
+  type ReactiveViewDefinition,
+} from './MenuView/ReactiveView.js';
+import { ClassViewDefinitionBody } from './MenuView/ClassicView.js';
 import { ClassicViewInstance } from './MenuView/ClassicView.js';
 import { ReactiveViewInstance } from './MenuView/ReactiveView.js';
-import type { MaybePromise } from '../util/TypesUtil.js';
+import type { MenuFactory } from './InteractiveMenu.js';
 
-export type ViewDefinition<Props extends PropsBase = PropsBase> =
-  ViewDefinitionBase & (ClassicViewBody<Props> | ReactiveViewBody);
+export type ClassViewDefinition<Props extends PropsBase = PropsBase> =
+  ViewDefinitionBase & ClassViewDefinitionBody<Props>;
+
+export type DefinedView<Props extends PropsBase = PropsBase> =
+  MenuFactory<Props> & View<Props>;
 
 export type View<Props extends PropsBase = PropsBase> =
-  | ClassicViewClosureDefinition<Props>
-  | ViewDefinition<Props>;
+  | ClassViewDefinition<Props>
+  | ReactiveViewDefinition<Props>;
 
-export type ViewInstance<Props extends PropsBase = PropsBase> =
-  | ClassicViewInstance<Props>
+export type ViewInstance =
+  | ClassicViewInstance<PropsBase>
   | ReactiveViewInstance;
-
-export type ViewClosure<Props extends PropsBase = PropsBase> =
-  | (() => ViewClosureReturn<Props>)
-  | ((props: ViewProps<Props>) => ViewClosureReturn<Props>);
-
-export type ViewClosureReturn<Props extends PropsBase = PropsBase> =
-  | MaybePromise<ClassicViewBody<Props>>
-  | MaybePromise<ReactiveViewBody>;
-
-export interface ViewClosureBody<Props extends PropsBase = PropsBase> {
-  closure: ViewClosure<Props>;
-}
 
 export interface MenuContext {
   /**
@@ -59,48 +52,29 @@ export type ViewProps<Props extends PropsBase = PropsBase> = Props & {
   $: Synapse;
 };
 
-export function DefineView<Props extends PropsBase = PropsBase>(
-  id: string,
-  definition: ViewClosure<Props> | ClassicViewBody<Props>
-): View<Props> {
-  return {
-    ...(typeof definition === 'function'
-      ? { closure: definition }
-      : definition),
-    id,
-  };
-}
-
-/**
- * Define a view that can only be swapped into.
- * Cannot be used as an initial view.
- */
-export function DefineSubView<Props extends PropsBase = PropsBase>(
-  id: string,
-  definition: ViewClosure<Props> | ClassicViewBody<Props>
-): View<Props> {
-  const view = DefineView(id, definition);
-  view.isSubView = true;
-  return view;
-}
-
 /** @internal */
-export async function instantiateViewFromClosure<
-  Props extends PropsBase = PropsBase
->(
-  view: ClassicViewClosureDefinition<Props>,
+export async function instantiateClassView<Props extends PropsBase = PropsBase>(
+  view: ClassViewDefinition<Props>,
   props: ViewProps<Props>
-): Promise<ViewInstance<Props>> {
-  const body = await view.closure(props);
+): Promise<ClassicViewInstance<Props>> {
   return {
-    ...body,
     id: view.id,
+    defaults: {},
+    class: view.class,
+    instance: new view.class(props),
   };
 }
 
 /** @internal */
-export function isReactiveViewInstance<Props extends PropsBase>(
-  body: ViewInstance<Props>
+export function isReactiveViewInstance(
+  body: ViewInstance
 ): body is ReactiveViewInstance {
-  return !('render' in body);
+  return IS_REACTIVE_SYMBOL in body;
+}
+
+/** @internal */
+export function isClassViewInstance(
+  body: ViewInstance
+): body is ClassicViewInstance<PropsBase> {
+  return 'instance' in body;
 }

@@ -2,17 +2,27 @@ import type { EmbedBuilder } from 'discord.js';
 import { flattenChildren, isSignal, type Props } from '../index.js';
 import { assert } from '../util/Assertions.js';
 import {
-  instantiateViewFromClosure,
+  isClassViewInstance,
   isReactiveViewInstance,
   type View,
   type ViewInstance,
 } from './FunctionalMenuView.js';
-import type { RenderedReactiveViewPayload, ViewPayload } from './MenuView.js';
+import type { RenderedReactiveView, ViewMessagePayload } from './MenuView.js';
 import { logger } from '../util/Logger.js';
 import type { MaybeSignal } from './Reactivity.js';
 import { Reactive } from '@reactively/core';
-import type { PropsBase } from './MenuView/ViewBase.js';
+import { type PropsBase } from './MenuView/ViewBase.js';
 import type { NavigationPayload } from './Navigation.js';
+import {
+  instantiateReactiveView,
+  isReactiveViewDefinition,
+  type ReactiveViewInstance,
+} from './MenuView/ReactiveView.js';
+import {
+  clearReactiveContext,
+  setReactiveContext,
+} from './ReactiveBuiltIns.js';
+import { instantiateClassView } from './MenuView/ClassicView.js';
 
 export type PatchTargetBitField = number;
 
@@ -51,18 +61,20 @@ function resolveMaybeSignal<T>(
 }
 
 export class RenderingEngine {
-  view?: View;
+  viewDefinition?: View;
   private queuedView?: QueuedView;
-  private closureViewCache = new Map<string, ViewInstance>();
+  private instances = new Map<string, ViewInstance>();
   private wantRender = true;
   private queuedEmbeds?: Partial<QueuedEmbeds>;
   private queuedClears: PatchTargetBitField = 0;
-  private reactivePayload?: RenderedReactiveViewPayload;
+  private reactiveViewInstance?: ReactiveViewInstance;
   private patchContext = PatchTarget.None;
   private queuedNavigation?: NavigationPayload;
 
   isCurrentViewReactive(): boolean {
-    return !!this.view && !!this.reactivePayload;
+    return (
+      !!this.viewDefinition && isReactiveViewDefinition(this.viewDefinition)
+    );
   }
 
   hasQueuedNavigation(): boolean {
@@ -78,7 +90,7 @@ export class RenderingEngine {
   }
 
   clearCachedView(id: string): void {
-    this.closureViewCache.delete(id);
+    this.instances.delete(id);
   }
 
   getPatchContext(): PatchTarget {
@@ -86,11 +98,11 @@ export class RenderingEngine {
   }
 
   getCurrentView(): View | undefined {
-    return this.view;
+    return this.viewDefinition;
   }
 
-  getReactivePayload(): RenderedReactiveViewPayload | undefined {
-    return this.reactivePayload;
+  getReactivePayload(): RenderedReactiveView | undefined {
+    return this.reactiveViewInstance;
   }
 
   prependEmbeds(...embeds: EmbedBuilder[]): void {
@@ -140,86 +152,91 @@ export class RenderingEngine {
   async patch(
     props: Props,
     targets: PatchTargetBitField
-  ): Promise<ViewPayload> {
-    assert(this.view, 'Internal error: View was not set.');
+  ): Promise<ViewMessagePayload> {
+    assert(this.viewDefinition, 'Internal error: View was not set.');
     const queuedNav = this.queuedNavigation;
     if (
       this.queuedView ||
-      (queuedNav && !queuedNav.reactive) ||
+      (queuedNav && !queuedNav.reactiveInstance) ||
       !this.isCurrentViewReactive()
     ) {
       // do a full render instead
       return await this.render(props);
     }
 
-    if (queuedNav && queuedNav.reactive) {
+    if (queuedNav && queuedNav.reactiveInstance) {
       this.applyQueuedNavigation();
       targets |= PatchTarget.All;
     }
 
     // reactive patching
     assert(
-      this.reactivePayload,
+      this.reactiveViewInstance,
       'Internal error: Reactive payload was not set.'
     );
     const $ = props.$;
+    setReactiveContext($);
     targets |= this.queuedClears;
-    const payload: ViewPayload = {};
-    if (this.reactivePayload.ephemeral !== undefined) {
-      payload.ephemeral = this.reactivePayload.ephemeral;
-    }
-    if (targets & PatchTarget.Content) {
-      this.patchContext = PatchTarget.Content;
-      const content = this.reactivePayload.content;
-      if (this.isQueuedForClear(PatchTarget.Content)) {
-        payload.content = '';
-      } else if (content !== undefined) {
-        if (typeof content === 'string' || content instanceof Reactive) {
-          payload.content = resolveMaybeSignal(content);
-        } else {
-          this.reactivePayload.content = $.createSignal(content);
-          payload.content = this.reactivePayload.content.get();
+    const payload: ViewMessagePayload = {};
+    try {
+      if (this.reactiveViewInstance.ephemeral !== undefined) {
+        payload.ephemeral = this.reactiveViewInstance.ephemeral;
+      }
+      if (targets & PatchTarget.Content) {
+        this.patchContext = PatchTarget.Content;
+        const content = this.reactiveViewInstance.content;
+        if (this.isQueuedForClear(PatchTarget.Content)) {
+          payload.content = '';
+        } else if (content !== undefined) {
+          if (typeof content === 'string' || content instanceof Reactive) {
+            payload.content = resolveMaybeSignal(content);
+          } else {
+            this.reactiveViewInstance.content = $.createSignal(content);
+            payload.content = this.reactiveViewInstance.content.get();
+          }
         }
       }
-    }
-    if (targets & PatchTarget.Embeds || this.hasQueuedEmbeds()) {
-      this.patchContext = PatchTarget.Embeds;
-      if (this.isQueuedForClear(PatchTarget.Embeds)) {
-        payload.embeds = [];
-      } else {
-        payload.embeds = flattenChildren(
-          $,
-          this.reactivePayload.embeds,
-          this.patchContext
-        );
+      if (targets & PatchTarget.Embeds || this.hasQueuedEmbeds()) {
+        this.patchContext = PatchTarget.Embeds;
+        if (this.isQueuedForClear(PatchTarget.Embeds)) {
+          payload.embeds = [];
+        } else {
+          payload.embeds = flattenChildren(
+            $,
+            this.reactiveViewInstance.embeds,
+            this.patchContext
+          );
+        }
+        if (this.queuedEmbeds) {
+          payload.embeds = this.attachEnqueuedEmbeds(payload.embeds ?? []);
+        }
       }
-      if (this.queuedEmbeds) {
-        payload.embeds = this.attachEnqueuedEmbeds(payload.embeds ?? []);
+      if (targets & PatchTarget.Components) {
+        this.patchContext = PatchTarget.Components;
+        if (this.isQueuedForClear(PatchTarget.Components)) {
+          payload.components = [];
+        } else if (this.reactiveViewInstance.components !== undefined) {
+          payload.components = flattenChildren(
+            $,
+            this.reactiveViewInstance.components,
+            this.patchContext
+          );
+        }
       }
+    } finally {
+      this.postRender();
+      clearReactiveContext();
     }
-    if (targets & PatchTarget.Components) {
-      this.patchContext = PatchTarget.Components;
-      if (this.isQueuedForClear(PatchTarget.Components)) {
-        payload.components = [];
-      } else if (this.reactivePayload.components !== undefined) {
-        payload.components = flattenChildren(
-          $,
-          this.reactivePayload.components,
-          this.patchContext
-        );
-      }
-    }
-    this.postRender();
     return payload;
   }
 
-  async render(props: Props): Promise<ViewPayload> {
+  async render(props: Props): Promise<ViewMessagePayload> {
     if (this.queuedView) {
-      this.view = this.queuedView.view;
+      this.viewDefinition = this.queuedView.view;
     }
     if (this.queuedNavigation) {
       this.applyQueuedNavigation();
-      if (this.reactivePayload) {
+      if (this.reactiveViewInstance) {
         return await this.patch(props, PatchTarget.All);
       }
     }
@@ -229,17 +246,17 @@ export class RenderingEngine {
         : { $: props.$, ...this.queuedView.props }
     );
     if (this.queuedView) {
-      if ('args' in this.queuedView) {
-        await view.onSwap?.(...this.queuedView.args);
+      if ('args' in this.queuedView && isClassViewInstance(view)) {
+        await view.instance.onSwap(...this.queuedView.args);
       }
       this.queuedView = undefined;
-      this.reactivePayload = undefined;
+      this.reactiveViewInstance = undefined;
     }
     if (isReactiveViewInstance(view)) {
-      this.reactivePayload = view;
+      this.reactiveViewInstance = view;
       return await this.patch(props, PatchTarget.All);
     }
-    const payload = await view.render(props);
+    const payload = await view.instance.render(props);
     if (this.queuedEmbeds) {
       payload.embeds = this.attachEnqueuedEmbeds(payload.embeds ?? []);
     }
@@ -256,27 +273,38 @@ export class RenderingEngine {
   }
 
   private async getViewInstance(props: Props): Promise<ViewInstance> {
-    assert(this.view, 'Internal error: View was not set.');
-    let viewInstance: ViewInstance;
-    if (!('closure' in this.view)) {
-      viewInstance = this.view;
-    } else {
-      // try cache for instantiated view
-      const id = this.view.id;
-      if (!this.closureViewCache.has(id) || this.queuedView?.skipCache) {
-        if (this.queuedView) {
-          this.queuedView.skipCache = false;
+    const viewDefinition = this.viewDefinition;
+    assert(viewDefinition, 'Internal error: View was not set.');
+
+    if (isReactiveViewDefinition(viewDefinition)) {
+      let reactiveInstance = this.reactiveViewInstance;
+      if (!reactiveInstance || viewDefinition.id !== reactiveInstance.id) {
+        // rendering must be synchronous; built-ins rely on the single-threaded
+        // nature of JS
+        setReactiveContext(props.$);
+        try {
+          reactiveInstance = instantiateReactiveView(viewDefinition, props);
+          this.reactiveViewInstance = reactiveInstance;
+        } catch (e) {
+          logger.debug(
+            'Encountered an error while rendering a reactive view:',
+            e
+          );
+          throw e;
+        } finally {
+          clearReactiveContext();
         }
-        this.closureViewCache.set(
-          id,
-          // eslint-disable-next-line @typescript-eslint/ban-types
-          await instantiateViewFromClosure<{}>(this.view, props)
-        );
       }
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      viewInstance = this.closureViewCache.get(id)!;
+      return reactiveInstance;
     }
-    return viewInstance;
+
+    // class based view
+    let viewClassInstance = this.instances.get(viewDefinition.id);
+    if (!viewClassInstance) {
+      viewClassInstance = await instantiateClassView(viewDefinition, props);
+      this.instances.set(viewClassInstance.id, viewClassInstance);
+    }
+    return viewClassInstance;
   }
 
   private applyQueuedNavigation(): void {
@@ -284,8 +312,13 @@ export class RenderingEngine {
       this.queuedNavigation,
       'Internal error: Tried to apply queuedNavigation before being assigned a value.'
     );
-    this.view = this.queuedNavigation.view;
-    this.reactivePayload = this.queuedNavigation.reactive;
+    this.viewDefinition = this.queuedNavigation.view;
+    this.reactiveViewInstance = this.queuedNavigation.reactiveInstance
+      ? {
+          ...this.queuedNavigation.reactiveInstance,
+          id: this.queuedNavigation.view.id,
+        }
+      : undefined;
     this.queuedNavigation = undefined;
   }
 

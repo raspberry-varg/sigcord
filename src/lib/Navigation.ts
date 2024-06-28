@@ -1,18 +1,18 @@
 import { assert } from '../util/Assertions.js';
 import type { View } from './FunctionalMenuView.js';
-import type { RenderedReactiveViewPayload } from './MenuView.js';
+import type { RenderedReactiveView } from './MenuView.js';
 import type { EffectInstance } from './Reactivity.js';
 
 export interface NavigationPayload {
   view: View;
   effects: EffectInstance[];
-  reactive: RenderedReactiveViewPayload | undefined;
+  reactiveInstance: RenderedReactiveView | undefined;
 }
 
 export class Navigation {
   views: View[] = [];
   effects: EffectInstance[][] = [];
-  reactive: Array<RenderedReactiveViewPayload | undefined> = [];
+  reactive: Array<RenderedReactiveView | undefined> = [];
 
   push(view: View) {
     this.views.push(view);
@@ -22,7 +22,7 @@ export class Navigation {
 
   pushReactive(
     view: View,
-    reactivePayload: RenderedReactiveViewPayload,
+    reactivePayload: RenderedReactiveView,
     effects: EffectInstance[]
   ) {
     this.views.push(view);
@@ -42,7 +42,7 @@ export class Navigation {
     return {
       view,
       effects,
-      reactive: this.reactive.pop(),
+      reactiveInstance: this.reactive.pop(),
     };
   }
 
@@ -54,7 +54,7 @@ export class Navigation {
     return {
       view,
       effects,
-      reactive: this.reactive.pop(),
+      reactiveInstance: this.reactive.pop(),
     };
   }
 }
