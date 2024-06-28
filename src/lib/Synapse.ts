@@ -7,13 +7,13 @@ import type {
   ModalSubmitInteraction,
   CommandInteraction,
 } from 'discord.js';
-import type { MenuContext, View } from './FunctionalMenuView.js';
+import type { DefinedView, MenuContext, View } from './FunctionalMenuView.js';
 import type { MessageComponentCallback } from './MenuView.js';
 import type { MaybeSignal, ReactiveOptions } from './Reactivity.js';
 import type { PatchTarget } from './RenderingEngine.js';
 import type { Signal } from './Reactivity.js';
 import type { PropsBase } from './MenuView/ViewBase.js';
-import type { UnionToIntersection } from './InteractiveMenu.js';
+import type { UnionToIntersection } from '../util/TypesUtil.js';
 
 type ModalRepliableInteraction =
   | CommandInteraction
@@ -27,9 +27,10 @@ type ModalRepliableInteraction =
  */
 export interface Synapse {
   /**
-   * Configures a reactive message component.
+   * Configures an interactive message component.
    *
    * - Passed component id is auto-formatted to `menuId:viewId:componentId`.
+   *   - `viewId:viewId:componentId` if standalone.
    * - Calls the passed component builder's `setCustomId` with the provided id.
    * - Binds a given handler to a component via its id.
    * @returns The provided component builder.
@@ -94,7 +95,13 @@ export interface Synapse {
     params?: ReactiveOptions,
     patchTarget?: PatchTarget
   ): Signal<EmbedBuilder>;
+
+  /**
+   * Resolve a {@link MaybeSignal} to a signal, or return the passed signal if
+   * already a signal.
+   */
   signalFrom<T>(fnOrMaybeSignal: MaybeSignal<T> | (() => T)): Signal<T>;
+
   /**
    * Create an effect that runs when the value of signals in the function are
    * changed.
@@ -105,8 +112,14 @@ export interface Synapse {
    * queue a patch for content, set content to a function that returns a string.
    * @param fn The effect to run.
    * @param params Extra configuration for debugging.
+   * @param patchTarget Bitfield of {@link PatchTarget} to queue for rendering
+   * when this effect runs.
    */
-  createEffect: <T>(fn: () => T, params?: ReactiveOptions) => void;
+  createEffect: <T>(
+    fn: () => T,
+    params?: ReactiveOptions,
+    patchTarget?: PatchTarget
+  ) => void;
   /**
    * Create an effect that runs when the value of signals in the function are
    * changed.
@@ -127,15 +140,39 @@ export interface Synapse {
    * @param params Extra configuration for debugging.
    */
   createComponentEffect: (fn: () => void, params?: ReactiveOptions) => void;
-  goTo<ViewDef extends View>(
+
+  /**
+   * Instantiate and navigate to a different view.
+   *
+   * - Can navigate back out of the view using {@link goBack}
+   */
+  goTo<
+    ViewDef extends DefinedView<any>,
+    Props extends ViewDef extends DefinedView<infer P> ? P : never
+  >(
     view: ViewDef,
-    props: ViewDef extends View<infer P> ? P : never
+    props: Props
   ): void;
-  goToCached<ViewDef extends View>(
-    view: ViewDef,
-    props: ViewDef extends View<infer P> ? P : never
+
+  /** @deprecated Not recommended. Not implemented. */
+  goToCached<View extends DefinedView<any>>(
+    view: View,
+    props: View extends DefinedView<infer P> ? P : never
   ): void;
+
+  /**
+   * Navigate back to the calling view.
+   *
+   * @throws If not navigated to using {@link goTo}
+   */
   goBack(): void;
+
+  /**
+   * Returns true if this view was navigated to using {@link goTo}. Safely allows
+   * the use of {@link goBack} since the previous menu is on the navigation stack.
+   */
   canGoBack(): boolean;
+
+  /** The current menu controller's context. */
   ctx: MenuContext;
 }

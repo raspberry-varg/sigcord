@@ -1,10 +1,7 @@
-export { IntrinsicMenuProps, DefineMenu } from './lib/InteractiveMenu.js';
+export { IntrinsicMenuProps, defineMenu } from './lib/InteractiveMenu.js';
 export * from './lib/MenuView.js';
 export {
-  DefineView,
-  DefineSubView,
   View,
-  ViewClosure,
   ViewProps,
   ViewProps as Props,
 } from './lib/FunctionalMenuView.js';
@@ -16,3 +13,9 @@ export * from './lib/Renderable.js';
 export { ModalBundle, useValues } from './lib/ModalBundle.js';
 export { PatchTarget } from './lib/RenderingEngine.js';
 export { Signal, MaybeSignal, isSignal } from './lib/Reactivity.js';
+export { component, signal, useSynapse } from './lib/ReactiveBuiltIns.js';
+export { defineView } from './lib/MenuView/DefineReactiveView.js';
+export {
+  ViewClass,
+  defineClassView,
+} from './lib/MenuView/DefineClassicView.js';
