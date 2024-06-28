@@ -95,7 +95,13 @@ export interface Synapse {
     params?: ReactiveOptions,
     patchTarget?: PatchTarget
   ): Signal<EmbedBuilder>;
+
+  /**
+   * Resolve a {@link MaybeSignal} to a signal, or return the passed signal if
+   * already a signal.
+   */
   signalFrom<T>(fnOrMaybeSignal: MaybeSignal<T> | (() => T)): Signal<T>;
+
   /**
    * Create an effect that runs when the value of signals in the function are
    * changed.
@@ -106,8 +112,14 @@ export interface Synapse {
    * queue a patch for content, set content to a function that returns a string.
    * @param fn The effect to run.
    * @param params Extra configuration for debugging.
+   * @param patchTarget Bitfield of {@link PatchTarget} to queue for rendering
+   * when this effect runs.
    */
-  createEffect: <T>(fn: () => T, params?: ReactiveOptions) => void;
+  createEffect: <T>(
+    fn: () => T,
+    params?: ReactiveOptions,
+    patchTarget?: PatchTarget
+  ) => void;
   /**
    * Create an effect that runs when the value of signals in the function are
    * changed.
@@ -128,6 +140,12 @@ export interface Synapse {
    * @param params Extra configuration for debugging.
    */
   createComponentEffect: (fn: () => void, params?: ReactiveOptions) => void;
+
+  /**
+   * Instantiate and navigate to a different view.
+   *
+   * - Can navigate back out of the view using {@link goBack}
+   */
   goTo<
     ViewDef extends DefinedView<any>,
     Props extends ViewDef extends DefinedView<infer P> ? P : never
@@ -135,11 +153,26 @@ export interface Synapse {
     view: ViewDef,
     props: Props
   ): void;
+
+  /** @deprecated Not recommended. Not implemented. */
   goToCached<View extends DefinedView<any>>(
     view: View,
     props: View extends DefinedView<infer P> ? P : never
   ): void;
+
+  /**
+   * Navigate back to the calling view.
+   *
+   * @throws If not navigated to using {@link goTo}
+   */
   goBack(): void;
+
+  /**
+   * Returns true if this view was navigated to using {@link goTo}. Safely allows
+   * the use of {@link goBack} since the previous menu is on the navigation stack.
+   */
   canGoBack(): boolean;
+
+  /** The current menu controller's context. */
   ctx: MenuContext;
 }

@@ -231,8 +231,8 @@ export function MenuController<
         }, params);
         return s;
       },
-      createEffect: (fn, params) => {
-        registerEffect(fn, params);
+      createEffect: (fn, params, patchTarget) => {
+        registerEffect(fn, params, patchTarget);
       },
       createEmbedEffect: (fn, params) => {
         registerEffect(fn, params, PatchTarget.Embeds);
