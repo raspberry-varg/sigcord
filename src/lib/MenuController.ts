@@ -22,10 +22,6 @@ import { Reactive } from '@reactively/core';
 import type { PropsBase } from './MenuView/ViewBase.js';
 import { EffectInstance } from './Reactivity.js';
 import { Navigation } from './Navigation.js';
-import {
-  setReactiveContext,
-  clearReactiveContext,
-} from './ReactiveBuiltIns.js';
 
 export interface MenuControllerAPI {
   // render API
@@ -421,12 +417,6 @@ export function MenuController<
   function beforeRender() {
     if (renderer.hasQueuedView()) {
       effects.length = 0;
-
-      // optimistic set in case the queued view is reactive
-      setReactiveContext(builtins);
-    }
-    if (renderer.isCurrentViewReactive()) {
-      setReactiveContext(builtins);
     }
   }
 
@@ -434,7 +424,6 @@ export function MenuController<
     skipRender = false;
     manualPatchQueued = 0;
     listeners.onRender.fire();
-    clearReactiveContext();
   }
 
   function createComponentId(componentId: string): MenuViewComponentId {
@@ -558,9 +547,12 @@ export function MenuController<
     renderer.queueRender();
     patcher.mountInteraction(getInteractionToPatch());
     beforeRender();
-    const payload = await renderer.render(props);
-    await patcher.patch(payload, options);
-    afterRender();
+    try {
+      const payload = await renderer.render(props);
+      await patcher.patch(payload, options);
+    } finally {
+      afterRender();
+    }
   }
 
   /** Handles subsequent rerenders. */
