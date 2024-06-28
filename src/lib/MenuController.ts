@@ -162,14 +162,7 @@ export function MenuController<
           return;
         }
         flushModal();
-        try {
-          if (renderer.isCurrentViewReactive()) {
-            setReactiveContext(props.$);
-          }
-          await callback(response);
-        } finally {
-          clearReactiveContext();
-        }
+        await callback(response);
       },
       setIdleMs: (idleMilliseconds: number) => {
         assert(
@@ -409,15 +402,20 @@ export function MenuController<
     }
     if (renderer.isCurrentViewReactive()) {
       let patchTargets: PatchTargetBitField = manualPatchQueued;
-      effects.forEach((effect) => {
-        const oldVersion = effect.previousVersion;
-        const newVersion = effect.signal.get();
-        const hasChanged = oldVersion !== newVersion;
-        effect.previousVersion = newVersion;
-        if (hasChanged && effect.patch !== undefined) {
-          patchTargets |= effect.patch;
-        }
-      });
+      try {
+        setReactiveContext(props.$);
+        effects.forEach((effect) => {
+          const oldVersion = effect.previousVersion;
+          const newVersion = effect.signal.get();
+          const hasChanged = oldVersion !== newVersion;
+          effect.previousVersion = newVersion;
+          if (hasChanged && effect.patch !== undefined) {
+            patchTargets |= effect.patch;
+          }
+        });
+      } finally {
+        clearReactiveContext();
+      }
       logger.debug({ patchTargetBitField: patchTargets });
       if (renderer.hasQueuedEmbeds()) {
         patchTargets |= PatchTarget.Embeds;
@@ -537,20 +535,15 @@ export function MenuController<
     const interactionCallback = collector.getComponentCallback(
       collected.customId
     );
+
     if (!interactionCallback) {
       logger.warn(
         `MenuView: No handler defined for ${getComponentId(collected.customId)}`
       );
       return;
     }
-    try {
-      if (renderer.isCurrentViewReactive()) {
-        setReactiveContext(props.$);
-      }
-      await interactionCallback(collected);
-    } finally {
-      clearReactiveContext();
-    }
+
+    await interactionCallback(collected);
 
     const patchTargets = getPatchTargets();
     if (patchTargets !== PatchTarget.None) {
