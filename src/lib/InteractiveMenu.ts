@@ -43,7 +43,7 @@ export interface IntrinsicMenuProps extends IntrinsicViewProps {
  * @param definition.initialView The view that should be rendered first.
  * @param definition.intrinsic Override default values for intrinsic properties.
  */
-export function DefineMenu<
+export function defineMenu<
   Views extends ViewDefinitions,
   Props extends Partial<IntrinsicMenuProps> &
     ArrayUnionToIntersection<{
