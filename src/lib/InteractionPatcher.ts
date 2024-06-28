@@ -1,5 +1,5 @@
 import type { Message, RepliableInteraction } from 'discord.js';
-import type { ViewPayload } from './MenuView.js';
+import type { ViewMessagePayload } from './MenuView.js';
 import { safeRender } from '../util/RenderingUtil.js';
 import type { RenderOptions } from './MenuController.js';
 import type { IntrinsicMenuProps } from './InteractiveMenu.js';
@@ -17,7 +17,7 @@ export class InteractionPatcher {
     this.interaction = interaction;
   }
 
-  async patch(payload: ViewPayload, options: Partial<RenderOptions>) {
+  async patch(payload: ViewMessagePayload, options: Partial<RenderOptions>) {
     logger.debug(
       `Patching interaction.id=${this.interaction.id} with the following payload: `,
       payload

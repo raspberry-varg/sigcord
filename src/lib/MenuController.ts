@@ -22,9 +22,29 @@ import { Reactive } from '@reactively/core';
 import type { PropsBase } from './MenuView/ViewBase.js';
 import { EffectInstance } from './Reactivity.js';
 import { Navigation } from './Navigation.js';
+import {
+  setReactiveContext,
+  clearReactiveContext,
+} from './ReactiveBuiltIns.js';
+
+export interface MenuControllerAPI {
+  // render API
+  start(options?: Partial<RenderOptions>): Promise<void>;
+  reply(
+    options: Omit<Partial<RenderOptions<string>>, 'forceReply'>
+  ): Promise<void>;
+  /**@deprecated Please use `.start` instead. */
+  render(
+    options?: Omit<Partial<RenderOptions<string>>, 'forceReply'>
+  ): Promise<void>;
+  // listener API
+  onRender(callback: () => unknown, once?: boolean): void;
+  awaitRender(): Promise<void>;
+  onEnd(callback: (endReason: string | null) => unknown): void;
+  awaitEnd(): Promise<string | null>;
+}
 
 export interface ControllerContext {
-  // onLoadCallbacks: OnLoadCallback[];
   appendedEmbeds: EmbedBuilder[];
   prependedEmbeds: EmbedBuilder[];
   smartComponents: Map<string, { component: any; callback: any }>;
@@ -67,14 +87,15 @@ interface MenuControllerListeners {
 
 export function MenuController<
   MenuProps extends NonNullable<unknown> = NonNullable<unknown>,
-  ViewId extends string = string
+  ViewId extends string = string,
+  AllProps extends PropsBase = PropsBase
 >(
   menuId: string,
   initialViewId: string,
-  registeredViews: View[],
+  registeredViews: View<AllProps>[],
   interaction: RepliableInteraction,
   initProps: MenuProps
-) {
+): MenuControllerAPI {
   function createSynapse(): Synapse {
     const $: Synapse = {
       ctx,
@@ -88,9 +109,9 @@ export function MenuController<
         const incomingIsView = typeof idOrView !== 'string';
         const view = incomingIsView ? idOrView : getView(idOrView);
         if (incomingIsView) {
-          renderer.queueViewSwapWithProps(view, args[0] as PropsBase);
+          renderer.queueViewSwapWithProps(view as View, args[0] as PropsBase);
         } else {
-          renderer.queueViewSwap(view, args);
+          renderer.queueViewSwap(view as View, args);
         }
       },
       component: ({ id, component, controller }) => {
@@ -240,7 +261,7 @@ export function MenuController<
         } else {
           navigation.push(currentView);
         }
-        renderer.queueViewSwapWithProps(view, props, true);
+        renderer.queueViewSwapWithProps(view as View, props, true);
       },
       goToCached: (view, props) => {
         const currentView = renderer.getCurrentView();
@@ -298,7 +319,7 @@ export function MenuController<
       patch: patchTarget,
     });
   }
-  function getView(id: string): View {
+  function getView(id: string): View<AllProps> {
     const view = views.get(id);
     assert(view, `"${id}" is not a registered view.`);
     return view;
@@ -327,7 +348,9 @@ export function MenuController<
   };
   const builtins = createSynapse();
   const props = buildProps(initProps, builtins);
-  const views = new Map<string, View>(registeredViews.map((v) => [v.id, v]));
+  const views = new Map<string, View<AllProps>>(
+    registeredViews.map((v) => [v.id, v])
+  );
   const renderer = new RenderingEngine();
   const patcher = new InteractionPatcher(interaction, props);
   const listeners: MenuControllerListeners = {
@@ -398,6 +421,12 @@ export function MenuController<
   function beforeRender() {
     if (renderer.hasQueuedView()) {
       effects.length = 0;
+
+      // optimistic set in case the queued view is reactive
+      setReactiveContext(builtins);
+    }
+    if (renderer.isCurrentViewReactive()) {
+      setReactiveContext(builtins);
     }
   }
 
@@ -405,6 +434,7 @@ export function MenuController<
     skipRender = false;
     manualPatchQueued = 0;
     listeners.onRender.fire();
+    clearReactiveContext();
   }
 
   function createComponentId(componentId: string): MenuViewComponentId {
@@ -415,7 +445,7 @@ export function MenuController<
       );
     }
     return `${menuId}:${
-      renderer.view ? renderer.view.id : initialViewId
+      renderer.viewDefinition ? renderer.viewDefinition.id : initialViewId
     }:${componentId}`;
   }
 
@@ -520,11 +550,11 @@ export function MenuController<
   async function initialRender(options: Partial<RenderOptions>) {
     const initialView = getView(options.view ?? initialViewId);
     assert(
-      !initialView.isSubView,
+      !('isSubView' in initialView) || !initialView.isSubView,
       `Tried to render subview "${initialView.id}" directly. ` +
         'Subviews must be swapped into.'
     );
-    renderer.queueViewSwap(initialView, []);
+    renderer.queueViewSwap(initialView as View, []);
     renderer.queueRender();
     patcher.mountInteraction(getInteractionToPatch());
     beforeRender();

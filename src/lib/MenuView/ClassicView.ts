@@ -1,20 +1,32 @@
 import type { MaybePromise } from '../../util/TypesUtil.js';
-import type { PropsBase, ViewDefinitionBase } from './ViewBase.js';
-import { ViewProps } from '../FunctionalMenuView.js';
-import type { ViewPayload } from '../MenuView.js';
-import { ViewClosureBody } from '../FunctionalMenuView.js';
+import type { PropsBase } from './ViewBase.js';
+import { ViewProps, type ClassViewDefinition } from '../FunctionalMenuView.js';
+import type { ViewMessagePayload } from '../MenuView.js';
+import type {
+  ViewClass,
+  ViewClassImplementation,
+} from './DefineClassicView.js';
 
 export type ViewRender<Props extends PropsBase = PropsBase> =
-  | (() => MaybePromise<ViewPayload>)
-  | ((props: ViewProps<Props>) => MaybePromise<ViewPayload>);
+  | (() => MaybePromise<ViewMessagePayload>)
+  | ((props: ViewProps<Props>) => MaybePromise<ViewMessagePayload>);
 
-export interface ClassicViewBody<Props extends PropsBase = PropsBase> {
-  /** Callback when this view is {@link Synapse.swap swapped} into. */
-  render: ViewRender<Props>;
+export interface ClassViewDefinitionBody<Props extends PropsBase = PropsBase> {
+  class: ViewClassImplementation<Props>;
 }
 
-export type ClassicViewClosureDefinition<Props extends PropsBase = PropsBase> =
-  ViewDefinitionBase & ViewClosureBody<Props>;
+export type ClassicViewInstance<Props extends PropsBase> =
+  ClassViewDefinition<Props> & {
+    instance: ViewClass<Props>;
+  };
 
-export type ClassicViewInstance<Props extends PropsBase> = ViewDefinitionBase &
-  ClassicViewBody<Props>;
+/** @internal */
+export function instantiateClassView<Props extends PropsBase>(
+  view: ClassViewDefinition<Props>,
+  props: ViewProps<Props>
+): ClassicViewInstance<Props> {
+  return {
+    ...view,
+    instance: new view.class(props),
+  };
+}
