@@ -346,10 +346,12 @@ export function MenuController<
   const views = new Map<string, View<AllProps>>(
     registeredViews.map((v) => [v.id, v])
   );
-  const props = buildProps(
-    { ...views.get(initialViewId)!.defaults, ...initProps },
-    builtins
+  const initialView = views.get(initialViewId);
+  assert(
+    initialView,
+    `View with initial view id=${initialViewId} is not registered.`
   );
+  const props = buildProps({ ...initialView.defaults, ...initProps }, builtins);
   const renderer = new RenderingEngine();
   const patcher = new InteractionPatcher(interaction, props);
   const listeners: MenuControllerListeners = {
