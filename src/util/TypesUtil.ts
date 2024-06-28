@@ -9,19 +9,3 @@ export type UnionToIntersection<U> = (
 export type ArrayUnionToIntersection<U> = U extends Array<infer T>
   ? UnionToIntersection<T>
   : never;
-
-// type AllProperties<Views extends View[]> = {
-//   [K in keyof Views]: Views[K] extends View<infer Props>
-//     ? Props
-//     : never;
-// };
-
-// type AllPropertiesOfArray<Views extends ViewDefinitions> =
-//   ArrayUnionToIntersection<AllProperties<Views>>;
-
-// type ResolveAllPropertiesOf<Views extends ViewDefinitions> =
-//   AllPropertiesOfArray<Views>;
-
-// type AllPropertiesOf<Views extends ViewDefinitions> = ArrayUnionToIntersection<{
-//   [K in keyof Views]: Views[K] extends View<infer Props> ? Props : PropsBase;
-// }>;

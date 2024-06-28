@@ -1,4 +1,4 @@
-export { IntrinsicMenuProps, DefineMenu } from './lib/InteractiveMenu.js';
+export { IntrinsicMenuProps, defineMenu } from './lib/InteractiveMenu.js';
 export * from './lib/MenuView.js';
 export {
   View,
