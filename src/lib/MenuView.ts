@@ -4,7 +4,7 @@ import {
   MessageActionRowComponentBuilder,
   MessageComponentInteraction,
 } from 'discord.js';
-import { PatchTarget, type Signal, type Synapse } from '../index.js';
+import { PatchTarget, type WritableSignal, type Synapse } from '../index.js';
 import { Reactive } from '@reactively/core';
 import type { IS_REACTIVE_SYMBOL } from './MenuView/ReactiveView.js';
 
@@ -16,7 +16,7 @@ export type RenderedReactiveView = ReactiveViewPayload & {
 
 export interface ReactiveViewPayload {
   ephemeral?: boolean;
-  content?: string | Signal<string> | (() => string);
+  content?: string | WritableSignal<string> | (() => string);
   embeds?: EmbedChildren;
   components?: ComponentChildren;
 }
@@ -41,7 +41,7 @@ export interface IntrinsicViewProps {
 type Children<T> =
   | Children<T>[]
   | (() => Children<T>)
-  | Signal<Children<T>>
+  | WritableSignal<Children<T>>
   | T
   | false
   | null

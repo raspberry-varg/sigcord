@@ -9,9 +9,9 @@ import type {
 } from 'discord.js';
 import type { DefinedView, MenuContext, View } from './FunctionalMenuView.js';
 import type { MessageComponentCallback } from './MenuView.js';
-import type { MaybeSignal, ReactiveOptions } from './Reactivity.js';
+import type { ReactiveOptions } from './Reactivity.js';
 import type { PatchTarget } from './RenderingEngine.js';
-import type { Signal } from './Reactivity.js';
+import type { WritableSignal } from './Reactivity.js';
 import type { PropsBase } from './MenuView/ViewBase.js';
 import type { UnionToIntersection } from '../util/TypesUtil.js';
 
@@ -74,33 +74,27 @@ export interface Synapse {
    * instead of relying on reactivity.
    */
   patch: (...targets: PatchTarget[]) => void;
-  createSignal<T>(): Signal<T | undefined>;
+  createSignal<T>(): WritableSignal<T | undefined>;
   createSignal<T>(
     fnOrValue: undefined,
     params?: ReactiveOptions,
     patchTarget?: PatchTarget
-  ): Signal<T | undefined>;
+  ): WritableSignal<T | undefined>;
   createSignal<T>(
     fnOrValue: T | (() => T),
     params?: ReactiveOptions,
     patchTarget?: PatchTarget
-  ): Signal<T>;
+  ): WritableSignal<T>;
   createEmbedSignal(
     closure: () => EmbedBuilder,
     params?: ReactiveOptions,
     patchTarget?: PatchTarget
-  ): Signal<EmbedBuilder>;
+  ): WritableSignal<EmbedBuilder>;
   createComponentSignal(
     closure: () => EmbedBuilder,
     params?: ReactiveOptions,
     patchTarget?: PatchTarget
-  ): Signal<EmbedBuilder>;
-
-  /**
-   * Resolve a {@link MaybeSignal} to a signal, or return the passed signal if
-   * already a signal.
-   */
-  signalFrom<T>(fnOrMaybeSignal: MaybeSignal<T> | (() => T)): Signal<T>;
+  ): WritableSignal<EmbedBuilder>;
 
   /**
    * Create an effect that runs when the value of signals in the function are
