@@ -12,7 +12,15 @@ export * from './lib/PrebuiltEmbeds.js';
 export * from './lib/Renderable.js';
 export { ModalBundle, useValues } from './lib/ModalBundle.js';
 export { PatchTarget } from './lib/RenderingEngine.js';
-export { Signal, MaybeSignal, isSignal } from './lib/Reactivity.js';
+export {
+  WritableSignal,
+  MaybeSignal,
+  MaybeWritableSignal,
+  Signal,
+  Setter,
+  isSignal,
+  isWritableSignal,
+} from './lib/Reactivity.js';
 export { component, signal, useSynapse } from './lib/ReactiveBuiltIns.js';
 export { defineView } from './lib/MenuView/DefineReactiveView.js';
 export {

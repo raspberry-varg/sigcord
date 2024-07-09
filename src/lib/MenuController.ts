@@ -18,7 +18,6 @@ import { TimeoutEmbed } from './PrebuiltEmbeds.js';
 import { createSignal } from './Reactivity.js';
 import type { ReactiveOptions } from './Reactivity.js';
 import { PatchTarget, PatchTargetBitField } from './RenderingEngine.js';
-import { Reactive } from '@reactively/core';
 import type { PropsBase } from './MenuView/ViewBase.js';
 import { EffectInstance } from './Reactivity.js';
 import { Navigation } from './Navigation.js';
@@ -197,12 +196,6 @@ export function MenuController<
           },
           PatchTarget.None
         );
-      },
-      signalFrom: (fnOrMaybeSignal) => {
-        if (fnOrMaybeSignal instanceof Reactive) {
-          return fnOrMaybeSignal;
-        }
-        return createSignal(fnOrMaybeSignal, {}, PatchTarget.None);
       },
       createSignal<T>(
         fnOrValue: T | (() => T) | undefined = undefined,

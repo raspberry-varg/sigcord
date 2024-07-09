@@ -9,7 +9,11 @@ import {
 } from './FunctionalMenuView.js';
 import type { RenderedReactiveView, ViewMessagePayload } from './MenuView.js';
 import { logger } from '../util/Logger.js';
-import type { MaybeSignal } from './Reactivity.js';
+import {
+  isWritableSignal,
+  type MaybeSignal,
+  type MaybeWritableSignal,
+} from './Reactivity.js';
 import { Reactive } from '@reactively/core';
 import { type PropsBase } from './MenuView/ViewBase.js';
 import type { NavigationPayload } from './Navigation.js';
@@ -50,14 +54,20 @@ interface QueuedEmbeds {
   prepend: EmbedBuilder[];
   append: EmbedBuilder[];
 }
-function resolveMaybeSignal<T>(maybeSignal: MaybeSignal<T>): T;
 function resolveMaybeSignal<T>(
-  maybeSignal: MaybeSignal<T> | undefined
+  maybeSignal: MaybeSignal<T> | MaybeWritableSignal<T>
+): T;
+function resolveMaybeSignal<T>(
+  maybeSignal: MaybeSignal<T> | MaybeWritableSignal<T> | undefined
 ): T | undefined;
 function resolveMaybeSignal<T>(
-  maybeSignal: MaybeSignal<T> | undefined
+  maybeSignal: MaybeSignal<T> | MaybeWritableSignal<T> | undefined
 ): T | undefined {
-  return isSignal(maybeSignal) ? maybeSignal.get() : maybeSignal;
+  return isSignal(maybeSignal)
+    ? maybeSignal()
+    : isWritableSignal(maybeSignal)
+    ? maybeSignal.get()
+    : maybeSignal;
 }
 
 export class RenderingEngine {
