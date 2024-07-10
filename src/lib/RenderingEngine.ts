@@ -201,7 +201,7 @@ export class RenderingEngine {
           if (typeof content === 'string' || content instanceof Reactive) {
             payload.content = resolveMaybeSignal(content);
           } else {
-            this.reactiveViewInstance.content = $.createSignal(content);
+            this.reactiveViewInstance.content = $.createWritableSignal(content);
             payload.content = this.reactiveViewInstance.content.get();
           }
         }

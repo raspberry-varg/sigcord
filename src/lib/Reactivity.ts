@@ -15,18 +15,24 @@ export function isWritableSignal<T>(
 }
 
 const SignalGetterSymbol = Symbol('singal getter');
-export type Signal<T> = (() => T) & { [SignalGetterSymbol]: true };
+export type Signal<T> = (() => T) & { readonly [SignalGetterSymbol]: true };
 
 export interface WritableSignal<T> extends Reactive<T> {
   readonly _patchContext: PatchTarget;
   isDefined(): this is WritableSignal<NonNullable<T>>;
   readonly(): Signal<T>;
-  split(): [getter: Getter<T>, setter: Setter<T>, WritableSignal<T>];
+  split(): SignalTuple<T>;
   get: Getter<T>;
 }
 
 type Getter<T> = Reactive<T>['get'] & { [SignalGetterSymbol]: true };
 export type Setter<T> = Reactive<T>['set'];
+
+export type SignalTuple<T> = [
+  getter: Getter<T>,
+  setter: Setter<T>,
+  WritableSignal<T>
+];
 
 export function createSignal<T>(
   fnOrValue: T | (() => T),

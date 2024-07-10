@@ -38,6 +38,12 @@ export const signal: Synapse['createSignal'] = <T>(
   patchTarget = PatchTarget.None
 ) => useSynapse().createSignal(fnOrValue, params, patchTarget);
 
+export const writable: Synapse['createWritableSignal'] = <T>(
+  fnOrValue: T | (() => T) | undefined = undefined,
+  params = {},
+  patchTarget = PatchTarget.None
+) => useSynapse().createWritableSignal(fnOrValue, params, patchTarget);
+
 // Signal effects
 
 /**

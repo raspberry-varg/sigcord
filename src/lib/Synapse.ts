@@ -9,7 +9,7 @@ import type {
 } from 'discord.js';
 import type { DefinedView, MenuContext, View } from './FunctionalMenuView.js';
 import type { MessageComponentCallback } from './MenuView.js';
-import type { ReactiveOptions } from './Reactivity.js';
+import type { ReactiveOptions, SignalTuple } from './Reactivity.js';
 import type { PatchTarget } from './RenderingEngine.js';
 import type { WritableSignal } from './Reactivity.js';
 import type { PropsBase } from './MenuView/ViewBase.js';
@@ -74,17 +74,31 @@ export interface Synapse {
    * instead of relying on reactivity.
    */
   patch: (...targets: PatchTarget[]) => void;
-  createSignal<T>(): WritableSignal<T | undefined>;
+
+  createSignal<T>(): SignalTuple<T | undefined>;
   createSignal<T>(
     fnOrValue: undefined,
     params?: ReactiveOptions,
     patchTarget?: PatchTarget
-  ): WritableSignal<T | undefined>;
+  ): SignalTuple<T | undefined>;
   createSignal<T>(
     fnOrValue: T | (() => T),
     params?: ReactiveOptions,
     patchTarget?: PatchTarget
+  ): SignalTuple<T>;
+
+  createWritableSignal<T>(): WritableSignal<T | undefined>;
+  createWritableSignal<T>(
+    fnOrValue: undefined,
+    params?: ReactiveOptions,
+    patchTarget?: PatchTarget
+  ): WritableSignal<T | undefined>;
+  createWritableSignal<T>(
+    fnOrValue: T | (() => T),
+    params?: ReactiveOptions,
+    patchTarget?: PatchTarget
   ): WritableSignal<T>;
+
   createEmbedSignal(
     closure: () => EmbedBuilder,
     params?: ReactiveOptions,
