@@ -21,7 +21,12 @@ export {
   isSignal,
   isWritableSignal,
 } from './lib/Reactivity.js';
-export { component, signal, useSynapse } from './lib/ReactiveBuiltIns.js';
+export {
+  component,
+  signal,
+  writable,
+  useSynapse,
+} from './lib/ReactiveBuiltIns.js';
 export { defineView } from './lib/MenuView/DefineReactiveView.js';
 export {
   ViewClass,

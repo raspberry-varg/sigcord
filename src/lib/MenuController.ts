@@ -212,6 +212,23 @@ export function MenuController<
             patchTarget
           );
         }
+        return s.split();
+      },
+      createWritableSignal<T>(
+        fnOrValue: T | (() => T) | undefined = undefined,
+        params = {},
+        patchTarget = PatchTarget.None
+      ) {
+        const s = createSignal(fnOrValue, params, patchTarget);
+        if (patchTarget !== PatchTarget.None) {
+          registerEffect(
+            () => {
+              s.get();
+            },
+            params,
+            patchTarget
+          );
+        }
         return s;
       },
       createEmbedSignal: (closure, params = {}) => {
