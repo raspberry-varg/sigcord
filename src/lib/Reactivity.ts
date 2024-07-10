@@ -53,7 +53,7 @@ export function createSignal<T>(
 
   const getter = () => signal.get();
   getter[SignalGetterSymbol] = true as const;
-  const setter = (newValue: T) => signal.set(newValue);
+  const setter: Setter<T> = (fnOrValue) => signal.set(fnOrValue);
   signal.split = () => [getter, setter, signal];
 
   return signal as WritableSignal<T | undefined>;
