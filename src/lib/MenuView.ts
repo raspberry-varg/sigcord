@@ -4,14 +4,19 @@ import {
   MessageActionRowComponentBuilder,
   MessageComponentInteraction,
 } from 'discord.js';
-import { PatchTarget, type WritableSignal, type Synapse } from '../index.js';
-import { Reactive } from '@reactively/core';
+import {
+  PatchTarget,
+  type WritableSignal,
+  type Synapse,
+  isSignal,
+  isWritableSignal,
+} from '../index.js';
 import type { IS_REACTIVE_SYMBOL } from './MenuView/ReactiveView.js';
 
 export type ViewComponent = ActionRowBuilder<MessageActionRowComponentBuilder>;
 
 export type RenderedReactiveView = ReactiveViewPayload & {
-  [IS_REACTIVE_SYMBOL]: true;
+  readonly [IS_REACTIVE_SYMBOL]: true;
 };
 
 export interface ReactiveViewPayload {
@@ -67,15 +72,17 @@ export function flattenChildren<T extends EmbedBuilder | ViewComponent>(
       flattenChildren($, nested, patchTarget, out);
     }
   }
-  // resolve signal
-  else if (c instanceof Reactive) {
+  // resolve writable signal
+  else if (isWritableSignal(c)) {
     flattenChildren($, c.get(), patchTarget, out);
   }
   // resolve function call
   else if (typeof c === 'function') {
-    // wrap fn in a signal hooked to the current patch ctx
-    c = $.createSignal(c, {}, patchTarget);
-    flattenChildren($, c.get(), patchTarget, out);
+    if (!isSignal(c)) {
+      // wrap fn in a signal hooked to the current patch ctx
+      c = $.createWritableSignal(c, {}, patchTarget).readonly();
+    }
+    flattenChildren($, c(), patchTarget, out);
   } else if (c) {
     out.push(c);
   }
