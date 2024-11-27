@@ -18,6 +18,7 @@ export {
   MaybeWritableSignal,
   Signal,
   Setter,
+  read,
   isSignal,
   isWritableSignal,
 } from './lib/Reactivity.js';
@@ -25,6 +26,7 @@ export {
   component,
   signal,
   writable,
+  computed,
   effect,
   embedEffect,
   componentEffect,
