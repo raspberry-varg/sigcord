@@ -245,6 +245,9 @@ export function MenuController<
         }, params);
         return s;
       },
+      createComputed(fn, params = {}, patchTarget = PatchTarget.None) {
+        return this.createSignal(fn, params, patchTarget)[0];
+      },
       createEffect: (fn, params, patchTarget) => {
         registerEffect(fn, params, patchTarget);
       },
