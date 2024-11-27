@@ -14,7 +14,7 @@ export function isWritableSignal<T>(
   return value instanceof Reactive;
 }
 
-const SignalGetterSymbol = Symbol('singal getter');
+const SignalGetterSymbol = Symbol('signal getter');
 export type Signal<T> = (() => T) & { readonly [SignalGetterSymbol]: true };
 
 export interface WritableSignal<T> extends Reactive<T> {
