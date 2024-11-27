@@ -9,7 +9,7 @@ import type {
 } from 'discord.js';
 import type { DefinedView, MenuContext, View } from './FunctionalMenuView.js';
 import type { MessageComponentCallback } from './MenuView.js';
-import type { ReactiveOptions, SignalTuple } from './Reactivity.js';
+import type { ReactiveOptions, Signal, SignalTuple } from './Reactivity.js';
 import type { PatchTarget } from './RenderingEngine.js';
 import type { WritableSignal } from './Reactivity.js';
 import type { PropsBase } from './MenuView/ViewBase.js';
@@ -109,6 +109,12 @@ export interface Synapse {
     params?: ReactiveOptions,
     patchTarget?: PatchTarget
   ): WritableSignal<EmbedBuilder>;
+
+  createComputed<T>(
+    fn: () => T,
+    params?: ReactiveOptions,
+    patchTarget?: PatchTarget
+  ): Signal<T>;
 
   /**
    * Create an effect that runs when the value of signals in the function are
