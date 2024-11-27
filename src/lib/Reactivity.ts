@@ -70,3 +70,16 @@ export interface EffectInstance {
   previousVersion: number;
   patch?: PatchTarget;
 }
+
+/**
+ * Resolves a possible signal to its held value.
+ */
+export function read<T>(
+  maybeSignal: MaybeSignal<T> | MaybeWritableSignal<T> | T
+): T {
+  return isSignal(maybeSignal)
+    ? maybeSignal()
+    : isWritableSignal(maybeSignal)
+    ? maybeSignal.get()
+    : maybeSignal;
+}
