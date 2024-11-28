@@ -8,7 +8,6 @@ import {
   PatchTarget,
   type WritableSignal,
   type Synapse,
-  isSignal,
   isWritableSignal,
 } from '../index.js';
 import type { IS_REACTIVE_SYMBOL } from './MenuView/ReactiveView.js';
@@ -74,15 +73,16 @@ export function flattenChildren<T extends EmbedBuilder | ViewComponent>(
   }
   // resolve writable signal
   else if (isWritableSignal(c)) {
-    flattenChildren($, c.get(), patchTarget, out);
+    flattenChildren(
+      $,
+      $.createComputed(c.get, {}, patchTarget),
+      patchTarget,
+      out
+    );
   }
   // resolve function call
   else if (typeof c === 'function') {
-    if (!isSignal(c)) {
-      // wrap fn in a signal hooked to the current patch ctx
-      c = $.createWritableSignal(c, {}, patchTarget).readonly();
-    }
-    flattenChildren($, c(), patchTarget, out);
+    flattenChildren($, $.createComputed(c, {}, patchTarget), patchTarget, out);
   } else if (c) {
     out.push(c);
   }
