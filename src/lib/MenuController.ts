@@ -162,6 +162,11 @@ export function MenuController<
         }
         flushModal();
         await callback(response);
+
+        const patchTargets = getPatchTargets();
+        if (patchTargets !== PatchTarget.None) {
+          await update(patchTargets);
+        }
       },
       setIdleMs: (idleMilliseconds: number) => {
         assert(
