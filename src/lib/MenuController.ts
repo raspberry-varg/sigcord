@@ -160,6 +160,7 @@ export function MenuController<
         ) {
           return;
         }
+
         flushModal();
         await callback(response);
 
@@ -192,6 +193,17 @@ export function MenuController<
           manualPatchQueued |= PatchTarget.All;
         } else {
           manualPatchQueued = 0;
+        }
+      },
+      /**
+       * Do not wait for a component collection loop, update immediately.
+
+       * Handy for asynchronous operations such as handling a modal submit.
+       */
+      doUpdate: async () => {
+        const patchTargets = getPatchTargets();
+        if (patchTargets !== PatchTarget.None) {
+          await update(patchTargets);
         }
       },
       patch: (...targets) => {

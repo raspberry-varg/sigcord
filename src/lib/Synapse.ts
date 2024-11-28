@@ -74,6 +74,7 @@ export interface Synapse {
    * instead of relying on reactivity.
    */
   patch: (...targets: PatchTarget[]) => void;
+  doUpdate: () => Promise<void>;
 
   createSignal<T>(): SignalTuple<T | undefined>;
   createSignal<T>(
