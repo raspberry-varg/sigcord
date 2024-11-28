@@ -73,16 +73,13 @@ export function flattenChildren<T extends EmbedBuilder | ViewComponent>(
   }
   // resolve writable signal
   else if (isWritableSignal(c)) {
-    flattenChildren(
-      $,
-      $.createComputed(c.get, {}, patchTarget),
-      patchTarget,
-      out
-    );
+    const patchTargetAware = $.createComputed(c.get, {}, patchTarget);
+    flattenChildren($, patchTargetAware(), patchTarget, out);
   }
   // resolve function call
   else if (typeof c === 'function') {
-    flattenChildren($, $.createComputed(c, {}, patchTarget), patchTarget, out);
+    const patchTargetAware = $.createComputed(c, {}, patchTarget);
+    flattenChildren($, patchTargetAware(), patchTarget, out);
   } else if (c) {
     out.push(c);
   }
