@@ -10,7 +10,7 @@ export function appendTimeoutEmbed(payload: ViewMessagePayload) {
 export async function safeRender(
   renderTarget: RepliableInteraction,
   viewPayload: ViewMessagePayload,
-  preferReplyForComponent = false
+  preferReplyForComponent = false,
 ) {
   let message;
 

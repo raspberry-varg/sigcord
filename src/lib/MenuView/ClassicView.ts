@@ -23,7 +23,7 @@ export type ClassicViewInstance<Props extends PropsBase> =
 /** @internal */
 export function instantiateClassView<Props extends PropsBase>(
   view: ClassViewDefinition<Props>,
-  props: ViewProps<Props>
+  props: ViewProps<Props>,
 ): ClassicViewInstance<Props> {
   return {
     ...view,

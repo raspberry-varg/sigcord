@@ -23,7 +23,7 @@ export class Navigation {
   pushReactive(
     view: View,
     reactivePayload: RenderedReactiveView,
-    effects: EffectInstance[]
+    effects: EffectInstance[],
   ) {
     this.views.push(view);
     this.effects.push(effects);

@@ -25,7 +25,7 @@ export type ReactiveViewInstance = {
 export const IS_REACTIVE_SYMBOL = Symbol('is_reactive');
 
 export function isReactiveViewDefinition(
-  maybeView: View
+  maybeView: View,
 ): maybeView is ReactiveViewDefinition {
   return IS_REACTIVE_SYMBOL in maybeView;
 }
@@ -37,7 +37,7 @@ export function isReactiveView(view: View): view is ReactiveViewDefinition {
 /** @internal */
 export function instantiateReactiveView<Props extends PropsBase = PropsBase>(
   view: ReactiveViewDefinition<Props>,
-  props: ViewProps<Props>
+  props: ViewProps<Props>,
 ): ReactiveViewInstance {
   return {
     ...view.factory(props),

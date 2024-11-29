@@ -20,7 +20,7 @@ type ModalRepliableInteraction =
   | MessageComponentInteraction;
 
 export type ModalOnSubmitHandler = (
-  modal: ModalSubmitInteraction
+  modal: ModalSubmitInteraction,
 ) => void | Promise<void>;
 
 export interface ModalHandlingOptions
@@ -47,7 +47,7 @@ export interface Synapse {
    */
   component<
     ComponentType extends MessageActionRowComponentBuilder,
-    ComponentInteractionType extends MessageComponentInteraction
+    ComponentInteractionType extends MessageComponentInteraction,
   >(definition: {
     id: string;
     component: ComponentType;
@@ -56,26 +56,26 @@ export interface Synapse {
   swap(toViewId: string, ...args: any[]): void;
   swap<ViewDefinition extends View<P>, P extends PropsBase>(
     viewDefinition: ViewDefinition & View<P>,
-    props: UnionToIntersection<P>
+    props: UnionToIntersection<P>,
   ): void;
   appendEmbeds(...embeds: EmbedBuilder[]): void;
   prependEmbeds(...embeds: EmbedBuilder[]): void;
   showModal(
     interaction: ModalRepliableInteraction,
-    modal: ModalBuilder
+    modal: ModalBuilder,
   ): Promise<void>;
   showModal(
     interaction: ModalRepliableInteraction,
-    options: ModalHandlingOptions
+    options: ModalHandlingOptions,
   ): Promise<void>;
   awaitModalSubmit(
     interaction: ModalRepliableInteraction,
-    options: AwaitModalSubmitOptions<ModalSubmitInteraction>
+    options: AwaitModalSubmitOptions<ModalSubmitInteraction>,
   ): Promise<ModalSubmitInteraction<import('discord.js').CacheType> | null>;
   onModalSubmit(
     interaction: ModalRepliableInteraction,
     options: AwaitModalSubmitOptions<ModalSubmitInteraction>,
-    callback: ModalOnSubmitHandler
+    callback: ModalOnSubmitHandler,
   ): Promise<void>;
   setIdleMs(idleMilliseconds: number): void;
   setIdleSec(idleSeconds: number): void;
@@ -94,41 +94,41 @@ export interface Synapse {
   createSignal<T>(
     fnOrValue: undefined,
     params?: ReactiveOptions,
-    patchTarget?: PatchTarget
+    patchTarget?: PatchTarget,
   ): SignalTuple<T | undefined>;
   createSignal<T>(
     fnOrValue: T | (() => T),
     params?: ReactiveOptions,
-    patchTarget?: PatchTarget
+    patchTarget?: PatchTarget,
   ): SignalTuple<T>;
 
   createWritableSignal<T>(): WritableSignal<T | undefined>;
   createWritableSignal<T>(
     fnOrValue: undefined,
     params?: ReactiveOptions,
-    patchTarget?: PatchTarget
+    patchTarget?: PatchTarget,
   ): WritableSignal<T | undefined>;
   createWritableSignal<T>(
     fnOrValue: T | (() => T),
     params?: ReactiveOptions,
-    patchTarget?: PatchTarget
+    patchTarget?: PatchTarget,
   ): WritableSignal<T>;
 
   createEmbedSignal(
     closure: () => EmbedBuilder,
     params?: ReactiveOptions,
-    patchTarget?: PatchTarget
+    patchTarget?: PatchTarget,
   ): WritableSignal<EmbedBuilder>;
   createComponentSignal(
     closure: () => EmbedBuilder,
     params?: ReactiveOptions,
-    patchTarget?: PatchTarget
+    patchTarget?: PatchTarget,
   ): WritableSignal<EmbedBuilder>;
 
   createComputed<T>(
     fn: () => T,
     params?: ReactiveOptions,
-    patchTarget?: PatchTarget
+    patchTarget?: PatchTarget,
   ): Signal<T>;
 
   /**
@@ -147,7 +147,7 @@ export interface Synapse {
   createEffect: <T>(
     fn: () => T,
     params?: ReactiveOptions,
-    patchTarget?: PatchTarget
+    patchTarget?: PatchTarget,
   ) => void;
   /**
    * Create an effect that runs when the value of signals in the function are
@@ -177,16 +177,16 @@ export interface Synapse {
    */
   goTo<
     ViewDef extends DefinedView<any>,
-    Props extends ViewDef extends DefinedView<infer P> ? P : never
+    Props extends ViewDef extends DefinedView<infer P> ? P : never,
   >(
     view: ViewDef,
-    props: Props
+    props: Props,
   ): void;
 
   /** @deprecated Not recommended. Not implemented. */
   goToCached<View extends DefinedView<any>>(
     view: View,
-    props: View extends DefinedView<infer P> ? P : never
+    props: View extends DefinedView<infer P> ? P : never,
   ): void;
 
   /**

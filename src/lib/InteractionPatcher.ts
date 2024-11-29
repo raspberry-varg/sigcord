@@ -10,7 +10,7 @@ export class InteractionPatcher {
 
   constructor(
     public interaction: RepliableInteraction,
-    private readonly props: Readonly<IntrinsicMenuProps>
+    private readonly props: Readonly<IntrinsicMenuProps>,
   ) {}
 
   mountInteraction(interaction: RepliableInteraction): void {
@@ -20,12 +20,12 @@ export class InteractionPatcher {
   async patch(payload: ViewMessagePayload, options: Partial<RenderOptions>) {
     logger.debug(
       `Patching interaction.id=${this.interaction.id} with the following payload: `,
-      payload
+      payload,
     );
     this.message = await safeRender(
       this.interaction,
       { ...this.props, ...payload },
-      options.forceReply
+      options.forceReply,
     );
   }
 

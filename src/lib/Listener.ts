@@ -26,7 +26,7 @@ export class Listener<ResolveType = unknown> {
 
   fire(resolveResult: ResolveType) {
     const callWithResult = (
-      cb: PromiseResolver<ResolveType> | ListenerCallback<ResolveType>
+      cb: PromiseResolver<ResolveType> | ListenerCallback<ResolveType>,
     ) => cb(resolveResult);
     this.oncely.forEach(callWithResult);
     this.oncely.length = 0;

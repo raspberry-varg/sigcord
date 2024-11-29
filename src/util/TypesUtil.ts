@@ -6,6 +6,5 @@ export type UnionToIntersection<U> = (
 ) extends (x: infer I) => void
   ? I
   : never;
-export type ArrayUnionToIntersection<U> = U extends Array<infer T>
-  ? UnionToIntersection<T>
-  : never;
+export type ArrayUnionToIntersection<U> =
+  U extends Array<infer T> ? UnionToIntersection<T> : never;

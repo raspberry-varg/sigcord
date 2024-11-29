@@ -55,7 +55,7 @@ export type ViewProps<Props extends PropsBase = PropsBase> = Props & {
 /** @internal */
 export async function instantiateClassView<Props extends PropsBase = PropsBase>(
   view: ClassViewDefinition<Props>,
-  props: ViewProps<Props>
+  props: ViewProps<Props>,
 ): Promise<ClassicViewInstance<Props>> {
   return {
     id: view.id,
@@ -67,14 +67,14 @@ export async function instantiateClassView<Props extends PropsBase = PropsBase>(
 
 /** @internal */
 export function isReactiveViewInstance(
-  body: ViewInstance
+  body: ViewInstance,
 ): body is ReactiveViewInstance {
   return IS_REACTIVE_SYMBOL in body;
 }
 
 /** @internal */
 export function isClassViewInstance(
-  body: ViewInstance
+  body: ViewInstance,
 ): body is ClassicViewInstance<PropsBase> {
   return 'instance' in body;
 }
