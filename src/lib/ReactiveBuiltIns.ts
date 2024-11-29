@@ -18,6 +18,16 @@ export function useSynapse(): Synapse {
   return currentSynapse;
 }
 
+export function withReactiveContext(synapse: Synapse) {
+  const prev = currentSynapse;
+  currentSynapse = synapse;
+  return {
+    [Symbol.dispose]: () => {
+      currentSynapse = prev;
+    },
+  };
+}
+
 export function setReactiveContext(synapse: Synapse): void {
   currentSynapse = synapse;
 }

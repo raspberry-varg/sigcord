@@ -22,10 +22,7 @@ import {
   isReactiveViewDefinition,
   type ReactiveViewInstance,
 } from './MenuView/ReactiveView.js';
-import {
-  clearReactiveContext,
-  setReactiveContext,
-} from './ReactiveBuiltIns.js';
+import { withReactiveContext } from './ReactiveBuiltIns.js';
 import { instantiateClassView } from './MenuView/ClassicView.js';
 
 export type PatchTargetBitField = number;
@@ -185,10 +182,10 @@ export class RenderingEngine {
       'Internal error: Reactive payload was not set.'
     );
     const $ = props.$;
-    setReactiveContext($);
     targets |= this.queuedClears;
     const payload: ViewMessagePayload = {};
     try {
+      using _resource = withReactiveContext($);
       if (this.reactiveViewInstance.ephemeral !== undefined) {
         payload.ephemeral = this.reactiveViewInstance.ephemeral;
       }
@@ -235,7 +232,6 @@ export class RenderingEngine {
       }
     } finally {
       this.postRender();
-      clearReactiveContext();
     }
     return payload;
   }
@@ -291,7 +287,7 @@ export class RenderingEngine {
       if (!reactiveInstance || viewDefinition.id !== reactiveInstance.id) {
         // rendering must be synchronous; built-ins rely on the single-threaded
         // nature of JS
-        setReactiveContext(props.$);
+        using _resource = withReactiveContext(props.$);
         try {
           reactiveInstance = instantiateReactiveView(viewDefinition, props);
           this.reactiveViewInstance = reactiveInstance;
@@ -301,8 +297,6 @@ export class RenderingEngine {
             e
           );
           throw e;
-        } finally {
-          clearReactiveContext();
         }
       }
       return reactiveInstance;
