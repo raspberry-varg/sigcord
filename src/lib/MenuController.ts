@@ -22,20 +22,17 @@ import { PatchTarget, PatchTargetBitField } from './RenderingEngine.js';
 import type { PropsBase } from './MenuView/ViewBase.js';
 import { EffectInstance } from './Reactivity.js';
 import { Navigation } from './Navigation.js';
-import {
-  clearReactiveContext,
-  setReactiveContext,
-} from './ReactiveBuiltIns.js';
+import { withReactiveContext } from './ReactiveBuiltIns.js';
 
 export interface MenuControllerAPI {
   // render API
   start(options?: Partial<RenderOptions>): Promise<void>;
   reply(
-    options: Omit<Partial<RenderOptions<string>>, 'forceReply'>
+    options: Omit<Partial<RenderOptions<string>>, 'forceReply'>,
   ): Promise<void>;
   /**@deprecated Please use `.start` instead. */
   render(
-    options?: Omit<Partial<RenderOptions<string>>, 'forceReply'>
+    options?: Omit<Partial<RenderOptions<string>>, 'forceReply'>,
   ): Promise<void>;
   // listener API
   onRender(callback: () => unknown, once?: boolean): void;
@@ -52,7 +49,7 @@ export interface ControllerContext {
 }
 
 export interface MessageComponentCallback<
-  T extends MessageComponentInteraction = MessageComponentInteraction
+  T extends MessageComponentInteraction = MessageComponentInteraction,
 > {
   (callback: T): Promise<unknown> | unknown;
 }
@@ -88,13 +85,13 @@ interface MenuControllerListeners {
 export function MenuController<
   MenuProps extends NonNullable<unknown> = NonNullable<unknown>,
   ViewId extends string = string,
-  AllProps extends PropsBase = PropsBase
+  AllProps extends PropsBase = PropsBase,
 >(
   menuId: string,
   initialViewId: string,
   registeredViews: View<AllProps>[],
   interaction: RepliableInteraction,
-  initProps: MenuProps
+  initProps: MenuProps,
 ): MenuControllerAPI {
   function createSynapse(): Synapse {
     const $: Synapse = {
@@ -185,14 +182,14 @@ export function MenuController<
       setIdleMs: (idleMilliseconds: number) => {
         assert(
           idleMilliseconds > 0,
-          `Idle time must be greater than 0 milliseconds, got [${idleMilliseconds}].`
+          `Idle time must be greater than 0 milliseconds, got [${idleMilliseconds}].`,
         );
         updateListenerIdle(idleMilliseconds);
       },
       setIdleSec: (idleSeconds: number) => {
         assert(
           idleSeconds > 0,
-          `Idle time must be greater than 0 seconds, got [${idleSeconds}].`
+          `Idle time must be greater than 0 seconds, got [${idleSeconds}].`,
         );
         updateListenerIdle(idleSeconds * 1_000);
       },
@@ -224,13 +221,13 @@ export function MenuController<
           (bitField, target) => {
             return bitField | target;
           },
-          PatchTarget.None
+          PatchTarget.None,
         );
       },
       createSignal<T>(
         fnOrValue: T | (() => T) | undefined = undefined,
         params = {},
-        patchTarget = PatchTarget.None
+        patchTarget = PatchTarget.None,
       ) {
         const s = createSignal(fnOrValue, params, patchTarget);
         if (patchTarget !== PatchTarget.None) {
@@ -239,7 +236,7 @@ export function MenuController<
               s.get();
             },
             params,
-            patchTarget
+            patchTarget,
           );
         }
         return s.split();
@@ -247,7 +244,7 @@ export function MenuController<
       createWritableSignal<T>(
         fnOrValue: T | (() => T) | undefined = undefined,
         params = {},
-        patchTarget = PatchTarget.None
+        patchTarget = PatchTarget.None,
       ) {
         const s = createSignal(fnOrValue, params, patchTarget);
         if (patchTarget !== PatchTarget.None) {
@@ -256,7 +253,7 @@ export function MenuController<
               s.get();
             },
             params,
-            patchTarget
+            patchTarget,
           );
         }
         return s;
@@ -291,13 +288,13 @@ export function MenuController<
         const currentView = renderer.getCurrentView();
         assert(
           currentView,
-          'Tried to navigate before initial render in a reactive view.'
+          'Tried to navigate before initial render in a reactive view.',
         );
         if (renderer.isCurrentViewReactive()) {
           const reactivePayload = renderer.getReactivePayload();
           assert(
             reactivePayload,
-            'Tried to navigate before initial render in a reactive view.'
+            'Tried to navigate before initial render in a reactive view.',
           );
           navigation.pushReactive(currentView, reactivePayload, effects);
           effects = [];
@@ -310,13 +307,13 @@ export function MenuController<
         const currentView = renderer.getCurrentView();
         assert(
           currentView,
-          'Tried to navigate before initial render in a reactive view.'
+          'Tried to navigate before initial render in a reactive view.',
         );
         if (renderer.isCurrentViewReactive()) {
           const reactivePayload = renderer.getReactivePayload();
           assert(
             reactivePayload,
-            'Tried to navigate before initial render in a reactive view.'
+            'Tried to navigate before initial render in a reactive view.',
           );
           navigation.pushReactive(currentView, reactivePayload, effects);
           effects = [];
@@ -328,7 +325,7 @@ export function MenuController<
       goBack: () => {
         assert(
           !navigation.empty(),
-          'Tried to navigate backwards without a parent view. Have you called goTo() in the parent view?'
+          'Tried to navigate backwards without a parent view. Have you called goTo() in the parent view?',
         );
         const payload = navigation.pop();
         effects = payload.effects;
@@ -343,7 +340,7 @@ export function MenuController<
   function registerEffect(
     fn: () => void,
     params: ReactiveOptions | undefined,
-    patchTarget = PatchTarget.None
+    patchTarget = PatchTarget.None,
   ): void {
     let version = 0;
     const signal = createSignal(
@@ -353,7 +350,7 @@ export function MenuController<
         return version;
       },
       { ...params },
-      patchTarget
+      patchTarget,
     );
     signal.get();
     effects.push({
@@ -391,12 +388,12 @@ export function MenuController<
   };
   const builtins = createSynapse();
   const views = new Map<string, View<AllProps>>(
-    registeredViews.map((v) => [v.id, v])
+    registeredViews.map((v) => [v.id, v]),
   );
   const initialView = views.get(initialViewId);
   assert(
     initialView,
-    `View with initial view id=${initialViewId} is not registered.`
+    `View with initial view id=${initialViewId} is not registered.`,
   );
   const props = buildProps({ ...initialView.defaults, ...initProps }, builtins);
   const renderer = new RenderingEngine();
@@ -418,7 +415,7 @@ export function MenuController<
       : assertAndReturn(
           props.idleTimeMs,
           (t) => t > 0,
-          `Idle time must be greater than 0 milliseconds, got [${props.idleTimeMs}].`
+          `Idle time must be greater than 0 milliseconds, got [${props.idleTimeMs}].`,
         );
   const collector = new CollectorService(listeners.onEnd);
   const latestModal = {
@@ -446,7 +443,7 @@ export function MenuController<
     if (renderer.isCurrentViewReactive()) {
       let patchTargets: PatchTargetBitField = manualPatchQueued;
       try {
-        setReactiveContext(props.$);
+        using _resource = withReactiveContext(props.$);
         effects.forEach((effect) => {
           const oldVersion = effect.previousVersion;
           const newVersion = effect.signal.get();
@@ -456,8 +453,11 @@ export function MenuController<
             patchTargets |= effect.patch;
           }
         });
-      } finally {
-        clearReactiveContext();
+      } catch (e) {
+        logger.error(
+          `Error encountered while running effects for <${renderer.getCurrentView()?.id ?? 'Unnamed'}>.`,
+        );
+        throw e;
       }
       logger.debug({ patchTargetBitField: patchTargets });
       if (renderer.hasQueuedEmbeds()) {
@@ -487,7 +487,7 @@ export function MenuController<
     if (componentId.includes(':')) {
       throw new MenuViewComponentError(
         `Internal delimiter uses ':' for MenuViewComponentIds. Please use ` +
-          `a different character.`
+          `a different character.`,
       );
     }
     return `${menuId}:${
@@ -521,7 +521,7 @@ export function MenuController<
     if (componentIdSplit.length !== 3) {
       throw new MenuViewComponentError(
         `customId for '${rawCustomId}' is malformed. Please use ` +
-          `'createMessageComponentId()' when defining a new component id.`
+          `'createMessageComponentId()' when defining a new component id.`,
       );
     }
     return componentIdSplit.at(-1);
@@ -576,12 +576,12 @@ export function MenuController<
 
     // route to registered handler
     const interactionCallback = collector.getComponentCallback(
-      collected.customId
+      collected.customId,
     );
 
     if (!interactionCallback) {
       logger.warn(
-        `MenuView: No handler defined for ${getComponentId(collected.customId)}`
+        `MenuView: No handler defined for ${getComponentId(collected.customId)}`,
       );
       return;
     }
@@ -599,7 +599,7 @@ export function MenuController<
     assert(
       !('isSubView' in initialView) || !initialView.isSubView,
       `Tried to render subview "${initialView.id}" directly. ` +
-        'Subviews must be swapped into.'
+        'Subviews must be swapped into.',
     );
     renderer.queueViewSwap(initialView as View, []);
     renderer.queueRender();
@@ -625,7 +625,7 @@ export function MenuController<
    * Force a reply to the initial interaction instead of dynamically rendering.
    */
   async function reply(
-    options: Omit<Partial<RenderOptions<ViewId>>, 'forceReply'>
+    options: Omit<Partial<RenderOptions<ViewId>>, 'forceReply'>,
   ) {
     return await start({ ...options, forceReply: true });
   }
@@ -635,7 +635,7 @@ export function MenuController<
     renderer.queueClear(PatchTarget.Components);
     const payload = await renderer.patch(
       props,
-      PatchTarget.Embeds | PatchTarget.Content
+      PatchTarget.Embeds | PatchTarget.Content,
     );
     await patcher.patch(payload, {});
   }
@@ -677,7 +677,7 @@ export function MenuController<
 
 function buildProps<Props extends NonNullable<unknown>>(
   initProps: Props,
-  builtins: Synapse
+  builtins: Synapse,
 ): ViewProps<Props> & IntrinsicMenuProps {
   return {
     ...DefaultProperties,
