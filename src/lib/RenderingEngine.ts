@@ -22,7 +22,10 @@ import {
   isReactiveViewDefinition,
   type ReactiveViewInstance,
 } from './MenuView/ReactiveView.js';
-import { withReactiveContext } from './ReactiveBuiltIns.js';
+import {
+  getCurrentReactiveContext,
+  setReactiveContext,
+} from './ReactiveBuiltIns.js';
 import { instantiateClassView } from './MenuView/ClassicView.js';
 
 export type PatchTargetBitField = number;
@@ -184,8 +187,10 @@ export class RenderingEngine {
     const $ = props.$;
     targets |= this.queuedClears;
     const payload: ViewMessagePayload = {};
+    const prevContext = getCurrentReactiveContext();
     try {
-      using _resource = withReactiveContext($);
+      // using _resource = withReactiveContext($);
+      setReactiveContext($);
       if (this.reactiveViewInstance.ephemeral !== undefined) {
         payload.ephemeral = this.reactiveViewInstance.ephemeral;
       }
@@ -232,6 +237,7 @@ export class RenderingEngine {
       }
     } finally {
       this.postRender();
+      setReactiveContext(prevContext);
     }
     return payload;
   }
@@ -287,8 +293,10 @@ export class RenderingEngine {
       if (!reactiveInstance || viewDefinition.id !== reactiveInstance.id) {
         // rendering must be synchronous; built-ins rely on the single-threaded
         // nature of JS
-        using _resource = withReactiveContext(props.$);
+        // using _resource = withReactiveContext(props.$);
+        const prevContext = getCurrentReactiveContext();
         try {
+          setReactiveContext(props.$);
           reactiveInstance = instantiateReactiveView(viewDefinition, props);
           this.reactiveViewInstance = reactiveInstance;
         } catch (e) {
@@ -297,6 +305,8 @@ export class RenderingEngine {
             e,
           );
           throw e;
+        } finally {
+          setReactiveContext(prevContext);
         }
       }
       return reactiveInstance;

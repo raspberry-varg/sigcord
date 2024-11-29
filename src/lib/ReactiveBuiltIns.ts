@@ -28,6 +28,14 @@ export function withReactiveContext(synapse: Synapse) {
   };
 }
 
+export function getCurrentReactiveContext(): Synapse | null {
+  return currentSynapse;
+}
+
+export function setReactiveContext(synapse: Synapse | null) {
+  currentSynapse = synapse;
+}
+
 // - - - - - - -
 // Begin globals
 // - - - - - - -
