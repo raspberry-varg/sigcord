@@ -1,10 +1,11 @@
-import type {
-  EmbedBuilder,
-  CollectedMessageInteraction,
-  MessageComponentInteraction,
-  RepliableInteraction,
+import {
+  type EmbedBuilder,
+  type CollectedMessageInteraction,
+  type MessageComponentInteraction,
+  type RepliableInteraction,
+  ModalBuilder,
 } from 'discord.js';
-import { Synapse } from './Synapse.js';
+import { Synapse, type ModalHandlingOptions } from './Synapse.js';
 import { View, ViewProps, MenuContext } from './FunctionalMenuView.js';
 import { IntrinsicMenuProps } from './InteractiveMenu.js';
 import { SmartComponentType } from './SmartComponents.js';
@@ -119,9 +120,21 @@ export function MenuController<
         collector.onComponent(componentId, controller);
         return component;
       },
-      showModal: async (interaction, modal) => {
+      async showModal(interaction, modalOrOptions) {
+        let modal: ModalBuilder;
+        let options: ModalHandlingOptions | undefined;
+        if (modalOrOptions instanceof ModalBuilder) {
+          modal = modalOrOptions;
+        } else {
+          modal = modalOrOptions.modal;
+          options = modalOrOptions;
+        }
+
         latestModal.customId = modal.data.custom_id ?? '';
-        return await interaction.showModal(modal);
+        await interaction.showModal(modal);
+        if (options) {
+          await this.onModalSubmit(interaction, options, options.onSubmit);
+        }
       },
       awaitModalSubmit: async (interaction, options) => {
         latestModal.interactionId = interaction.id;
