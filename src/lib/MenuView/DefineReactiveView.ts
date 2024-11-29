@@ -15,7 +15,7 @@ import type { PropsBase } from './ViewBase.js';
 export function defineView<Props extends PropsBase = PropsBase>(
   id: string,
   factory: ReactiveViewFactory<Props>,
-  defaults: Partial<IntrinsicMenuProps> = {}
+  defaults: Partial<IntrinsicMenuProps> = {},
 ): ReactiveViewDefinition<Props> & MenuFactory<Props> {
   const definition: ReactiveViewDefinition<Props> = {
     id,

@@ -48,7 +48,7 @@ export function defineMenu<
   Props extends Partial<IntrinsicMenuProps> &
     ArrayUnionToIntersection<{
       [K in keyof Views]: Views[K] extends MenuFactory<infer P> ? P : never;
-    }>
+    }>,
 >(definition: {
   id: string;
   initialView: string;
@@ -64,14 +64,14 @@ export function defineMenu<
     const id = view.id;
     if (idToClass.has(id)) {
       throw new InteractiveMenuError(
-        `Id '${id}' already exists in this interactive menu.`
+        `Id '${id}' already exists in this interactive menu.`,
       );
     }
     idToClass.set(id, view);
   }
   if (!idToClass.has(initialView)) {
     throw new InteractiveMenuError(
-      `Initial view ID: "${initialView}" is not a registered view.`
+      `Initial view ID: "${initialView}" is not a registered view.`,
     );
   }
 
@@ -83,7 +83,7 @@ export function defineMenu<
       initialView,
       [...idToClass.values()],
       interaction,
-      { ...intrinsic, ...props }
+      { ...intrinsic, ...props },
     );
     return menu;
   };
@@ -92,7 +92,7 @@ export function defineMenu<
 
 export type MenuFactory<Props extends PropsBase> = (
   interaction: RepliableInteraction,
-  props: Props & Partial<IntrinsicMenuProps>
+  props: Props & Partial<IntrinsicMenuProps>,
 ) => MenuControllerAPI;
 
 class InteractiveMenuError extends Error {

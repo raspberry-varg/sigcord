@@ -9,7 +9,7 @@ export function isSignal<T>(value?: MaybeSignal<T>): value is Signal<T> {
 
 export type MaybeWritableSignal<T> = T | WritableSignal<T>;
 export function isWritableSignal<T>(
-  value?: MaybeWritableSignal<T>
+  value?: MaybeWritableSignal<T>,
 ): value is WritableSignal<T> {
   return value instanceof Reactive;
 }
@@ -31,23 +31,23 @@ export type Setter<T> = Reactive<T>['set'];
 export type SignalTuple<T> = [
   getter: Getter<T>,
   setter: Setter<T>,
-  WritableSignal<T>
+  WritableSignal<T>,
 ];
 
 export function createSignal<T>(
   fnOrValue: T | (() => T),
   params: ReactiveOptions,
-  patchContext: PatchTarget
+  patchContext: PatchTarget,
 ): WritableSignal<T>;
 export function createSignal<T>(
   fnOrValue: T | (() => T) | undefined,
   params: ReactiveOptions,
-  patchContext: PatchTarget
+  patchContext: PatchTarget,
 ): WritableSignal<T | undefined>;
 export function createSignal<T>(
   fnOrValue: T | (() => T) | undefined,
   params: ReactiveOptions,
-  patchContext: PatchTarget
+  patchContext: PatchTarget,
 ): WritableSignal<T | undefined> {
   const signal = reactive(fnOrValue, params) as WritableSignal<T | undefined>;
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -75,11 +75,11 @@ export interface EffectInstance {
  * Resolves a possible signal to its held value.
  */
 export function read<T>(
-  maybeSignal: MaybeSignal<T> | MaybeWritableSignal<T> | T
+  maybeSignal: MaybeSignal<T> | MaybeWritableSignal<T> | T,
 ): T {
   return isSignal(maybeSignal)
     ? maybeSignal()
     : isWritableSignal(maybeSignal)
-    ? maybeSignal.get()
-    : maybeSignal;
+      ? maybeSignal.get()
+      : maybeSignal;
 }

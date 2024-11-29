@@ -33,7 +33,7 @@ export interface ViewMessagePayload {
 }
 
 export interface MessageComponentCallback<
-  T extends MessageComponentInteraction = MessageComponentInteraction
+  T extends MessageComponentInteraction = MessageComponentInteraction,
 > {
   (callback: T): Promise<unknown> | unknown;
 }
@@ -58,7 +58,7 @@ export function flattenChildren<T extends EmbedBuilder | ViewComponent>(
   $: Synapse,
   c: Children<T>,
   patchTarget: PatchTarget,
-  out: T[] | undefined = undefined
+  out: T[] | undefined = undefined,
 ): T[] | undefined {
   if (c === null || c === undefined || c === false) {
     return out;

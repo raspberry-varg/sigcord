@@ -21,7 +21,7 @@ export class Renderable {
     private readonly options: RenderOptions = {
       ephemeral: true,
       replyToComponentOnFirstRender: false,
-    }
+    },
   ) {}
 
   async triggerPreloads() {
@@ -58,7 +58,7 @@ export class Renderable {
     this.message = await safeRender(
       this.interaction,
       this.messagePayload(),
-      this.options.replyToComponentOnFirstRender
+      this.options.replyToComponentOnFirstRender,
     );
     this.options.replyToComponentOnFirstRender = false;
     return this.message;

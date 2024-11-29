@@ -11,7 +11,7 @@ import { endReasonIsTimeout } from '../util/CollectorUtil.js';
 type ComponentId = string;
 type ComponentCallbackMap = Map<ComponentId, MessageComponentCallback<any>>;
 type OnCollectCallback = (
-  collected: CollectedMessageInteraction
+  collected: CollectedMessageInteraction,
 ) => void | Promise<void>;
 
 interface CollectorOptions {
@@ -34,7 +34,7 @@ export class CollectorService {
 
   onComponent(
     componentId: string,
-    callback: MessageComponentCallback<any>
+    callback: MessageComponentCallback<any>,
   ): void {
     this.componentCallbacks.set(componentId, callback);
   }
@@ -73,7 +73,7 @@ export class CollectorService {
       {
         filter,
         idle,
-      }
+      },
     ));
 
     collector.on('collect', async (collected) => {
@@ -91,7 +91,7 @@ export class CollectorService {
       }
       this.listeners.fire(endReason);
       logger.debug(
-        `Component listener successfully stopped due to reason: ` + endReason
+        `Component listener successfully stopped due to reason: ` + endReason,
       );
     });
   }

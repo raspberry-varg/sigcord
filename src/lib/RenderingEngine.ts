@@ -52,19 +52,19 @@ interface QueuedEmbeds {
   append: EmbedBuilder[];
 }
 function resolveMaybeSignal<T>(
-  maybeSignal: MaybeSignal<T> | MaybeWritableSignal<T>
+  maybeSignal: MaybeSignal<T> | MaybeWritableSignal<T>,
 ): T;
 function resolveMaybeSignal<T>(
-  maybeSignal: MaybeSignal<T> | MaybeWritableSignal<T> | undefined
+  maybeSignal: MaybeSignal<T> | MaybeWritableSignal<T> | undefined,
 ): T | undefined;
 function resolveMaybeSignal<T>(
-  maybeSignal: MaybeSignal<T> | MaybeWritableSignal<T> | undefined
+  maybeSignal: MaybeSignal<T> | MaybeWritableSignal<T> | undefined,
 ): T | undefined {
   return isSignal(maybeSignal)
     ? maybeSignal()
     : isWritableSignal(maybeSignal)
-    ? maybeSignal.get()
-    : maybeSignal;
+      ? maybeSignal.get()
+      : maybeSignal;
 }
 
 export class RenderingEngine {
@@ -136,7 +136,7 @@ export class RenderingEngine {
   queueViewSwapWithProps(
     view: View,
     props: PropsBase,
-    skipCache = false
+    skipCache = false,
   ): void {
     this.queuedView = { view, props, skipCache };
   }
@@ -145,7 +145,7 @@ export class RenderingEngine {
     if (view === this.queuedView?.view) {
       logger.warn(
         `Tried to queue the currently-active view with id=${view.id}: `,
-        view
+        view,
       );
       return;
     }
@@ -158,7 +158,7 @@ export class RenderingEngine {
 
   async patch(
     props: Props,
-    targets: PatchTargetBitField
+    targets: PatchTargetBitField,
   ): Promise<ViewMessagePayload> {
     assert(this.viewDefinition, 'Internal error: View was not set.');
     const queuedNav = this.queuedNavigation;
@@ -179,7 +179,7 @@ export class RenderingEngine {
     // reactive patching
     assert(
       this.reactiveViewInstance,
-      'Internal error: Reactive payload was not set.'
+      'Internal error: Reactive payload was not set.',
     );
     const $ = props.$;
     targets |= this.queuedClears;
@@ -211,7 +211,7 @@ export class RenderingEngine {
           payload.embeds = flattenChildren(
             $,
             this.reactiveViewInstance.embeds,
-            this.patchContext
+            this.patchContext,
           );
         }
         if (this.queuedEmbeds) {
@@ -226,7 +226,7 @@ export class RenderingEngine {
           payload.components = flattenChildren(
             $,
             this.reactiveViewInstance.components,
-            this.patchContext
+            this.patchContext,
           );
         }
       }
@@ -249,7 +249,7 @@ export class RenderingEngine {
     const view = await this.getViewInstance(
       !this.queuedView || 'args' in this.queuedView
         ? props
-        : { $: props.$, ...this.queuedView.props }
+        : { $: props.$, ...this.queuedView.props },
     );
     if (this.queuedView) {
       if ('args' in this.queuedView && isClassViewInstance(view)) {
@@ -294,7 +294,7 @@ export class RenderingEngine {
         } catch (e) {
           logger.debug(
             'Encountered an error while rendering a reactive view:',
-            e
+            e,
           );
           throw e;
         }
@@ -314,7 +314,7 @@ export class RenderingEngine {
   private applyQueuedNavigation(): void {
     assert(
       this.queuedNavigation,
-      'Internal error: Tried to apply queuedNavigation before being assigned a value.'
+      'Internal error: Tried to apply queuedNavigation before being assigned a value.',
     );
     this.viewDefinition = this.queuedNavigation.view;
     this.reactiveViewInstance = this.queuedNavigation.reactiveInstance

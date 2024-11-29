@@ -14,7 +14,7 @@ export abstract class ViewClass<Props extends PropsBase = PropsBase> {
   constructor(protected readonly props: Props & { $: Synapse }) {}
 
   abstract render(
-    props: Props & { $: Synapse }
+    props: Props & { $: Synapse },
   ): MaybePromise<ViewMessagePayload>;
 
   /** @deprecated It is recommended to use $.goTo instead. */
@@ -27,7 +27,7 @@ export function defineClassView<Props extends PropsBase>(
   implementation: {
     new (props: Props & { $: Synapse }): ViewClass<Props>;
   },
-  defaults: Partial<IntrinsicMenuProps> = {}
+  defaults: Partial<IntrinsicMenuProps> = {},
 ): ClassViewDefinition<Props> & MenuFactory<Props> {
   const definition: ClassViewDefinition<Props> = {
     id,
