@@ -28,14 +28,6 @@ export function withReactiveContext(synapse: Synapse) {
   };
 }
 
-export function setReactiveContext(synapse: Synapse): void {
-  currentSynapse = synapse;
-}
-
-export function clearReactiveContext(): void {
-  currentSynapse = null;
-}
-
 // - - - - - - -
 // Begin globals
 // - - - - - - -
@@ -45,19 +37,19 @@ export function clearReactiveContext(): void {
 export const signal: Synapse['createSignal'] = <T>(
   fnOrValue: T | (() => T) | undefined = undefined,
   params = {},
-  patchTarget = PatchTarget.None
+  patchTarget = PatchTarget.None,
 ) => useSynapse().createSignal(fnOrValue, params, patchTarget);
 
 export const writable: Synapse['createWritableSignal'] = <T>(
   fnOrValue: T | (() => T) | undefined = undefined,
   params = {},
-  patchTarget = PatchTarget.None
+  patchTarget = PatchTarget.None,
 ) => useSynapse().createWritableSignal(fnOrValue, params, patchTarget);
 
 export const computed: Synapse['createComputed'] = <T>(
   fn: () => T,
   params = {},
-  patchTarget = PatchTarget.None
+  patchTarget = PatchTarget.None,
 ) => useSynapse().createComputed(fn, params, patchTarget);
 
 // Signal effects
@@ -145,18 +137,18 @@ export const canNavigateBack: Synapse['canGoBack'] = () =>
 export const showModal: Synapse['showModal'] = (interaction, modalOrOptions) =>
   useSynapse().showModal(
     interaction,
-    modalOrOptions as Parameters<Synapse['showModal']>[1]
+    modalOrOptions as Parameters<Synapse['showModal']>[1],
   );
 
 export const awaitModalSubmit: Synapse['awaitModalSubmit'] = (
   interaction,
-  options
+  options,
 ) => useSynapse().awaitModalSubmit(interaction, options);
 
 export const onModalSubmit: Synapse['onModalSubmit'] = (
   interaction,
   options,
-  callback
+  callback,
 ) => useSynapse().onModalSubmit(interaction, options, callback);
 
 // Embed manipulation
