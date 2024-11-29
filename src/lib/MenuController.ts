@@ -586,7 +586,10 @@ export function MenuController<
       return;
     }
 
-    await interactionCallback(collected);
+    {
+      using _resource = withReactiveContext(props.$);
+      await interactionCallback(collected);
+    }
 
     const patchTargets = getPatchTargets();
     if (patchTargets !== PatchTarget.None) {
