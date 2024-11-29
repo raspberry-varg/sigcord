@@ -586,9 +586,14 @@ export function MenuController<
       return;
     }
 
-    {
+    try {
       using _resource = withReactiveContext(props.$);
       await interactionCallback(collected);
+    } catch (e) {
+      logger.error(
+        `Error occurred while handling a collected component interaction: ${collected.customId}`,
+      );
+      throw e;
     }
 
     const patchTargets = getPatchTargets();
