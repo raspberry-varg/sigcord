@@ -19,6 +19,16 @@ type ModalRepliableInteraction =
   | CommandInteraction
   | MessageComponentInteraction;
 
+export type ModalOnSubmitHandler = (
+  modal: ModalSubmitInteraction
+) => void | Promise<void>;
+
+export interface ModalHandlingOptions
+  extends AwaitModalSubmitOptions<ModalSubmitInteraction> {
+  modal: ModalBuilder;
+  onSubmit: ModalOnSubmitHandler;
+}
+
 /**
  * Closure functions to manage and interact with a bound menu instance.
  *
@@ -54,6 +64,10 @@ export interface Synapse {
     interaction: ModalRepliableInteraction,
     modal: ModalBuilder
   ): Promise<void>;
+  showModal(
+    interaction: ModalRepliableInteraction,
+    options: ModalHandlingOptions
+  ): Promise<void>;
   awaitModalSubmit(
     interaction: ModalRepliableInteraction,
     options: AwaitModalSubmitOptions<ModalSubmitInteraction>
@@ -61,7 +75,7 @@ export interface Synapse {
   onModalSubmit(
     interaction: ModalRepliableInteraction,
     options: AwaitModalSubmitOptions<ModalSubmitInteraction>,
-    callback: (collected: ModalSubmitInteraction) => unknown
+    callback: ModalOnSubmitHandler
   ): Promise<void>;
   setIdleMs(idleMilliseconds: number): void;
   setIdleSec(idleSeconds: number): void;

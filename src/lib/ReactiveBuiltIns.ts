@@ -132,8 +132,11 @@ export const canNavigateBack: Synapse['canGoBack'] = () =>
 
 // Modals
 
-export const showModal: Synapse['showModal'] = (interaction, modal) =>
-  useSynapse().showModal(interaction, modal);
+export const showModal: Synapse['showModal'] = (interaction, modalOrOptions) =>
+  useSynapse().showModal(
+    interaction,
+    modalOrOptions as Parameters<Synapse['showModal']>[1]
+  );
 
 export const awaitModalSubmit: Synapse['awaitModalSubmit'] = (
   interaction,
