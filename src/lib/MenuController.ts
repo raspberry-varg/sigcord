@@ -22,7 +22,10 @@ import { PatchTarget, PatchTargetBitField } from './RenderingEngine.js';
 import type { PropsBase } from './MenuView/ViewBase.js';
 import { EffectInstance } from './Reactivity.js';
 import { Navigation } from './Navigation.js';
-import { withReactiveContext } from './ReactiveBuiltIns.js';
+import {
+  getCurrentReactiveContext,
+  setReactiveContext,
+} from './ReactiveBuiltIns.js';
 
 export interface MenuControllerAPI {
   // render API
@@ -442,8 +445,10 @@ export function MenuController<
     }
     if (renderer.isCurrentViewReactive()) {
       let patchTargets: PatchTargetBitField = manualPatchQueued;
+      const prevContext = getCurrentReactiveContext();
       try {
-        using _resource = withReactiveContext(props.$);
+        // using _resource = withReactiveContext(props.$);
+        setReactiveContext(props.$);
         effects.forEach((effect) => {
           const oldVersion = effect.previousVersion;
           const newVersion = effect.signal.get();
@@ -458,6 +463,8 @@ export function MenuController<
           `Error encountered while running effects for <${renderer.getCurrentView()?.id ?? 'Unnamed'}>.`,
         );
         throw e;
+      } finally {
+        setReactiveContext(prevContext);
       }
       logger.debug({ patchTargetBitField: patchTargets });
       if (renderer.hasQueuedEmbeds()) {
@@ -586,14 +593,18 @@ export function MenuController<
       return;
     }
 
+    const prevContext = getCurrentReactiveContext();
     try {
-      using _resource = withReactiveContext(props.$);
+      // using _resource = withReactiveContext(props.$);
+      setReactiveContext(props.$);
       await interactionCallback(collected);
     } catch (e) {
       logger.error(
         `Error occurred while handling a collected component interaction: ${collected.customId}`,
       );
       throw e;
+    } finally {
+      setReactiveContext(prevContext);
     }
 
     const patchTargets = getPatchTargets();
