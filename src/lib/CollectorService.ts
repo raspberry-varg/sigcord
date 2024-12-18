@@ -6,7 +6,10 @@ import type {
 import type { Listener } from './Listener.js';
 import { logger } from '../util/Logger.js';
 import type { MessageComponentCallback } from './MenuView.js';
-import { endReasonIsTimeout } from '../util/CollectorUtil.js';
+import {
+  endReasonIsTimeout,
+  type TimeoutEndReason,
+} from '../util/CollectorUtil.js';
 
 type ComponentId = string;
 type ComponentCallbackMap = Map<ComponentId, MessageComponentCallback<any>>;
@@ -22,15 +25,18 @@ interface CollectorOptions {
   onCollect: OnCollectCallback;
 }
 
+interface Listeners {
+  onEnd: Listener<TimeoutEndReason | (string & {}) | null>;
+  onStop: Listener<string | null>;
+  onTimeout: Listener<TimeoutEndReason>;
+}
+
 export class CollectorService {
   lastCollected?: CollectedMessageInteraction;
   private collector?: ReturnType<Message['createMessageComponentCollector']>;
-  private listeners: Listener<string | null>;
   private componentCallbacks: ComponentCallbackMap = new Map();
 
-  constructor(onEndListener: Listener<string | null>) {
-    this.listeners = onEndListener;
-  }
+  constructor(private listeners: Partial<Listeners>) {}
 
   onComponent(
     componentId: string,
@@ -88,8 +94,11 @@ export class CollectorService {
       const endReason = collector.endReason;
       if (endReasonIsTimeout(endReason)) {
         onTimeout();
+        this.listeners.onTimeout?.fire(endReason);
+      } else {
+        this.listeners.onStop?.fire(endReason);
       }
-      this.listeners.fire(endReason);
+      this.listeners.onEnd?.fire(endReason);
       logger.debug(
         `Component listener successfully stopped due to reason: ` + endReason,
       );

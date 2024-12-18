@@ -1,6 +1,10 @@
-export function endReasonIsTimeout(endReason?: string | null) {
+export const TIMEOUT_END_REASONS = ['idle', 'timeout', 'time'] as const;
+export type TimeoutEndReason = (typeof TIMEOUT_END_REASONS)[number];
+
+export function endReasonIsTimeout(
+  endReason?: string | null,
+): endReason is TimeoutEndReason {
   return (
-    endReason &&
-    ['idle', 'timeout', 'time'].some((reason) => reason === endReason)
+    !!endReason && TIMEOUT_END_REASONS.some((reason) => reason === endReason)
   );
 }
