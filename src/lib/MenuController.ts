@@ -26,6 +26,7 @@ import {
   getCurrentReactiveContext,
   setReactiveContext,
 } from './ReactiveBuiltIns.js';
+import type { TimeoutEndReason } from '../util/CollectorUtil.js';
 
 export interface MenuControllerAPI {
   // render API
@@ -40,8 +41,14 @@ export interface MenuControllerAPI {
   // listener API
   onRender(callback: () => unknown, once?: boolean): void;
   awaitRender(): Promise<void>;
-  onEnd(callback: (endReason: string | null) => unknown): void;
-  awaitEnd(): Promise<string | null>;
+  onEnd(
+    callback: (endReason: TimeoutEndReason | (string & {}) | null) => unknown,
+  ): void;
+  awaitEnd(): Promise<TimeoutEndReason | (string & {}) | null>;
+  onStop(callback: (endReason: string | null) => unknown): void;
+  awaitStop(): Promise<string | null>;
+  onTimeout(callback: (timeoutReason: TimeoutEndReason) => unknown): void;
+  awaitTimeout(): Promise<TimeoutEndReason | null>;
 }
 
 export interface ControllerContext {
@@ -82,7 +89,9 @@ type MenuViewComponentId = string;
 
 interface MenuControllerListeners {
   onRender: Listener<void>;
-  onEnd: Listener<string | null>;
+  onEnd: Listener<TimeoutEndReason | (string & {}) | null>;
+  onStop: Listener<string | null>;
+  onTimeout: Listener<TimeoutEndReason>;
 }
 
 export function MenuController<
@@ -404,6 +413,8 @@ export function MenuController<
   const listeners: MenuControllerListeners = {
     onRender: new Listener(),
     onEnd: new Listener(),
+    onStop: new Listener(),
+    onTimeout: new Listener(),
   };
   const navigation = new Navigation();
   const componentCallbacks = new Map<
@@ -420,7 +431,7 @@ export function MenuController<
           (t) => t > 0,
           `Idle time must be greater than 0 milliseconds, got [${props.idleTimeMs}].`,
         );
-  const collector = new CollectorService(listeners.onEnd);
+  const collector = new CollectorService(listeners);
   const latestModal = {
     interactionId: '',
     customId: '',
@@ -674,11 +685,23 @@ export function MenuController<
   function onRender(callback: () => unknown, once = false): void {
     listeners.onRender.do(callback, once);
   }
-  function onEnd(callback: (endReason: string | null) => unknown): void {
+  function onEnd(
+    callback: (endReason: TimeoutEndReason | (string & {}) | null) => unknown,
+  ): void {
     listeners.onEnd.do(callback);
+  }
+  function onStop(callback: (stopReason: string | null) => unknown): void {
+    listeners.onStop.do(callback);
+  }
+  function onTimeoutDo(
+    callback: (timeoutReason: TimeoutEndReason) => unknown,
+  ): void {
+    listeners.onTimeout.do(callback);
   }
   const awaitRender = () => listeners.onRender.asPromise();
   const awaitEnd = () => listeners.onEnd.asPromise();
+  const awaitStop = () => listeners.onStop.asPromise();
+  const awaitTimeout = () => listeners.onTimeout.asPromise();
 
   return {
     // render API
@@ -691,6 +714,10 @@ export function MenuController<
     awaitRender,
     onEnd,
     awaitEnd,
+    onStop,
+    awaitStop,
+    onTimeout: onTimeoutDo,
+    awaitTimeout,
   };
 }
 
