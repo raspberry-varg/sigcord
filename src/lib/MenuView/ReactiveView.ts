@@ -4,9 +4,9 @@ import type { IntrinsicMenuProps } from '../InteractiveMenu.js';
 import type { ReactiveViewPayload, RenderedReactiveView } from '../MenuView.js';
 import type { PropsBase } from './ViewBase.js';
 
-export type ReactiveViewFactory<Props extends PropsBase> =
-  | (() => ReactiveViewPayload)
-  | ((props: ViewProps<Props>) => ReactiveViewPayload);
+export type ReactiveViewFactory<Props extends PropsBase> = (
+  props: ViewProps<Props>,
+) => ReactiveViewPayload;
 
 export type ReactiveViewBody<Props extends PropsBase = PropsBase> =
   ReactiveViewDefinition<Props>;
