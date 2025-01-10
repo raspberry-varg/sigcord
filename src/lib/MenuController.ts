@@ -346,11 +346,11 @@ export function MenuController<
       canGoBack: () => {
         return !navigation.empty();
       },
-      resumableSuspend: async (action) => {
-        const res = await action();
-        setReactiveContext($);
-        return res;
-      },
+      resumableSuspend: async (action) =>
+        await action().then((r) => {
+          setReactiveContext($);
+          return r;
+        }),
     };
     return $;
   }

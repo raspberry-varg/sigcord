@@ -202,9 +202,7 @@ export interface Synapse {
    */
   canGoBack(): boolean;
 
-  resumableSuspend<P extends Promise<unknown>>(
-    action: () => P,
-  ): Promise<Awaited<P>>;
+  resumableSuspend<R>(action: () => Promise<R>): Promise<R>;
 
   /** The current menu controller's context. */
   ctx: MenuContext;
