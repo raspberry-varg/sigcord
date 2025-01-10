@@ -346,6 +346,11 @@ export function MenuController<
       canGoBack: () => {
         return !navigation.empty();
       },
+      resumableSuspend: async (action) => {
+        const res = await action();
+        setReactiveContext($);
+        return res;
+      },
     };
     return $;
   }
