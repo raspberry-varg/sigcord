@@ -36,6 +36,9 @@ export function setReactiveContext(synapse: Synapse | null) {
   currentSynapse = synapse;
 }
 
+export const resumable: Synapse['resumableSuspend'] = (action) =>
+  useSynapse().resumableSuspend(action);
+
 // - - - - - - -
 // Begin globals
 // - - - - - - -

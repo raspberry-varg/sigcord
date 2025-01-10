@@ -44,6 +44,7 @@ export {
   stopMenu,
   patch,
   useSynapse,
+  resumable,
 } from './lib/ReactiveBuiltIns.js';
 export { defineView } from './lib/MenuView/DefineReactiveView.js';
 export {
