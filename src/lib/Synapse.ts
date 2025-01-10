@@ -9,7 +9,7 @@ import type {
 } from 'discord.js';
 import type { DefinedView, MenuContext, View } from './FunctionalMenuView.js';
 import type { MessageComponentCallback } from './MenuView.js';
-import type { ReactiveOptions, Signal, SignalTuple } from './Reactivity.js';
+import type { Signal, SignalTuple } from './Reactivity.js';
 import type { PatchTarget } from './RenderingEngine.js';
 import type { WritableSignal } from './Reactivity.js';
 import type { PropsBase } from './MenuView/ViewBase.js';
@@ -91,45 +91,16 @@ export interface Synapse {
   doUpdate: () => Promise<void>;
 
   createSignal<T>(): SignalTuple<T | undefined>;
-  createSignal<T>(
-    fnOrValue: undefined,
-    params?: ReactiveOptions,
-    patchTarget?: PatchTarget,
-  ): SignalTuple<T | undefined>;
-  createSignal<T>(
-    fnOrValue: T | (() => T),
-    params?: ReactiveOptions,
-    patchTarget?: PatchTarget,
-  ): SignalTuple<T>;
+  createSignal<T>(initialValue: undefined): SignalTuple<T | undefined>;
+  createSignal<T>(initialValue: T): SignalTuple<T>;
 
   createWritableSignal<T>(): WritableSignal<T | undefined>;
   createWritableSignal<T>(
-    fnOrValue: undefined,
-    params?: ReactiveOptions,
-    patchTarget?: PatchTarget,
+    initialValue: undefined,
   ): WritableSignal<T | undefined>;
-  createWritableSignal<T>(
-    fnOrValue: T | (() => T),
-    params?: ReactiveOptions,
-    patchTarget?: PatchTarget,
-  ): WritableSignal<T>;
+  createWritableSignal<T>(initialValue: T): WritableSignal<T>;
 
-  createEmbedSignal(
-    closure: () => EmbedBuilder,
-    params?: ReactiveOptions,
-    patchTarget?: PatchTarget,
-  ): WritableSignal<EmbedBuilder>;
-  createComponentSignal(
-    closure: () => EmbedBuilder,
-    params?: ReactiveOptions,
-    patchTarget?: PatchTarget,
-  ): WritableSignal<EmbedBuilder>;
-
-  createComputed<T>(
-    fn: () => T,
-    params?: ReactiveOptions,
-    patchTarget?: PatchTarget,
-  ): Signal<T>;
+  createComputed<T>(fn: () => T): Signal<T>;
 
   /**
    * Create an effect that runs when the value of signals in the function are
@@ -144,11 +115,7 @@ export interface Synapse {
    * @param patchTarget Bitfield of {@link PatchTarget} to queue for rendering
    * when this effect runs.
    */
-  createEffect: <T>(
-    fn: () => T,
-    params?: ReactiveOptions,
-    patchTarget?: PatchTarget,
-  ) => void;
+  createEffect: <T>(fn: () => T, patchTarget?: PatchTarget) => void;
   /**
    * Create an effect that runs when the value of signals in the function are
    * changed.
@@ -158,7 +125,7 @@ export interface Synapse {
    * @param fn The effect to run.
    * @param params Extra configuration for debugging.
    */
-  createEmbedEffect: (fn: () => void, params?: ReactiveOptions) => void;
+  createEmbedEffect: (fn: () => void) => void;
   /**
    * Create an effect that runs when the value of signals in the function are
    * changed.
@@ -168,7 +135,7 @@ export interface Synapse {
    * @param fn The effect to run.
    * @param params Extra configuration for debugging.
    */
-  createComponentEffect: (fn: () => void, params?: ReactiveOptions) => void;
+  createComponentEffect: (fn: () => void) => void;
 
   /**
    * Instantiate and navigate to a different view.

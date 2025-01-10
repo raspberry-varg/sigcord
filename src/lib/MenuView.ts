@@ -11,6 +11,8 @@ import {
   isWritableSignal,
 } from '../index.js';
 import type { IS_REACTIVE_SYMBOL } from './MenuView/ReactiveView.js';
+import { type Signalish } from './Reactivity.js';
+import { logger } from '../util/Logger.js';
 
 export type ViewComponent = ActionRowBuilder<MessageActionRowComponentBuilder>;
 
@@ -20,7 +22,7 @@ export type RenderedReactiveView = ReactiveViewPayload & {
 
 export interface ReactiveViewPayload {
   ephemeral?: boolean;
-  content?: string | WritableSignal<string> | (() => string);
+  content?: string | Signalish<string>;
   embeds?: EmbedChildren;
   components?: ComponentChildren;
 }
@@ -73,13 +75,23 @@ export function flattenChildren<T extends EmbedBuilder | ViewComponent>(
   }
   // resolve writable signal
   else if (isWritableSignal(c)) {
-    const patchTargetAware = $.createComputed(c.get, {}, patchTarget);
-    flattenChildren($, patchTargetAware(), patchTarget, out);
+    let initialVal;
+    $.createEffect(() => {
+      initialVal = c.get();
+    }, patchTarget);
+    flattenChildren($, initialVal, patchTarget, out);
   }
   // resolve function call
   else if (typeof c === 'function') {
-    const patchTargetAware = $.createComputed(c, {}, patchTarget);
-    flattenChildren($, patchTargetAware(), patchTarget, out);
+    const computed = $.createComputed(c);
+    let initialVal;
+    logger.debug(`before effect; initialVal=${initialVal}`);
+    $.createEffect(() => {
+      initialVal ??= computed();
+      logger.debug(`effect has been run; initialVal=${initialVal}`);
+    }, patchTarget);
+    logger.debug(`initialVal=${initialVal}`);
+    flattenChildren($, initialVal, patchTarget, out);
   } else if (c) {
     out.push(c);
   }

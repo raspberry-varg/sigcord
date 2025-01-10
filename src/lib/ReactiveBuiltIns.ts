@@ -10,6 +10,7 @@
 import { Synapse } from './Synapse.js';
 import { PatchTarget } from './RenderingEngine.js';
 import { assert } from '../util/Assertions.js';
+import { createUntracked } from './Reactivity.js';
 
 let currentSynapse: Synapse | null = null;
 
@@ -47,21 +48,18 @@ export const resumable: Synapse['resumableSuspend'] = (action) =>
 
 export const signal: Synapse['createSignal'] = <T>(
   fnOrValue: T | (() => T) | undefined = undefined,
-  params = {},
-  patchTarget = PatchTarget.None,
-) => useSynapse().createSignal(fnOrValue, params, patchTarget);
+) => useSynapse().createSignal(fnOrValue);
 
 export const writable: Synapse['createWritableSignal'] = <T>(
   fnOrValue: T | (() => T) | undefined = undefined,
-  params = {},
-  patchTarget = PatchTarget.None,
-) => useSynapse().createWritableSignal(fnOrValue, params, patchTarget);
+) => useSynapse().createWritableSignal(fnOrValue);
 
-export const computed: Synapse['createComputed'] = <T>(
-  fn: () => T,
-  params = {},
-  patchTarget = PatchTarget.None,
-) => useSynapse().createComputed(fn, params, patchTarget);
+export const computed: Synapse['createComputed'] = <T>(fn: () => T) =>
+  useSynapse().createComputed(fn);
+
+export function untracked<T>(signal: () => T): T {
+  return createUntracked(signal);
+}
 
 // Signal effects
 
@@ -78,8 +76,8 @@ export const computed: Synapse['createComputed'] = <T>(
  * @param patchTarget Bitfield of {@link PatchTarget} to queue for rendering
  * when this effect runs.
  */
-export const effect: Synapse['createEffect'] = (fn, params, patchTarget) =>
-  useSynapse().createEffect(fn, params, patchTarget);
+export const effect: Synapse['createEffect'] = (fn, patchTarget) =>
+  useSynapse().createEffect(fn, patchTarget);
 
 /**
  * Create an effect that runs when the value of signals in the function are
@@ -90,8 +88,8 @@ export const effect: Synapse['createEffect'] = (fn, params, patchTarget) =>
  * @param fn The effect to run.
  * @param params Extra configuration for debugging.
  */
-export const embedEffect: Synapse['createEmbedEffect'] = (fn, params) =>
-  useSynapse().createEmbedEffect(fn, params);
+export const embedEffect: Synapse['createEmbedEffect'] = (fn) =>
+  useSynapse().createEmbedEffect(fn);
 
 /**
  * Create an effect that runs when the value of signals in the function are
@@ -102,8 +100,8 @@ export const embedEffect: Synapse['createEmbedEffect'] = (fn, params) =>
  * @param fn The effect to run.
  * @param params Extra configuration for debugging.
  */
-export const componentEffect: Synapse['createComponentEffect'] = (fn, params) =>
-  useSynapse().createComponentEffect(fn, params);
+export const componentEffect: Synapse['createComponentEffect'] = (fn) =>
+  useSynapse().createComponentEffect(fn);
 
 // Component
 

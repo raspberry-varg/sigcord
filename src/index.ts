@@ -25,6 +25,7 @@ export {
 export {
   component,
   signal,
+  untracked,
   writable,
   computed,
   effect,
