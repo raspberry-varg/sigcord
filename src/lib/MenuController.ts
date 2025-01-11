@@ -610,11 +610,14 @@ export function MenuController<
   /** Handles subsequent rerenders. */
   async function update(patchTargets: PatchTargetBitField): Promise<void> {
     beforeRender();
-    const payload = await batch(
-      async () => await renderer.patch(props, patchTargets),
-    );
-    await patcher.patch(payload, {});
-    afterRender();
+    try {
+      const payload = await batch(
+        async () => await renderer.patch(props, patchTargets),
+      );
+      await patcher.patch(payload, {});
+    } finally {
+      afterRender();
+    }
   }
 
   /**
