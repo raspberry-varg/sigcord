@@ -11,7 +11,7 @@ import {
   isWritableSignal,
 } from '../index.js';
 import type { IS_REACTIVE_SYMBOL } from './MenuView/ReactiveView.js';
-import { type Signalish } from './Reactivity.js';
+import { isSignal, type Signalish } from './Reactivity.js';
 import { logger } from '../util/Logger.js';
 
 export type ViewComponent = ActionRowBuilder<MessageActionRowComponentBuilder>;
@@ -44,7 +44,7 @@ export interface IntrinsicViewProps {
   ephemeral: boolean | false;
 }
 
-type Children<T> =
+export type Children<T> =
   | Children<T>[]
   | (() => Children<T>)
   | WritableSignal<Children<T>>
@@ -78,6 +78,12 @@ export function flattenChildren<T extends EmbedBuilder | ViewComponent>(
     let initialVal;
     $.createEffect(() => {
       initialVal = c.get();
+    }, patchTarget);
+    flattenChildren($, initialVal, patchTarget, out);
+  } else if (isSignal(c)) {
+    let initialVal;
+    $.createEffect(() => {
+      initialVal = c();
     }, patchTarget);
     flattenChildren($, initialVal, patchTarget, out);
   }

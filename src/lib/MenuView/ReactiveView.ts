@@ -1,7 +1,12 @@
 import { ViewProps, type View } from '../FunctionalMenuView.js';
 import type { IntrinsicMenuProps } from '../InteractiveMenu.js';
 
-import type { ReactiveViewPayload, RenderedReactiveView } from '../MenuView.js';
+import type {
+  Children,
+  ReactiveViewPayload,
+  RenderedReactiveView,
+} from '../MenuView.js';
+import { createComputed, isSignal, isWritableSignal } from '../Reactivity.js';
 import type { PropsBase } from './ViewBase.js';
 
 export type ReactiveViewFactory<Props extends PropsBase> = (
@@ -39,9 +44,38 @@ export function instantiateReactiveView<Props extends PropsBase = PropsBase>(
   view: ReactiveViewDefinition<Props>,
   props: ViewProps<Props>,
 ): ReactiveViewInstance {
-  return {
+  const instance: ReactiveViewInstance = {
     ...view.factory(props),
     id: view.id,
     [IS_REACTIVE_SYMBOL]: true,
   };
+  postProcessReactiveViewInstance(instance);
+  return instance;
+}
+
+export function postProcessReactiveViewInstance(
+  instance: ReactiveViewInstance,
+): void {
+  if (instance.embeds !== undefined) {
+    instance.embeds = functionsAsComputed(instance.embeds);
+  }
+  if (instance.components !== undefined) {
+    instance.components = functionsAsComputed(instance.components);
+  }
+}
+
+function functionsAsComputed<T>(val: Children<T>): Children<T> {
+  if (Array.isArray(val)) {
+    return val.map(functionsAsComputed);
+  }
+
+  if (isWritableSignal(val)) {
+    return val.readonly();
+  }
+
+  if (isSignal(val) || typeof val !== 'function') {
+    return val;
+  }
+
+  return createComputed(() => val());
 }
