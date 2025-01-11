@@ -26,6 +26,7 @@ import {
 } from './ReactiveBuiltIns.js';
 import type { TimeoutEndReason } from '../util/CollectorUtil.js';
 import { batch } from '@preact/signals-core';
+import { queueUpdateMicrotask } from './MenuUpdateMicrotasks.js';
 
 export interface MenuControllerAPI {
   // render API
@@ -336,8 +337,21 @@ export function MenuController<
         );
         return;
       }
-      fn();
+
+      const prevCtx = getCurrentReactiveContext();
+      try {
+        setReactiveContext(builtins);
+        fn();
+      } finally {
+        setReactiveContext(prevCtx);
+      }
+
       builtins.patch(patchTarget);
+
+      if (patchTarget !== PatchTarget.None && prevCtx !== builtins) {
+        // run called outside of a render or update cycle
+        queueUpdateMicrotask(builtins);
+      }
     });
   }
   function getView(id: string): View<AllProps> {
@@ -424,34 +438,13 @@ export function MenuController<
     }
     if (renderer.isCurrentViewReactive()) {
       let patchTargets: PatchTargetBitField = manualPatchQueued;
-      // const prevContext = getCurrentReactiveContext();
-      // try {
-      //   // using _resource = withReactiveContext(props.$);
-      //   setReactiveContext(props.$);
-      //   effects.forEach((effect) => {
-      //     const oldVersion = effect.previousVersion;
-      //     const newVersion = effect.signal();
-      //     const hasChanged = oldVersion !== newVersion;
-      //     effect.previousVersion = newVersion;
-      //     if (hasChanged && effect.patch !== undefined) {
-      //       patchTargets |= effect.patch;
-      //     }
-      //   });
-      // } catch (e) {
-      //   logger.error(
-      //     `Error encountered while running effects for <${renderer.getCurrentView()?.id ?? 'Unnamed'}>.`,
-      //   );
-      //   throw e;
-      // } finally {
-      //   setReactiveContext(prevContext);
-      // }
-      logger.debug({ patchTargetBitField: patchTargets });
       if (renderer.hasQueuedEmbeds()) {
         patchTargets |= PatchTarget.Embeds;
       }
       if (renderer.hasQueuedNavigation()) {
         patchTargets |= PatchTarget.All;
       }
+      logger.debug({ patchTargetBitField: patchTargets });
       return patchTargets;
     }
     return PatchTarget.All;
