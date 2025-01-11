@@ -112,7 +112,7 @@ export class RenderingEngine {
   }
 
   getQueuedView(): Readonly<QueuedView> | undefined {
-    return this.queuedView
+    return this.queuedView;
   }
 
   getReactivePayload(): RenderedReactiveView | undefined {
@@ -196,9 +196,6 @@ export class RenderingEngine {
     props: Props,
     targets: PatchTargetBitField,
   ) {
-    logger.debug(
-      `patchReactive called with instance=${instance.id}, targets=${targets}`,
-    );
     const $ = props.$;
     targets |= this.queuedClears;
     const payload: ViewMessagePayload = {};
