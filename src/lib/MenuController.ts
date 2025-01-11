@@ -11,7 +11,7 @@ import { IntrinsicMenuProps } from './InteractiveMenu.js';
 import { SmartComponentType } from './SmartComponents.js';
 import { assert, assertAndReturn, assertNotNull } from '../util/Assertions.js';
 import { Listener } from './Listener.js';
-import { logger } from '../util/Logger.js';
+import { debug, logger } from '../util/Logger.js';
 import { RenderingEngine } from './RenderingEngine.js';
 import { InteractionPatcher } from './InteractionPatcher.js';
 import { CollectorService } from './CollectorService.js';
@@ -279,7 +279,6 @@ export function MenuController<
             'Tried to navigate before initial render in a reactive view.',
           );
           navigation.pushReactive(currentView, reactivePayload);
-          setActiveView(null);
         } else {
           navigation.push(currentView);
         }
@@ -298,7 +297,6 @@ export function MenuController<
             'Tried to navigate before initial render in a reactive view.',
           );
           navigation.pushReactive(currentView, reactivePayload);
-          setActiveView(null);
         } else {
           navigation.push(currentView);
         }
@@ -310,7 +308,6 @@ export function MenuController<
           'Tried to navigate backwards without a parent view. Have you called goTo() in the parent view?',
         );
         const payload = navigation.pop();
-        setActiveView(payload.view);
         renderer.queueNavigation(payload);
       },
       canGoBack: () => {
@@ -328,13 +325,16 @@ export function MenuController<
     fn: () => void,
     patchTarget = PatchTarget.None,
   ): void {
-    const currentView = assertNotNull(renderer.getCurrentView());
-    const isActiveView = createComputed(() => activeView() === currentView);
+    const effectRegisteredTo = assertNotNull(renderer.getCurrentView());
+    const isActiveView = createComputed(
+      () => activeView() === effectRegisteredTo,
+    );
     createEffect(() => {
       if (!isActiveView()) {
-        logger.debug(
-          `Not active view; active=${activeView()?.id}, current=${currentView.id}`,
-        );
+        logger.debug(`Not active view!`, {
+          effectRegisteredTo: effectRegisteredTo.id,
+          menuControllerActiveView: activeView()?.id,
+        });
         return;
       }
 
@@ -383,6 +383,11 @@ export function MenuController<
   };
   const builtins = createSynapse();
   const [activeView, setActiveView] = builtins.createSignal<View | null>(null);
+  if (debug) {
+    createEffect(() => {
+      logger.debug(`activeView set to --> ${activeView()?.id ?? null}`);
+    });
+  }
   const views = new Map<string, View<AllProps>>(
     registeredViews.map((v) => [v.id, v]),
   );
@@ -453,9 +458,13 @@ export function MenuController<
   function beforeRender() {
     const queued = renderer.getQueuedView();
     if (queued) {
-      setActiveView(queued.view);
+      logger.debug(':: about to set active view --> queued is not null');
+      setActiveView(() => queued.view);
     } else {
-      setActiveView(assertNotNull(renderer.getCurrentView()));
+      logger.debug(
+        ':: about to set active view --> queued was null, using current view',
+      );
+      setActiveView(() => assertNotNull(renderer.getCurrentView()));
     }
   }
 
