@@ -22,6 +22,10 @@ export function isWritableSignal<T>(
 
 export type Signal<T> = () => T;
 
+export type Resource<T> = Signal<T> & {
+  isLoading: Signal<boolean>;
+};
+
 export interface WritableSignal<T> extends core.Signal<T> {
   readonly _patchContext: PatchTarget;
   get: Getter<T>;
@@ -44,6 +48,12 @@ export type SignalTuple<T> = [
   getter: Getter<T>,
   setter: Setter<T>,
   WritableSignal<T>,
+];
+
+export type ResourceTuple<T> = [
+  data: Signal<T>,
+  mutate: Setter<T>,
+  refetch: () => void,
 ];
 
 export function createSignal<T>(

@@ -12,7 +12,6 @@ import {
 } from '../index.js';
 import type { IS_REACTIVE_SYMBOL } from './MenuView/ReactiveView.js';
 import { isSignal, type Signalish } from './Reactivity.js';
-import { logger } from '../util/Logger.js';
 
 export type ViewComponent = ActionRowBuilder<MessageActionRowComponentBuilder>;
 
@@ -80,7 +79,9 @@ export function flattenChildren<T extends EmbedBuilder | ViewComponent>(
       initialVal = c.get();
     }, patchTarget);
     flattenChildren($, initialVal, patchTarget, out);
-  } else if (isSignal(c)) {
+  }
+  // resolve a known signal
+  else if (isSignal(c)) {
     let initialVal;
     $.createEffect(() => {
       initialVal = c();
@@ -91,12 +92,9 @@ export function flattenChildren<T extends EmbedBuilder | ViewComponent>(
   else if (typeof c === 'function') {
     const computed = $.createComputed(c);
     let initialVal;
-    logger.debug(`before effect; initialVal=${initialVal}`);
     $.createEffect(() => {
       initialVal ??= computed();
-      logger.debug(`effect has been run; initialVal=${initialVal}`);
     }, patchTarget);
-    logger.debug(`initialVal=${initialVal}`);
     flattenChildren($, initialVal, patchTarget, out);
   } else if (c) {
     out.push(c);
