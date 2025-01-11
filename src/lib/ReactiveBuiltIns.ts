@@ -10,7 +10,11 @@
 import { Synapse } from './Synapse.js';
 import { PatchTarget } from './RenderingEngine.js';
 import { assert } from '../util/Assertions.js';
-import { createUntracked } from './Reactivity.js';
+import {
+  createUntracked,
+  type Resource,
+  type ResourceTuple,
+} from './Reactivity.js';
 
 let currentSynapse: Synapse | null = null;
 
@@ -59,6 +63,29 @@ export const computed: Synapse['createComputed'] = <T>(fn: () => T) =>
 
 export function untracked<T>(signal: () => T): T {
   return createUntracked(signal);
+}
+
+export function resource<T>(
+  getResource: () => Promise<T>,
+): ResourceTuple<T | undefined> {
+  const [resolvedResource, setResolvedResource] = signal<T>();
+  const [loading, setLoading] = signal(false);
+  const fetch = () => {
+    setLoading(true);
+    getResource().then((result) => {
+      setResolvedResource(result);
+      setLoading(false);
+    });
+  };
+  fetch();
+
+  return [
+    Object.assign(resolvedResource, {
+      isLoading: loading,
+    }) satisfies Resource<T | undefined>,
+    setResolvedResource,
+    fetch,
+  ];
 }
 
 // Signal effects
