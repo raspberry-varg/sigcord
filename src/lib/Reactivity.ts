@@ -40,9 +40,16 @@ type WritableSignalInternal<T> = {
   -readonly [x in keyof WritableSignal<T>]: WritableSignal<T>[x];
 };
 
+type UpdateFn<T> = (oldVal: T) => T;
+
 type Getter<T> = () => T;
-export type Setter<T> = (newVal: T) => void;
-export type Updater<T> = (updater: (oldVal: T) => T) => void;
+
+export interface Setter<T> {
+  (newVal: T): void;
+  (setter: UpdateFn<T>): void;
+}
+
+export type Updater<T> = (updater: UpdateFn<T>) => void;
 
 export type SignalTuple<T> = [
   getter: Getter<T>,
@@ -76,7 +83,9 @@ export function createSignal<T>(
   w.get = () => s.value;
   (w.get as any)[FROM_SIGNAL] = s;
   (w.get as any)[GETTER_STAMP] = true;
-  w.set = (v) => (s.value = v);
+  w.set = (v) =>
+    (s.value =
+      typeof v === 'function' ? (v as UpdateFn<T | undefined>)(w.peek()) : v);
   (w.set as any)[FROM_SIGNAL] = s;
   (w.set as any)[SETTER_STAMP] = s;
   w.update = (updater) => {
