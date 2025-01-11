@@ -1,5 +1,5 @@
 import type { EmbedBuilder } from 'discord.js';
-import { flattenChildren, isSignal, type Props } from '../index.js';
+import { flattenChildren, type Props } from '../index.js';
 import { assert } from '../util/Assertions.js';
 import {
   isClassViewInstance,
@@ -9,11 +9,7 @@ import {
 } from './FunctionalMenuView.js';
 import type { RenderedReactiveView, ViewMessagePayload } from './MenuView.js';
 import { logger } from '../util/Logger.js';
-import {
-  isWritableSignal,
-  type MaybeSignal,
-  type MaybeWritableSignal,
-} from './Reactivity.js';
+import { read } from './Reactivity.js';
 import { type PropsBase } from './MenuView/ViewBase.js';
 import type { NavigationPayload } from './Navigation.js';
 import {
@@ -53,21 +49,6 @@ type QueuedView = {
 interface QueuedEmbeds {
   prepend: EmbedBuilder[];
   append: EmbedBuilder[];
-}
-function resolveMaybeSignal<T>(
-  maybeSignal: MaybeSignal<T> | MaybeWritableSignal<T>,
-): T;
-function resolveMaybeSignal<T>(
-  maybeSignal: MaybeSignal<T> | MaybeWritableSignal<T> | undefined,
-): T | undefined;
-function resolveMaybeSignal<T>(
-  maybeSignal: MaybeSignal<T> | MaybeWritableSignal<T> | undefined,
-): T | undefined {
-  return isSignal(maybeSignal)
-    ? maybeSignal()
-    : isWritableSignal(maybeSignal)
-      ? maybeSignal.get()
-      : maybeSignal;
 }
 
 export class RenderingEngine {
@@ -213,7 +194,7 @@ export class RenderingEngine {
           if (this.isQueuedForClear(PatchTarget.Content)) {
             payload.content = '';
           } else if (content !== undefined) {
-            payload.content = resolveMaybeSignal(content);
+            payload.content = read(content);
           }
         }
         if (targets & PatchTarget.Embeds || this.hasQueuedEmbeds()) {
