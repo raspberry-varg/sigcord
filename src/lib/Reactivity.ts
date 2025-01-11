@@ -26,6 +26,7 @@ export interface WritableSignal<T> extends core.Signal<T> {
   readonly _patchContext: PatchTarget;
   get: Getter<T>;
   set: Setter<T>;
+  update: Updater<T>;
   isDefined(): this is WritableSignal<NonNullable<T>>;
   readonly(): Signal<T>;
   split(): SignalTuple<T>;
@@ -37,6 +38,7 @@ type WritableSignalInternal<T> = {
 
 type Getter<T> = () => T;
 export type Setter<T> = (newVal: T) => void;
+export type Updater<T> = (updater: (oldVal: T) => T) => void;
 
 export type SignalTuple<T> = [
   getter: Getter<T>,
@@ -67,6 +69,11 @@ export function createSignal<T>(
   w.set = (v) => (s.value = v);
   (w.set as any)[FROM_SIGNAL] = s;
   (w.set as any)[SETTER_STAMP] = s;
+  w.update = (updater) => {
+    const cur = s.peek();
+    w.set(updater(cur));
+  };
+  (w.update as any)[FROM_SIGNAL] = s;
   w.isDefined = (): this is WritableSignal<NonNullable<T>> => {
     const v = s.peek();
     return v !== null && v !== undefined;

@@ -18,6 +18,7 @@ export {
   MaybeWritableSignal,
   Signal,
   Setter,
+  Updater,
   read,
   isSignal,
   isWritableSignal,
