@@ -282,7 +282,11 @@ export function MenuController<
         } else {
           navigation.push(currentView);
         }
-        renderer.queueViewSwapWithProps(view as View, props, true);
+        renderer.queueViewSwapWithProps(
+          view as View,
+          props,
+          /** skipCache= */ true,
+        );
       },
       goToCached: (view, props) => {
         const currentView = renderer.getCurrentView();
@@ -350,7 +354,7 @@ export function MenuController<
 
       if (patchTarget !== PatchTarget.None && prevCtx !== builtins) {
         // run called outside of a render or update cycle
-        queueUpdateMicrotask(builtins);
+        queueUpdateMicrotask(builtins, isActiveView);
       }
     });
   }
@@ -457,9 +461,15 @@ export function MenuController<
 
   function beforeRender() {
     const queued = renderer.getQueuedView();
+    const queuedNav = renderer.getQueuedNavigation();
     if (queued) {
       logger.debug(':: about to set active view --> queued is not null');
       setActiveView(() => queued.view);
+    } else if (queuedNav) {
+      logger.debug(
+        ':: about to set active view --> queuedNavigation is not null',
+      );
+      setActiveView(() => queuedNav.view);
     } else {
       logger.debug(
         ':: about to set active view --> queued was null, using current view',
