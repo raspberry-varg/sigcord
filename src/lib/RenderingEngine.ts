@@ -96,6 +96,10 @@ export class RenderingEngine {
     return this.queuedView;
   }
 
+  getQueuedNavigation(): Readonly<NavigationPayload> | undefined {
+    return this.queuedNavigation;
+  }
+
   getReactivePayload(): RenderedReactiveView | undefined {
     return this.reactiveViewInstance;
   }
