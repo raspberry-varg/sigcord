@@ -10,6 +10,11 @@
 import { Synapse } from './Synapse.js';
 import { PatchTarget } from './RenderingEngine.js';
 import { assert } from '../util/Assertions.js';
+import {
+  createUntracked,
+  type Resource,
+  type ResourceTuple,
+} from './Reactivity.js';
 
 let currentSynapse: Synapse | null = null;
 
@@ -36,32 +41,138 @@ export function setReactiveContext(synapse: Synapse | null) {
   currentSynapse = synapse;
 }
 
-export const resumable: Synapse['resumableSuspend'] = (action) =>
-  useSynapse().resumableSuspend(action);
-
 // - - - - - - -
 // Begin globals
 // - - - - - - -
 
 // Signals
 
+/**
+ * Create a new signal.
+ *
+ * Signals are functions that allow for fine-grained reactivity in an app,
+ * triggering reactions ("effects") **only if** their value changes.
+ *
+ * ```ts
+ * const [clicks, setClicks] = signal(0);
+ * const button = createDiscordButton();
+ * componentEffect(() => {
+ *   // subscribes to this signal and re-runs any time this signal changes
+ *   button.label = `You have clicked me ${clicks()} times.`;
+ * });
+ *
+ * return component({
+ *   id: 'my-component',
+ *   controller: (buttonInteraction) => {
+ *     // updates clicks without reading the signal
+ *     setClicks((prev) => prev + 1);
+ *   }
+ * });
+ * ```
+ *
+ * In DIM, signals automatically bind to the render cycle. If you need to
+ * completely re-run an entire function if any subscribed signal changes, or to
+ * incrementally migrate a component to be fully reactive, wrap the embed or
+ * component in a closure:
+ *
+ * ```ts
+ * const [clicks, setClicks] = signal(0);
+ * return {
+ *   embeds: [
+ *     () =>
+ *       new EmbedBuilder()
+ *         .setDescription(`You clicked the button below ${clicks()} times!`),
+ *   ],
+ *   components: [
+ *     // ...
+ *   ]
+ * }
+ * ```
+ *
+ * @param initialValue The initial value to set to the signal. Omit to assign
+ *    later.
+ * @returns Signal tuple with a signal getter and setter.
+ */
 export const signal: Synapse['createSignal'] = <T>(
-  fnOrValue: T | (() => T) | undefined = undefined,
-  params = {},
-  patchTarget = PatchTarget.None,
-) => useSynapse().createSignal(fnOrValue, params, patchTarget);
+  initialValue: T | undefined = undefined,
+) => useSynapse().createSignal(initialValue);
 
+/**
+ * Create an object to modify and read from a single signal. Capable of being
+ * split into a signal tuple or standalone signal.
+ * @param initialValue The initial value to set to the signal. Omit to assign
+ *    later.
+ * @returns Object containing signal read and mutators.
+ */
 export const writable: Synapse['createWritableSignal'] = <T>(
-  fnOrValue: T | (() => T) | undefined = undefined,
-  params = {},
-  patchTarget = PatchTarget.None,
-) => useSynapse().createWritableSignal(fnOrValue, params, patchTarget);
+  initialValue: T | undefined = undefined,
+) => useSynapse().createWritableSignal(initialValue);
 
-export const computed: Synapse['createComputed'] = <T>(
-  fn: () => T,
-  params = {},
-  patchTarget = PatchTarget.None,
-) => useSynapse().createComputed(fn, params, patchTarget);
+/**
+ * Create a signal that only updates if any of its dependencies change.
+ * @param derived Function with signal reads.
+ * @returns Signal that has subscribed to any signals read during its initial
+ *    call.
+ */
+export const computed: Synapse['createComputed'] = <T>(derived: () => T) =>
+  useSynapse().createComputed(derived);
+
+/**
+ * Read a signal without subscribing it to the current reactive context or
+ * effect.
+ * @param signal Signal to read from.
+ * @returns
+ */
+export function untracked<T>(signal: () => T): T {
+  return createUntracked(signal);
+}
+
+/**
+ * Create a computed signal that auto-populates with the resolved value from the
+ * provided asynchronous task.
+ *
+ * ```ts
+ * const [user, mutateUser, refreshUser] = resource(() => fetchUserDb());
+ * const embed = createEmbed().setTitle('User Info');
+ * componentEffect(() => {
+ *   if (user.isLoading()) {
+ *     embed.setDescription('Loading...');
+ *   }
+ *   const u = user();
+ *   embed.setDescription(`Viewing information for ${u.name}.`);
+ *   // ...
+ * });
+ * return {
+ *   embeds: [embed],
+ * };
+ * ```
+ *
+ * @param getResource Getter function that resolves to the wanted resource kind.
+ * @returns Tuple with a resource, mutator for optimistic updates, and a refresh
+ * function that reruns the provided task.
+ */
+export function resource<T>(
+  getResource: () => Promise<T>,
+): ResourceTuple<T | undefined> {
+  const [resolvedResource, setResolvedResource] = signal<T>();
+  const [loading, setLoading] = signal(false);
+  const fetch = () => {
+    setLoading(true);
+    getResource().then((result) => {
+      setResolvedResource(result);
+      setLoading(false);
+    });
+  };
+  fetch();
+
+  return [
+    Object.assign(resolvedResource, {
+      isLoading: loading,
+    }) satisfies Resource<T | undefined>,
+    setResolvedResource,
+    fetch,
+  ];
+}
 
 // Signal effects
 
@@ -78,8 +189,8 @@ export const computed: Synapse['createComputed'] = <T>(
  * @param patchTarget Bitfield of {@link PatchTarget} to queue for rendering
  * when this effect runs.
  */
-export const effect: Synapse['createEffect'] = (fn, params, patchTarget) =>
-  useSynapse().createEffect(fn, params, patchTarget);
+export const effect: Synapse['createEffect'] = (fn, patchTarget) =>
+  useSynapse().createEffect(fn, patchTarget);
 
 /**
  * Create an effect that runs when the value of signals in the function are
@@ -90,8 +201,8 @@ export const effect: Synapse['createEffect'] = (fn, params, patchTarget) =>
  * @param fn The effect to run.
  * @param params Extra configuration for debugging.
  */
-export const embedEffect: Synapse['createEmbedEffect'] = (fn, params) =>
-  useSynapse().createEmbedEffect(fn, params);
+export const embedEffect: Synapse['createEmbedEffect'] = (fn) =>
+  useSynapse().createEmbedEffect(fn);
 
 /**
  * Create an effect that runs when the value of signals in the function are
@@ -102,8 +213,30 @@ export const embedEffect: Synapse['createEmbedEffect'] = (fn, params) =>
  * @param fn The effect to run.
  * @param params Extra configuration for debugging.
  */
-export const componentEffect: Synapse['createComponentEffect'] = (fn, params) =>
-  useSynapse().createComponentEffect(fn, params);
+export const componentEffect: Synapse['createComponentEffect'] = (fn) =>
+  useSynapse().createComponentEffect(fn);
+
+// Asynchronous escape-hatches
+
+/**
+ * Perform an asynchronous action, resetting the reactive context back to the
+ * current menu once the action's promise resolves.
+ *
+ * @example
+ * ```ts
+ * function onClick(buttonInteraction) {
+ *   const user = await resumableAction(() => fetchUserFromDb());
+ *   // reactive context restored, allowing calls to context-sensitive built-ins
+ *   goTo(UserInfoView, {user});
+ * }
+ * ```
+ *
+ * @param action The asynchronous action to perform immediately.
+ * @returns Promise which resets the current reactive context when the provided
+ *    action's promise resolves.
+ */
+export const resumableAction: Synapse['resumableSuspend'] = (action) =>
+  useSynapse().resumableSuspend(action);
 
 // Component
 

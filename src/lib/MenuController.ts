@@ -9,24 +9,24 @@ import { Synapse, type ModalHandlingOptions } from './Synapse.js';
 import { View, ViewProps, MenuContext } from './FunctionalMenuView.js';
 import { IntrinsicMenuProps } from './InteractiveMenu.js';
 import { SmartComponentType } from './SmartComponents.js';
-import { assert, assertAndReturn } from '../util/Assertions.js';
+import { assert, assertAndReturn, assertNotNull } from '../util/Assertions.js';
 import { Listener } from './Listener.js';
-import { logger } from '../util/Logger.js';
+import { debug, logger } from '../util/Logger.js';
 import { RenderingEngine } from './RenderingEngine.js';
 import { InteractionPatcher } from './InteractionPatcher.js';
 import { CollectorService } from './CollectorService.js';
 import { TimeoutEmbed } from './PrebuiltEmbeds.js';
-import { createSignal } from './Reactivity.js';
-import type { ReactiveOptions } from './Reactivity.js';
+import { createComputed, createEffect, createSignal } from './Reactivity.js';
 import { PatchTarget, PatchTargetBitField } from './RenderingEngine.js';
 import type { PropsBase } from './MenuView/ViewBase.js';
-import { EffectInstance } from './Reactivity.js';
 import { Navigation } from './Navigation.js';
 import {
   getCurrentReactiveContext,
   setReactiveContext,
 } from './ReactiveBuiltIns.js';
 import type { TimeoutEndReason } from '../util/CollectorUtil.js';
+import { batch } from '@preact/signals-core';
+import { queueUpdateMicrotask } from './MenuUpdateMicrotasks.js';
 
 export interface MenuControllerAPI {
   // render API
@@ -237,64 +237,34 @@ export function MenuController<
         );
       },
       createSignal<T>(
-        fnOrValue: T | (() => T) | undefined = undefined,
-        params = {},
+        fnOrValue: T | undefined = undefined,
         patchTarget = PatchTarget.None,
       ) {
-        const s = createSignal(fnOrValue, params, patchTarget);
+        const s = createSignal(fnOrValue, patchTarget);
         if (patchTarget !== PatchTarget.None) {
-          registerEffect(
-            () => {
-              s.get();
-            },
-            params,
-            patchTarget,
-          );
+          registerEffect(s.get.bind(s), patchTarget);
         }
         return s.split();
       },
       createWritableSignal<T>(
-        fnOrValue: T | (() => T) | undefined = undefined,
-        params = {},
+        initialValue: T | undefined = undefined,
         patchTarget = PatchTarget.None,
       ) {
-        const s = createSignal(fnOrValue, params, patchTarget);
+        const s = createSignal(initialValue, patchTarget);
         if (patchTarget !== PatchTarget.None) {
-          registerEffect(
-            () => {
-              s.get();
-            },
-            params,
-            patchTarget,
-          );
+          registerEffect(s.get.bind(s), patchTarget);
         }
         return s;
       },
-      createEmbedSignal: (closure, params = {}) => {
-        const s = createSignal(closure, params, PatchTarget.Embeds);
-        $.createEmbedEffect(() => {
-          s.get();
-        }, params);
-        return s;
+      createComputed: (fn) => createComputed(fn),
+      createEffect: (fn, patchTarget) => {
+        registerEffect(fn, patchTarget);
       },
-      createComponentSignal: (closure, params = {}) => {
-        const s = createSignal(closure, params, PatchTarget.Components);
-        $.createComponentEffect(() => {
-          s.get();
-        }, params);
-        return s;
+      createEmbedEffect: (fn) => {
+        registerEffect(fn, PatchTarget.Embeds);
       },
-      createComputed(fn, params = {}, patchTarget = PatchTarget.None) {
-        return this.createSignal(fn, params, patchTarget)[0];
-      },
-      createEffect: (fn, params, patchTarget) => {
-        registerEffect(fn, params, patchTarget);
-      },
-      createEmbedEffect: (fn, params) => {
-        registerEffect(fn, params, PatchTarget.Embeds);
-      },
-      createComponentEffect: (fn, params) => {
-        registerEffect(fn, params, PatchTarget.Components);
+      createComponentEffect: (fn) => {
+        registerEffect(fn, PatchTarget.Components);
       },
       goTo(view, props) {
         const currentView = renderer.getCurrentView();
@@ -308,12 +278,15 @@ export function MenuController<
             reactivePayload,
             'Tried to navigate before initial render in a reactive view.',
           );
-          navigation.pushReactive(currentView, reactivePayload, effects);
-          effects = [];
+          navigation.pushReactive(currentView, reactivePayload);
         } else {
           navigation.push(currentView);
         }
-        renderer.queueViewSwapWithProps(view as View, props, true);
+        renderer.queueViewSwapWithProps(
+          view as View,
+          props,
+          /** skipCache= */ true,
+        );
       },
       goToCached: (view, props) => {
         const currentView = renderer.getCurrentView();
@@ -327,8 +300,7 @@ export function MenuController<
             reactivePayload,
             'Tried to navigate before initial render in a reactive view.',
           );
-          navigation.pushReactive(currentView, reactivePayload, effects);
-          effects = [];
+          navigation.pushReactive(currentView, reactivePayload);
         } else {
           navigation.push(currentView);
         }
@@ -340,7 +312,6 @@ export function MenuController<
           'Tried to navigate backwards without a parent view. Have you called goTo() in the parent view?',
         );
         const payload = navigation.pop();
-        effects = payload.effects;
         renderer.queueNavigation(payload);
       },
       canGoBack: () => {
@@ -356,24 +327,35 @@ export function MenuController<
   }
   function registerEffect(
     fn: () => void,
-    params: ReactiveOptions | undefined,
     patchTarget = PatchTarget.None,
   ): void {
-    let version = 0;
-    const signal = createSignal(
-      () => {
-        fn();
-        version++;
-        return version;
-      },
-      { ...params },
-      patchTarget,
+    const effectRegisteredTo = assertNotNull(renderer.getCurrentView());
+    const isActiveView = createComputed(
+      () => activeView() === effectRegisteredTo,
     );
-    signal.get();
-    effects.push({
-      signal,
-      previousVersion: version,
-      patch: patchTarget,
+    createEffect(() => {
+      if (!isActiveView()) {
+        logger.debug(`Not active view!`, {
+          effectRegisteredTo: effectRegisteredTo.id,
+          menuControllerActiveView: activeView()?.id,
+        });
+        return;
+      }
+
+      const prevCtx = getCurrentReactiveContext();
+      try {
+        setReactiveContext(builtins);
+        fn();
+      } finally {
+        setReactiveContext(prevCtx);
+      }
+
+      builtins.patch(patchTarget);
+
+      if (patchTarget !== PatchTarget.None && prevCtx !== builtins) {
+        // run called outside of a render or update cycle
+        queueUpdateMicrotask(builtins, isActiveView);
+      }
     });
   }
   function getView(id: string): View<AllProps> {
@@ -404,6 +386,12 @@ export function MenuController<
     },
   };
   const builtins = createSynapse();
+  const [activeView, setActiveView] = builtins.createSignal<View | null>(null);
+  if (debug) {
+    createEffect(() => {
+      logger.debug(`activeView set to --> ${activeView()?.id ?? null}`);
+    });
+  }
   const views = new Map<string, View<AllProps>>(
     registeredViews.map((v) => [v.id, v]),
   );
@@ -426,8 +414,6 @@ export function MenuController<
     MenuViewComponentId,
     MessageComponentCallback<any>
   >();
-  let effects: EffectInstance[] = [];
-
   let idle: number =
     props.idleTimeMs === undefined
       ? DEFAULT_IDLE
@@ -461,42 +447,34 @@ export function MenuController<
     }
     if (renderer.isCurrentViewReactive()) {
       let patchTargets: PatchTargetBitField = manualPatchQueued;
-      const prevContext = getCurrentReactiveContext();
-      try {
-        // using _resource = withReactiveContext(props.$);
-        setReactiveContext(props.$);
-        effects.forEach((effect) => {
-          const oldVersion = effect.previousVersion;
-          const newVersion = effect.signal.get();
-          const hasChanged = oldVersion !== newVersion;
-          effect.previousVersion = newVersion;
-          if (hasChanged && effect.patch !== undefined) {
-            patchTargets |= effect.patch;
-          }
-        });
-      } catch (e) {
-        logger.error(
-          `Error encountered while running effects for <${renderer.getCurrentView()?.id ?? 'Unnamed'}>.`,
-        );
-        throw e;
-      } finally {
-        setReactiveContext(prevContext);
-      }
-      logger.debug({ patchTargetBitField: patchTargets });
       if (renderer.hasQueuedEmbeds()) {
         patchTargets |= PatchTarget.Embeds;
       }
       if (renderer.hasQueuedNavigation()) {
         patchTargets |= PatchTarget.All;
       }
+      logger.debug({ patchTargetBitField: patchTargets });
       return patchTargets;
     }
     return PatchTarget.All;
   }
 
   function beforeRender() {
-    if (renderer.hasQueuedView()) {
-      effects.length = 0;
+    const queued = renderer.getQueuedView();
+    const queuedNav = renderer.getQueuedNavigation();
+    if (queued) {
+      logger.debug(':: about to set active view --> queued is not null');
+      setActiveView(() => queued.view);
+    } else if (queuedNav) {
+      logger.debug(
+        ':: about to set active view --> queuedNavigation is not null',
+      );
+      setActiveView(() => queuedNav.view);
+    } else {
+      logger.debug(
+        ':: about to set active view --> queued was null, using current view',
+      );
+      setActiveView(() => assertNotNull(renderer.getCurrentView()));
     }
   }
 
@@ -641,7 +619,7 @@ export function MenuController<
     patcher.mountInteraction(getInteractionToPatch());
     beforeRender();
     try {
-      const payload = await renderer.render(props);
+      const payload = await batch(async () => await renderer.render(props));
       await patcher.patch(payload, options);
     } finally {
       afterRender();
@@ -651,9 +629,14 @@ export function MenuController<
   /** Handles subsequent rerenders. */
   async function update(patchTargets: PatchTargetBitField): Promise<void> {
     beforeRender();
-    const payload = await renderer.patch(props, patchTargets);
-    await patcher.patch(payload, {});
-    afterRender();
+    try {
+      const payload = await batch(
+        async () => await renderer.patch(props, patchTargets),
+      );
+      await patcher.patch(payload, {});
+    } finally {
+      afterRender();
+    }
   }
 
   /**
