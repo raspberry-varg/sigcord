@@ -1,32 +1,55 @@
-import { Reactive, reactive, type ReactivelyParams } from '@reactively/core';
 import type { PatchTarget } from './RenderingEngine.js';
+import * as core from '@preact/signals-core';
 
-export type ReactiveOptions = Omit<ReactivelyParams, 'effect'>;
-export type MaybeSignal<T> = T | Signal<T>;
-export function isSignal<T>(value?: MaybeSignal<T>): value is Signal<T> {
-  return typeof value === 'function' && SignalGetterSymbol in value;
+const WRITABLE_STAMP = Symbol('writable');
+const GETTER_STAMP = Symbol('getter');
+const SETTER_STAMP = Symbol('setter');
+const FROM_SIGNAL = Symbol('signal source instance');
+
+export type Signalish<T> = Signal<T> | WritableSignal<T>;
+
+export type MaybeSignal<T> = T | Signalish<T>;
+export function isSignal<T>(value?: T | Signalish<T>): value is Signal<T> {
+  return typeof value === 'function' && GETTER_STAMP in value;
 }
 
-export type MaybeWritableSignal<T> = T | WritableSignal<T>;
+export type MaybeWritableSignal<T> = T | Signalish<T>;
 export function isWritableSignal<T>(
-  value?: MaybeWritableSignal<T>,
+  value?: T | Signalish<T>,
 ): value is WritableSignal<T> {
-  return value instanceof Reactive;
+  return value != null && typeof value === 'object' && WRITABLE_STAMP in value;
 }
 
-const SignalGetterSymbol = Symbol('signal getter');
-export type Signal<T> = (() => T) & { readonly [SignalGetterSymbol]: true };
+export type Signal<T> = () => T;
 
-export interface WritableSignal<T> extends Reactive<T> {
+export type Resource<T> = Signal<T> & {
+  isLoading: Signal<boolean>;
+};
+
+export interface WritableSignal<T> extends core.Signal<T> {
   readonly _patchContext: PatchTarget;
+  get: Getter<T>;
+  set: Setter<T>;
+  update: Updater<T>;
   isDefined(): this is WritableSignal<NonNullable<T>>;
   readonly(): Signal<T>;
   split(): SignalTuple<T>;
-  get: Getter<T>;
 }
 
-type Getter<T> = Reactive<T>['get'] & { [SignalGetterSymbol]: true };
-export type Setter<T> = Reactive<T>['set'];
+type WritableSignalInternal<T> = {
+  -readonly [x in keyof WritableSignal<T>]: WritableSignal<T>[x];
+};
+
+type UpdateFn<T> = (oldVal: T) => T;
+
+type Getter<T> = () => T;
+
+export interface Setter<T> {
+  (newVal: T): void;
+  (setter: UpdateFn<T>): void;
+}
+
+export type Updater<T> = (updater: UpdateFn<T>) => void;
 
 export type SignalTuple<T> = [
   getter: Getter<T>,
@@ -34,52 +57,76 @@ export type SignalTuple<T> = [
   WritableSignal<T>,
 ];
 
+export type ResourceTuple<T> = [
+  data: Signal<T>,
+  mutate: Setter<T>,
+  refetch: () => void,
+];
+
 export function createSignal<T>(
-  fnOrValue: T | (() => T),
-  params: ReactiveOptions,
+  initialVal: T,
   patchContext: PatchTarget,
 ): WritableSignal<T>;
 export function createSignal<T>(
-  fnOrValue: T | (() => T) | undefined,
-  params: ReactiveOptions,
+  initialVal: T | undefined,
   patchContext: PatchTarget,
 ): WritableSignal<T | undefined>;
 export function createSignal<T>(
-  fnOrValue: T | (() => T) | undefined,
-  params: ReactiveOptions,
+  initialVal: T | undefined,
   patchContext: PatchTarget,
 ): WritableSignal<T | undefined> {
-  const signal = reactive(fnOrValue, params) as WritableSignal<T | undefined>;
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  signal.isDefined = () => signal.get() !== null && signal.get() !== undefined;
-  (signal as { _patchContext: PatchTarget })._patchContext = patchContext;
-  signal.get[SignalGetterSymbol] = true;
-  signal.readonly = () => signal.get.bind(signal);
+  const s = core.signal(initialVal);
+  const w = s as WritableSignalInternal<T | undefined>;
+  (w as any)[WRITABLE_STAMP] = true;
+  w._patchContext = patchContext;
 
-  const getter = () => signal.get();
-  getter[SignalGetterSymbol] = true as const;
-  const setter: Setter<T> = (fnOrValue) => signal.set(fnOrValue);
-  signal.split = () => [getter, setter, signal];
+  w.get = () => s.value;
+  (w.get as any)[FROM_SIGNAL] = s;
+  (w.get as any)[GETTER_STAMP] = true;
+  w.set = (v) =>
+    (s.value =
+      typeof v === 'function' ? (v as UpdateFn<T | undefined>)(w.peek()) : v);
+  (w.set as any)[FROM_SIGNAL] = s;
+  (w.set as any)[SETTER_STAMP] = s;
+  w.update = (updater) => {
+    const cur = s.peek();
+    w.set(updater(cur));
+  };
+  (w.update as any)[FROM_SIGNAL] = s;
+  w.isDefined = (): this is WritableSignal<NonNullable<T>> => {
+    const v = s.peek();
+    return v !== null && v !== undefined;
+  };
+  w.readonly = () => w.get.bind(w);
+  w.split = () => [w.get.bind(w), w.set.bind(w), w];
 
-  return signal as WritableSignal<T | undefined>;
+  return w;
 }
 
-export interface EffectInstance {
-  signal: WritableSignal<number>;
-  previousVersion: number;
-  patch?: PatchTarget;
+export function createUntracked<T>(signal: () => T): T {
+  return core.untracked(signal);
+}
+
+export function createComputed<T>(derived: () => T): Getter<T> {
+  const computed = core.computed(derived);
+  return () => computed.value;
+}
+
+export function createEffect(action: () => void) {
+  core.effect(action);
 }
 
 /**
  * Resolves a possible signal to its held value.
  */
-export function read<T>(
-  maybeSignal: MaybeSignal<T> | MaybeWritableSignal<T> | T,
-): T {
-  return isSignal(maybeSignal)
-    ? maybeSignal()
-    : isWritableSignal(maybeSignal)
-      ? maybeSignal.get()
+export function read<T>(maybeSignal: T | Signal<T> | WritableSignal<T>): T {
+  return isWritableSignal(maybeSignal)
+    ? maybeSignal.get()
+    : isSignal(maybeSignal) || typeof maybeSignal === 'function'
+      ? (maybeSignal as () => T)()
       : maybeSignal;
+}
+
+export function getWritable<T>(signal: Getter<T>): WritableSignal<T> {
+  return (signal as any)[FROM_SIGNAL];
 }

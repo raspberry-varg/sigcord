@@ -1,5 +1,5 @@
 import type { EmbedBuilder } from 'discord.js';
-import { flattenChildren, isSignal, type Props } from '../index.js';
+import { flattenChildren, type Props } from '../index.js';
 import { assert } from '../util/Assertions.js';
 import {
   isClassViewInstance,
@@ -9,12 +9,7 @@ import {
 } from './FunctionalMenuView.js';
 import type { RenderedReactiveView, ViewMessagePayload } from './MenuView.js';
 import { logger } from '../util/Logger.js';
-import {
-  isWritableSignal,
-  type MaybeSignal,
-  type MaybeWritableSignal,
-} from './Reactivity.js';
-import { Reactive } from '@reactively/core';
+import { read } from './Reactivity.js';
 import { type PropsBase } from './MenuView/ViewBase.js';
 import type { NavigationPayload } from './Navigation.js';
 import {
@@ -27,6 +22,7 @@ import {
   setReactiveContext,
 } from './ReactiveBuiltIns.js';
 import { instantiateClassView } from './MenuView/ClassicView.js';
+import { batch } from '@preact/signals-core';
 
 export type PatchTargetBitField = number;
 
@@ -53,21 +49,6 @@ type QueuedView = {
 interface QueuedEmbeds {
   prepend: EmbedBuilder[];
   append: EmbedBuilder[];
-}
-function resolveMaybeSignal<T>(
-  maybeSignal: MaybeSignal<T> | MaybeWritableSignal<T>,
-): T;
-function resolveMaybeSignal<T>(
-  maybeSignal: MaybeSignal<T> | MaybeWritableSignal<T> | undefined,
-): T | undefined;
-function resolveMaybeSignal<T>(
-  maybeSignal: MaybeSignal<T> | MaybeWritableSignal<T> | undefined,
-): T | undefined {
-  return isSignal(maybeSignal)
-    ? maybeSignal()
-    : isWritableSignal(maybeSignal)
-      ? maybeSignal.get()
-      : maybeSignal;
 }
 
 export class RenderingEngine {
@@ -109,6 +90,14 @@ export class RenderingEngine {
 
   getCurrentView(): View | undefined {
     return this.viewDefinition;
+  }
+
+  getQueuedView(): Readonly<QueuedView> | undefined {
+    return this.queuedView;
+  }
+
+  getQueuedNavigation(): Readonly<NavigationPayload> | undefined {
+    return this.queuedNavigation;
   }
 
   getReactivePayload(): RenderedReactiveView | undefined {
@@ -184,6 +173,14 @@ export class RenderingEngine {
       this.reactiveViewInstance,
       'Internal error: Reactive payload was not set.',
     );
+    return this.patchReactive(this.reactiveViewInstance, props, targets);
+  }
+
+  patchReactive(
+    instance: ReactiveViewInstance,
+    props: Props,
+    targets: PatchTargetBitField,
+  ) {
     const $ = props.$;
     targets |= this.queuedClears;
     const payload: ViewMessagePayload = {};
@@ -191,50 +188,47 @@ export class RenderingEngine {
     try {
       // using _resource = withReactiveContext($);
       setReactiveContext($);
-      if (this.reactiveViewInstance.ephemeral !== undefined) {
-        payload.ephemeral = this.reactiveViewInstance.ephemeral;
-      }
-      if (targets & PatchTarget.Content) {
-        this.patchContext = PatchTarget.Content;
-        const content = this.reactiveViewInstance.content;
-        if (this.isQueuedForClear(PatchTarget.Content)) {
-          payload.content = '';
-        } else if (content !== undefined) {
-          if (typeof content === 'string' || content instanceof Reactive) {
-            payload.content = resolveMaybeSignal(content);
-          } else {
-            this.reactiveViewInstance.content = $.createWritableSignal(content);
-            payload.content = this.reactiveViewInstance.content.get();
+      batch(() => {
+        if (instance.ephemeral !== undefined) {
+          payload.ephemeral = instance.ephemeral;
+        }
+        if (targets & PatchTarget.Content) {
+          this.patchContext = PatchTarget.Content;
+          const content = instance.content;
+          if (this.isQueuedForClear(PatchTarget.Content)) {
+            payload.content = '';
+          } else if (content !== undefined) {
+            payload.content = read(content);
           }
         }
-      }
-      if (targets & PatchTarget.Embeds || this.hasQueuedEmbeds()) {
-        this.patchContext = PatchTarget.Embeds;
-        if (this.isQueuedForClear(PatchTarget.Embeds)) {
-          payload.embeds = [];
-        } else {
-          payload.embeds = flattenChildren(
-            $,
-            this.reactiveViewInstance.embeds,
-            this.patchContext,
-          );
+        if (targets & PatchTarget.Embeds || this.hasQueuedEmbeds()) {
+          this.patchContext = PatchTarget.Embeds;
+          if (this.isQueuedForClear(PatchTarget.Embeds)) {
+            payload.embeds = [];
+          } else {
+            payload.embeds = flattenChildren(
+              $,
+              instance.embeds,
+              this.patchContext,
+            );
+          }
+          if (this.queuedEmbeds) {
+            payload.embeds = this.attachEnqueuedEmbeds(payload.embeds ?? []);
+          }
         }
-        if (this.queuedEmbeds) {
-          payload.embeds = this.attachEnqueuedEmbeds(payload.embeds ?? []);
+        if (targets & PatchTarget.Components) {
+          this.patchContext = PatchTarget.Components;
+          if (this.isQueuedForClear(PatchTarget.Components)) {
+            payload.components = [];
+          } else if (instance.components !== undefined) {
+            payload.components = flattenChildren(
+              $,
+              instance.components,
+              this.patchContext,
+            );
+          }
         }
-      }
-      if (targets & PatchTarget.Components) {
-        this.patchContext = PatchTarget.Components;
-        if (this.isQueuedForClear(PatchTarget.Components)) {
-          payload.components = [];
-        } else if (this.reactiveViewInstance.components !== undefined) {
-          payload.components = flattenChildren(
-            $,
-            this.reactiveViewInstance.components,
-            this.patchContext,
-          );
-        }
-      }
+      });
     } finally {
       this.postRender();
       setReactiveContext(prevContext);
@@ -246,13 +240,19 @@ export class RenderingEngine {
     if (this.queuedView) {
       this.viewDefinition = this.queuedView.view;
     }
+
     if (this.queuedNavigation) {
       this.applyQueuedNavigation();
       if (this.reactiveViewInstance) {
-        return await this.patch(props, PatchTarget.All);
+        return this.patchReactive(
+          this.reactiveViewInstance,
+          props,
+          PatchTarget.All,
+        );
       }
     }
-    const view = await this.getViewInstance(
+
+    const view = this.getViewInstance(
       !this.queuedView || 'args' in this.queuedView
         ? props
         : { $: props.$, ...this.queuedView.props },
@@ -266,9 +266,9 @@ export class RenderingEngine {
     }
     if (isReactiveViewInstance(view)) {
       this.reactiveViewInstance = view;
-      return await this.patch(props, PatchTarget.All);
+      return this.patchReactive(view, props, PatchTarget.All);
     }
-    const payload = await view.instance.render(props);
+    const payload = await batch(() => view.instance.render(props));
     if (this.queuedEmbeds) {
       payload.embeds = this.attachEnqueuedEmbeds(payload.embeds ?? []);
     }
@@ -284,7 +284,7 @@ export class RenderingEngine {
     this.patchContext = PatchTarget.None;
   }
 
-  private async getViewInstance(props: Props): Promise<ViewInstance> {
+  private getViewInstance(props: Props): ViewInstance {
     const viewDefinition = this.viewDefinition;
     assert(viewDefinition, 'Internal error: View was not set.');
 
@@ -315,7 +315,7 @@ export class RenderingEngine {
     // class based view
     let viewClassInstance = this.instances.get(viewDefinition.id);
     if (!viewClassInstance) {
-      viewClassInstance = await instantiateClassView(viewDefinition, props);
+      viewClassInstance = instantiateClassView(viewDefinition, props);
       this.instances.set(viewClassInstance.id, viewClassInstance);
     }
     return viewClassInstance;

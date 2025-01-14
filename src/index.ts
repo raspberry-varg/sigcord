@@ -18,6 +18,8 @@ export {
   MaybeWritableSignal,
   Signal,
   Setter,
+  Updater,
+  Resource,
   read,
   isSignal,
   isWritableSignal,
@@ -25,8 +27,10 @@ export {
 export {
   component,
   signal,
+  untracked,
   writable,
   computed,
+  resource,
   effect,
   embedEffect,
   componentEffect,
@@ -44,7 +48,7 @@ export {
   stopMenu,
   patch,
   useSynapse,
-  resumable,
+  resumableAction,
 } from './lib/ReactiveBuiltIns.js';
 export { defineView } from './lib/MenuView/DefineReactiveView.js';
 export {

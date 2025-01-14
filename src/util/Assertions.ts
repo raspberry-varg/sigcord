@@ -15,3 +15,8 @@ export function assertAndReturn<T>(
   assert(condition(value), typeof msg === 'string' ? msg : msg?.(value));
   return value;
 }
+
+export function assertNotNull<T>(value: T | null | undefined): NonNullable<T> {
+  assert(value != null, 'Expected value to not be null.');
+  return value!;
+}
