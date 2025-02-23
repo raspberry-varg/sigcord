@@ -26,7 +26,6 @@ import {
 } from './ReactiveBuiltIns.js';
 import type { TimeoutEndReason } from '../util/CollectorUtil.js';
 import { batch } from '@preact/signals-core';
-import { queueUpdateMicrotask } from './MenuUpdateMicrotasks.js';
 
 export interface MenuControllerAPI {
   // render API
@@ -351,11 +350,6 @@ export function MenuController<
       }
 
       builtins.patch(patchTarget);
-
-      if (patchTarget !== PatchTarget.None && prevCtx !== builtins) {
-        // run called outside of a render or update cycle
-        queueUpdateMicrotask(builtins, isActiveView);
-      }
     });
   }
   function getView(id: string): View<AllProps> {
