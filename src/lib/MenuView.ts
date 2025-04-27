@@ -9,14 +9,15 @@ import {
   type TopLevelComponent,
   type TopLevelComponentData,
 } from 'discord.js';
-import {
-  PatchTarget,
-  type WritableSignal,
-  type Synapse,
-  isWritableSignal,
-} from '../index.js';
 import type { IS_REACTIVE_SYMBOL } from './MenuView/ReactiveView.js';
-import { isSignal, type Signalish } from './Reactivity.js';
+import {
+  isSignal,
+  isWritableSignal,
+  type WritableSignal,
+  type Signalish,
+} from './Reactivity.js';
+import type { Synapse } from './Synapse.js';
+import type { PatchTarget } from './RenderingEngine.js';
 
 export type ViewComponent =
   | TopLevelComponent
