@@ -1,10 +1,11 @@
 import { ViewProps, type View } from '../FunctionalMenuView.js';
 import type { IntrinsicMenuProps } from '../InteractiveMenu.js';
 
-import type {
-  Children,
-  ReactiveViewPayload,
-  RenderedReactiveView,
+import {
+  IS_V2,
+  type Children,
+  type ReactiveViewPayload,
+  type RenderedReactiveView,
 } from '../MenuView.js';
 import { createComputed, isSignal, isWritableSignal } from '../Reactivity.js';
 import type { PropsBase } from './ViewBase.js';
@@ -44,11 +45,21 @@ export function instantiateReactiveView<Props extends PropsBase = PropsBase>(
   view: ReactiveViewDefinition<Props>,
   props: ViewProps<Props>,
 ): ReactiveViewInstance {
-  const instance: ReactiveViewInstance = {
-    ...view.factory(props),
-    id: view.id,
-    [IS_REACTIVE_SYMBOL]: true,
-  };
+  const factoryResult = view.factory(props);
+  const isV2 = Array.isArray(factoryResult);
+  const id = view.id;
+  const instance: ReactiveViewInstance = isV2
+    ? Object.assign(factoryResult, {
+        [IS_REACTIVE_SYMBOL]: true,
+        [IS_V2]: true,
+        id,
+      } as const)
+    : ({
+        [IS_REACTIVE_SYMBOL]: true,
+        [IS_V2]: false,
+        id: view.id,
+        ...factoryResult,
+      } as const);
   postProcessReactiveViewInstance(instance);
   return instance;
 }
@@ -56,6 +67,12 @@ export function instantiateReactiveView<Props extends PropsBase = PropsBase>(
 export function postProcessReactiveViewInstance(
   instance: ReactiveViewInstance,
 ): void {
+  if (instance[IS_V2]) {
+    // V2 is defined with a top-level array
+    // TODO: @raspberry-varg - Maybe make the array optional, idk.
+    return;
+  }
+
   if (instance.embeds !== undefined) {
     instance.embeds = functionsAsComputed(instance.embeds);
   }

@@ -1,5 +1,9 @@
-import type { EmbedBuilder } from 'discord.js';
-import { flattenChildren, type Props } from '../index.js';
+import { MessageFlags, type EmbedBuilder } from 'discord.js';
+import {
+  flattenChildren,
+  isRenderedReactiveViewV2,
+  type Props,
+} from '../index.js';
 import { assert } from '../util/Assertions.js';
 import {
   isClassViewInstance,
@@ -7,7 +11,11 @@ import {
   type View,
   type ViewInstance,
 } from './FunctionalMenuView.js';
-import type { RenderedReactiveView, ViewMessagePayload } from './MenuView.js';
+import type {
+  RenderedReactiveView,
+  ViewComponent,
+  ViewMessagePayload,
+} from './MenuView.js';
 import { logger } from '../util/Logger.js';
 import { read } from './Reactivity.js';
 import { type PropsBase } from './MenuView/ViewBase.js';
@@ -153,6 +161,10 @@ export class RenderingEngine {
     targets: PatchTargetBitField,
   ): Promise<ViewMessagePayload> {
     assert(this.viewDefinition, 'Internal error: View was not set.');
+    logger.debug('Patch requested', {
+      targets,
+      reactiveViewInstance: this.reactiveViewInstance,
+    });
     const queuedNav = this.queuedNavigation;
     if (
       this.queuedView ||
@@ -185,10 +197,37 @@ export class RenderingEngine {
     targets |= this.queuedClears;
     const payload: ViewMessagePayload = {};
     const prevContext = getCurrentReactiveContext();
+    logger.debug('Patching reactive view', { targets, viewInstance: instance });
     try {
       // using _resource = withReactiveContext($);
       setReactiveContext($);
       batch(() => {
+        if (isRenderedReactiveViewV2(instance)) {
+          // Using V2 components
+          logger.debug('Using V2 components');
+          if (!targets) {
+            logger.debug('No targets requested for V2 component instance.');
+            return;
+          }
+
+          payload.flags = (payload.flags ?? 0) | MessageFlags.IsComponentsV2;
+          this.patchContext = PatchTarget.Components;
+          if (this.isQueuedForClear(PatchTarget.Components)) {
+            payload.components = [];
+          } else {
+            const result = instance
+              .flatMap((el) =>
+                flattenChildren($, el as ViewComponent, this.patchContext),
+              )
+              .filter((el) => !!el);
+            if (result) {
+              payload.components = result;
+            }
+          }
+
+          return;
+        }
+
         if (instance.ephemeral !== undefined) {
           payload.ephemeral = instance.ephemeral;
         }
@@ -327,13 +366,29 @@ export class RenderingEngine {
       'Internal error: Tried to apply queuedNavigation before being assigned a value.',
     );
     this.viewDefinition = this.queuedNavigation.view;
-    this.reactiveViewInstance = this.queuedNavigation.reactiveInstance
-      ? {
-          ...this.queuedNavigation.reactiveInstance,
-          id: this.queuedNavigation.view.id,
-        }
-      : undefined;
+
+    const instance = this.queuedNavigation.reactiveInstance;
+    const id = this.queuedNavigation.view.id;
     this.queuedNavigation = undefined;
+
+    if (!instance) {
+      this.reactiveViewInstance = undefined;
+      return;
+    }
+
+    if (isRenderedReactiveViewV2(instance)) {
+      const clone = Object.assign({}, instance, {
+        id,
+      });
+      this.reactiveViewInstance = clone;
+    } else {
+      // legacy
+      const clone = {
+        ...instance,
+        id,
+      };
+      this.reactiveViewInstance = clone;
+    }
   }
 
   private attachEnqueuedEmbeds(embeds: EmbedBuilder[]): EmbedBuilder[] {

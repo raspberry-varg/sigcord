@@ -24,7 +24,8 @@ export class InteractionPatcher {
     );
     this.message = await safeRender(
       this.interaction,
-      { ...this.props, ...payload },
+      payload,
+      this.props,
       options.forceReply,
     );
   }

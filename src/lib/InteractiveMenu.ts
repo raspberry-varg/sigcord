@@ -23,6 +23,7 @@ export interface IntrinsicMenuProps extends IntrinsicViewProps {
   /**
    * Make this menu render its views as a private message.
    * @default false
+   * @deprecated Use {@link flags} instead
    */
   ephemeral: boolean | false;
   /**
