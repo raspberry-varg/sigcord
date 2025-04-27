@@ -1,9 +1,4 @@
 import { MessageFlags, type EmbedBuilder } from 'discord.js';
-import {
-  flattenChildren,
-  isRenderedReactiveViewV2,
-  type Props,
-} from '../index.js';
 import { assert } from '../util/Assertions.js';
 import {
   isClassViewInstance,
@@ -16,6 +11,7 @@ import type {
   ViewComponent,
   ViewMessagePayload,
 } from './MenuView.js';
+import { flattenChildren, isRenderedReactiveViewV2 } from './MenuView.js';
 import { logger } from '../util/Logger.js';
 import { read } from './Reactivity.js';
 import { type PropsBase } from './MenuView/ViewBase.js';
@@ -31,6 +27,7 @@ import {
 } from './ReactiveBuiltIns.js';
 import { instantiateClassView } from './MenuView/ClassicView.js';
 import { batch } from '@preact/signals-core';
+import type { Props } from '../index.js';
 
 export type PatchTargetBitField = number;
 
