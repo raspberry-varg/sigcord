@@ -75,6 +75,7 @@ export class CollectorService {
     onTimeout,
     onCollect,
   }: CollectorOptions): void {
+    logger.debug('Collector init', { message });
     const collector = (this.collector = message.createMessageComponentCollector(
       {
         filter,

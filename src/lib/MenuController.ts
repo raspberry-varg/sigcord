@@ -4,6 +4,7 @@ import {
   type MessageComponentInteraction,
   type RepliableInteraction,
   ModalBuilder,
+  InteractionResponse,
 } from 'discord.js';
 import { Synapse, type ModalHandlingOptions } from './Synapse.js';
 import { View, ViewProps, MenuContext } from './FunctionalMenuView.js';
@@ -237,7 +238,7 @@ export function MenuController<
       },
       createSignal<T>(
         fnOrValue: T | undefined = undefined,
-        patchTarget = PatchTarget.None,
+        patchTarget = PatchTarget.All, // V2 compatibility
       ) {
         const s = createSignal(fnOrValue, patchTarget);
         if (patchTarget !== PatchTarget.None) {
@@ -247,7 +248,7 @@ export function MenuController<
       },
       createWritableSignal<T>(
         initialValue: T | undefined = undefined,
-        patchTarget = PatchTarget.None,
+        patchTarget = PatchTarget.All, // V2 compatibility
       ) {
         const s = createSignal(initialValue, patchTarget);
         if (patchTarget !== PatchTarget.None) {
@@ -328,14 +329,14 @@ export function MenuController<
     fn: () => void,
     patchTarget = PatchTarget.None,
   ): void {
-    const effectRegisteredTo = assertNotNull(renderer.getCurrentView());
+    const effectRegisteredTo = renderer.getCurrentView();
     const isActiveView = createComputed(
-      () => activeView() === effectRegisteredTo,
+      () => !effectRegisteredTo || activeView() === effectRegisteredTo,
     );
     createEffect(() => {
       if (!isActiveView()) {
         logger.debug(`Not active view!`, {
-          effectRegisteredTo: effectRegisteredTo.id,
+          effectRegisteredTo: effectRegisteredTo?.id ?? 'ALL VIEWS',
           menuControllerActiveView: activeView()?.id,
         });
         return;
@@ -380,12 +381,6 @@ export function MenuController<
     },
   };
   const builtins = createSynapse();
-  const [activeView, setActiveView] = builtins.createSignal<View | null>(null);
-  if (debug) {
-    createEffect(() => {
-      logger.debug(`activeView set to --> ${activeView()?.id ?? null}`);
-    });
-  }
   const views = new Map<string, View<AllProps>>(
     registeredViews.map((v) => [v.id, v]),
   );
@@ -423,6 +418,13 @@ export function MenuController<
   };
   let skipRender = false;
   let manualPatchQueued: PatchTargetBitField = 0;
+
+  const [activeView, setActiveView] = builtins.createSignal<View | null>(null);
+  if (debug) {
+    createEffect(() => {
+      logger.debug(`activeView set to --> ${activeView()?.id ?? null}`);
+    });
+  }
 
   function getPatchTargets(): PatchTargetBitField {
     logger.debug({
@@ -528,7 +530,7 @@ export function MenuController<
   }
 
   function initCollector() {
-    const message = patcher.message;
+    const {message} = patcher;
     assert(message, `Unable to initialize collectors; 'message' is undefined.`);
     collector.init({
       idle,
@@ -658,6 +660,8 @@ export function MenuController<
   async function start(options: Partial<RenderOptions> = {}) {
     options = { ...DefaultRenderOptions, ...options };
     await initialRender(options);
+    if (patcher.message instanceof InteractionResponse)
+      patcher.message = await patcher.message.fetch();
     initCollector();
   }
 

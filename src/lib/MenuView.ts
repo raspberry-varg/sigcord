@@ -3,6 +3,10 @@ import {
   EmbedBuilder,
   MessageActionRowComponentBuilder,
   MessageComponentInteraction,
+  type ActionRowData,
+  type MessageActionRowComponentData,
+  type MessageFlags,
+  type TopLevelComponentData,
 } from 'discord.js';
 import {
   PatchTarget,
@@ -13,13 +17,57 @@ import {
 import type { IS_REACTIVE_SYMBOL } from './MenuView/ReactiveView.js';
 import { isSignal, type Signalish } from './Reactivity.js';
 
-export type ViewComponent = ActionRowBuilder<MessageActionRowComponentBuilder>;
+export type ViewComponent =
+  | ActionRowBuilder<MessageActionRowComponentBuilder>
+  | TopLevelComponentData
+  | ActionRowData<
+      MessageActionRowComponentData | MessageActionRowComponentBuilder
+    >;
 
-export type RenderedReactiveView = ReactiveViewPayload & {
+export const IS_V2: unique symbol = Symbol('using v2 components');
+
+export type RenderedReactiveView =
+  | LegacyRenderedReactiveView
+  | RenderedReactiveViewV2;
+
+interface RenderedReactiveViewBase {
   readonly [IS_REACTIVE_SYMBOL]: true;
-};
+}
 
-export interface ReactiveViewPayload {
+type LegacyRenderedReactiveView = LegacyReactiveViewPayload &
+  RenderedReactiveViewBase & {
+    [IS_V2]: false;
+  };
+
+type RenderedReactiveViewV2 = ReactiveViewPayloadV2 &
+  RenderedReactiveViewBase & {
+    [IS_V2]: true;
+  };
+
+export function isRenderedReactiveViewV2(
+  view: RenderedReactiveView,
+): view is RenderedReactiveViewV2 {
+  return view[IS_V2];
+}
+
+export type ReactiveViewPayload =
+  | ReactiveViewPayloadV2
+  | LegacyReactiveViewPayload;
+
+type ReactiveViewPayloadV2 = ReactiveViewPayloadV2Kind[];
+
+type ReactiveViewPayloadV2Kind =
+  | ReactiveViewPayloadV2Kind[]
+  | AllowedTypes
+  | Children<AllowedTypes>;
+
+type AllowedTypes =
+  | TopLevelComponentData
+  | ActionRowData<
+      MessageActionRowComponentData | MessageActionRowComponentBuilder
+    >;
+
+interface LegacyReactiveViewPayload {
   ephemeral?: boolean;
   content?: string | Signalish<string>;
   embeds?: EmbedChildren;
@@ -27,6 +75,8 @@ export interface ReactiveViewPayload {
 }
 
 export interface ViewMessagePayload {
+  flags?: MessageFlags;
+  /** @deprecated Use flags instead. */
   ephemeral?: boolean;
   content?: string;
   embeds?: EmbedBuilder[];
@@ -40,7 +90,11 @@ export interface MessageComponentCallback<
 }
 
 export interface IntrinsicViewProps {
+  /**
+   * @deprecated Use {@link flags} instead
+   */
   ephemeral: boolean | false;
+  flags?: MessageFlags;
 }
 
 export type Children<T> =
