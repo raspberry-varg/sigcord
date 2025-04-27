@@ -258,12 +258,6 @@ export class RenderingEngine {
                 this.queuedComponents,
               );
             }
-
-            logger.debug('Resolved V2 components', {
-              result,
-              queued: this.queuedComponents,
-              resolved: payload.components,
-            });
           }
 
           return;
