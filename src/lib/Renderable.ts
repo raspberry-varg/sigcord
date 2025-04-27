@@ -1,5 +1,4 @@
 import {
-  InteractionResponse,
   MessageFlags,
   type ActionRowBuilder,
   type EmbedBuilder,
@@ -57,17 +56,12 @@ export class Renderable {
   public async render() {
     await this.triggerPreloads();
 
-    let response = await safeRender(
+    this.message = await safeRender(
       this.interaction,
       this.messagePayload(),
       /* props= */ undefined,
       /* preferReplyForComponent= */ this.options.replyToComponentOnFirstRender,
     );
-
-    if (response instanceof InteractionResponse) {
-      response = await response.fetch();
-    }
-    this.message = response;
 
     this.options.replyToComponentOnFirstRender = false;
     return this.message;
