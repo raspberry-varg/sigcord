@@ -1,11 +1,12 @@
 import {
-  ActionRowBuilder,
   EmbedBuilder,
   MessageActionRowComponentBuilder,
   MessageComponentInteraction,
   type ActionRowData,
   type MessageActionRowComponentData,
+  type MessageComponentBuilder,
   type MessageFlags,
+  type TopLevelComponent,
   type TopLevelComponentData,
 } from 'discord.js';
 import {
@@ -18,8 +19,9 @@ import type { IS_REACTIVE_SYMBOL } from './MenuView/ReactiveView.js';
 import { isSignal, type Signalish } from './Reactivity.js';
 
 export type ViewComponent =
-  | ActionRowBuilder<MessageActionRowComponentBuilder>
+  | TopLevelComponent
   | TopLevelComponentData
+  | MessageComponentBuilder
   | ActionRowData<
       MessageActionRowComponentData | MessageActionRowComponentBuilder
     >;

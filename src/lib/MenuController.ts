@@ -16,7 +16,7 @@ import { debug, logger } from '../util/Logger.js';
 import { RenderingEngine } from './RenderingEngine.js';
 import { InteractionPatcher } from './InteractionPatcher.js';
 import { CollectorService } from './CollectorService.js';
-import { TimeoutEmbed } from './PrebuiltEmbeds.js';
+import { TimeoutComponent, TimeoutEmbed } from './PrebuiltEmbeds.js';
 import { createComputed, createEffect, createSignal } from './Reactivity.js';
 import { PatchTarget, PatchTargetBitField } from './RenderingEngine.js';
 import type { PropsBase } from './MenuView/ViewBase.js';
@@ -530,7 +530,7 @@ export function MenuController<
   }
 
   function initCollector() {
-    const {message} = patcher;
+    const { message } = patcher;
     assert(message, `Unable to initialize collectors; 'message' is undefined.`);
     collector.init({
       idle,
@@ -645,12 +645,17 @@ export function MenuController<
   }
 
   async function patchTimeout() {
-    renderer.appendEmbeds(TimeoutEmbed);
-    renderer.queueClear(PatchTarget.Components);
-    const payload = await renderer.patch(
-      props,
-      PatchTarget.Embeds | PatchTarget.Content,
-    );
+    let target: PatchTarget;
+    if (renderer.isCurrentViewV2()) {
+      target = PatchTarget.Components;
+      renderer.appendComponents(TimeoutComponent);
+    } else {
+      target = PatchTarget.Embeds | PatchTarget.Content;
+      renderer.appendEmbeds(TimeoutEmbed);
+      renderer.queueClear(PatchTarget.Components);
+    }
+
+    const payload = await renderer.patch(props, target);
     await patcher.patch(payload, {});
   }
 
