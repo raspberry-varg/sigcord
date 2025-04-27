@@ -60,14 +60,8 @@ type ReactiveViewPayloadV2 = ReactiveViewPayloadV2Kind[];
 
 type ReactiveViewPayloadV2Kind =
   | ReactiveViewPayloadV2Kind[]
-  | AllowedTypes
-  | Children<AllowedTypes>;
-
-type AllowedTypes =
-  | TopLevelComponentData
-  | ActionRowData<
-      MessageActionRowComponentData | MessageActionRowComponentBuilder
-    >;
+  | ViewComponent
+  | Children<ViewComponent>;
 
 interface LegacyReactiveViewPayload {
   ephemeral?: boolean;
