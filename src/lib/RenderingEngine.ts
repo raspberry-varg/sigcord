@@ -54,10 +54,13 @@ type QueuedView = {
     }
 );
 
-interface QueuedEmbeds {
-  prepend: EmbedBuilder[];
-  append: EmbedBuilder[];
+interface QueuedMessagePart<T> {
+  prepend: T[];
+  append: T[];
 }
+
+type QueuedEmbeds = QueuedMessagePart<EmbedBuilder>;
+type QueuedComponents = QueuedMessagePart<ViewComponent>;
 
 export class RenderingEngine {
   viewDefinition?: View;
@@ -65,6 +68,7 @@ export class RenderingEngine {
   private instances = new Map<string, ViewInstance>();
   private wantRender = true;
   private queuedEmbeds?: Partial<QueuedEmbeds>;
+  private queuedComponents?: Partial<QueuedComponents>;
   private queuedClears: PatchTargetBitField = 0;
   private reactiveViewInstance?: ReactiveViewInstance;
   private patchContext = PatchTarget.None;
@@ -73,6 +77,13 @@ export class RenderingEngine {
   isCurrentViewReactive(): boolean {
     return (
       !!this.viewDefinition && isReactiveViewDefinition(this.viewDefinition)
+    );
+  }
+
+  isCurrentViewV2(): boolean {
+    return (
+      !!this.reactiveViewInstance &&
+      isRenderedReactiveViewV2(this.reactiveViewInstance!)
     );
   }
 
@@ -86,6 +97,10 @@ export class RenderingEngine {
 
   hasQueuedEmbeds(): boolean {
     return !!this.queuedEmbeds;
+  }
+
+  hasQueuedComponents(): boolean {
+    return !!this.queuedComponents;
   }
 
   clearCachedView(id: string): void {
@@ -122,6 +137,18 @@ export class RenderingEngine {
     this.queuedEmbeds ??= {};
     this.queuedEmbeds.append ??= [];
     this.queuedEmbeds.append.push(...embeds);
+  }
+
+  prependComponents(...components: ViewComponent[]): void {
+    this.queuedComponents ??= {};
+    this.queuedComponents.prepend ??= [];
+    this.queuedComponents.prepend.push(...components);
+  }
+
+  appendComponents(...components: ViewComponent[]): void {
+    this.queuedComponents ??= {};
+    this.queuedComponents.append ??= [];
+    this.queuedComponents.append.push(...components);
   }
 
   queueRender(wantRender = true) {
@@ -205,7 +232,7 @@ export class RenderingEngine {
         if (isRenderedReactiveViewV2(instance)) {
           // Using V2 components
           logger.debug('Using V2 components');
-          if (!targets) {
+          if (!targets && !this.hasQueuedComponents()) {
             logger.debug('No targets requested for V2 component instance.');
             return;
           }
@@ -220,9 +247,23 @@ export class RenderingEngine {
                 flattenChildren($, el as ViewComponent, this.patchContext),
               )
               .filter((el) => !!el);
+
             if (result) {
               payload.components = result;
             }
+
+            if (this.queuedComponents) {
+              payload.components = this.resolveWithQueuedItems(
+                payload.components,
+                this.queuedComponents,
+              );
+            }
+
+            logger.debug('Resolved V2 components', {
+              result,
+              queued: this.queuedComponents,
+              resolved: payload.components,
+            });
           }
 
           return;
@@ -252,7 +293,10 @@ export class RenderingEngine {
             );
           }
           if (this.queuedEmbeds) {
-            payload.embeds = this.attachEnqueuedEmbeds(payload.embeds ?? []);
+            payload.embeds = this.resolveWithQueuedItems(
+              payload.embeds,
+              this.queuedEmbeds,
+            );
           }
         }
         if (targets & PatchTarget.Components) {
@@ -309,7 +353,10 @@ export class RenderingEngine {
     }
     const payload = await batch(() => view.instance.render(props));
     if (this.queuedEmbeds) {
-      payload.embeds = this.attachEnqueuedEmbeds(payload.embeds ?? []);
+      payload.embeds = this.resolveWithQueuedItems(
+        payload.embeds,
+        this.queuedEmbeds,
+      );
     }
     this.postRender();
     return payload;
@@ -391,19 +438,26 @@ export class RenderingEngine {
     }
   }
 
-  private attachEnqueuedEmbeds(embeds: EmbedBuilder[]): EmbedBuilder[] {
-    if (!this.queuedEmbeds) {
-      return embeds;
+  private resolveWithQueuedItems<T>(
+    dest: T[] = [],
+    queue: Partial<QueuedMessagePart<T>> | undefined,
+  ): T[] {
+    if (!queue) {
+      return dest;
     }
-    const enqueued = [
-      ...(this.queuedEmbeds.prepend ?? []),
-      ...(this.queuedEmbeds.append ?? []),
-    ].slice(0, 10);
-    embeds = [...embeds, ...enqueued];
-    if (embeds.length > 10) {
-      embeds = embeds.slice(-10, embeds.length);
+
+    const enqueued = [...(queue.prepend ?? []), ...(queue.append ?? [])].slice(
+      0,
+      10,
+    );
+    if (!enqueued.length) return dest;
+
+    let final = [...dest, ...enqueued];
+    if (final.length > 10) {
+      final = final.slice(-10, final.length);
     }
-    return embeds;
+
+    return final;
   }
 
   private isQueuedForClear(target: PatchTargetBitField): boolean {
