@@ -238,7 +238,7 @@ export function MenuController<
       },
       createSignal<T>(
         fnOrValue: T | undefined = undefined,
-        patchTarget = PatchTarget.All, // V2 compatibility
+        patchTarget = PatchTarget.None,
       ) {
         const s = createSignal(fnOrValue, patchTarget);
         if (patchTarget !== PatchTarget.None) {
@@ -248,7 +248,7 @@ export function MenuController<
       },
       createWritableSignal<T>(
         initialValue: T | undefined = undefined,
-        patchTarget = PatchTarget.All, // V2 compatibility
+        patchTarget = PatchTarget.None,
       ) {
         const s = createSignal(initialValue, patchTarget);
         if (patchTarget !== PatchTarget.None) {
