@@ -27,6 +27,7 @@ import {
 } from './ReactiveBuiltIns.js';
 import type { TimeoutEndReason } from '../util/CollectorUtil.js';
 import { batch } from '@preact/signals-core';
+import type { DisposeFn } from './render/dispose.js';
 
 export interface MenuControllerAPI {
   // render API
@@ -257,15 +258,9 @@ export function MenuController<
         return s;
       },
       createComputed: (fn) => createComputed(fn),
-      createEffect: (fn, patchTarget) => {
-        registerEffect(fn, patchTarget);
-      },
-      createEmbedEffect: (fn) => {
-        registerEffect(fn, PatchTarget.Embeds);
-      },
-      createComponentEffect: (fn) => {
-        registerEffect(fn, PatchTarget.Components);
-      },
+      createEffect: (fn, patchTarget) => registerEffect(fn, patchTarget),
+      createEmbedEffect: (fn) => registerEffect(fn, PatchTarget.Embeds),
+      createComponentEffect: (fn) => registerEffect(fn, PatchTarget.Components),
       goTo(view, props) {
         const currentView = renderer.getCurrentView();
         assert(
@@ -328,12 +323,12 @@ export function MenuController<
   function registerEffect(
     fn: () => void,
     patchTarget = PatchTarget.None,
-  ): void {
+  ): DisposeFn {
     const effectRegisteredTo = renderer.getCurrentView();
     const isActiveView = createComputed(
       () => !effectRegisteredTo || activeView() === effectRegisteredTo,
     );
-    createEffect(() => {
+    const dispose = createEffect(() => {
       if (!isActiveView()) {
         logger.debug(`Not active view!`, {
           effectRegisteredTo: effectRegisteredTo?.id ?? 'ALL VIEWS',
@@ -352,6 +347,8 @@ export function MenuController<
 
       builtins.patch(patchTarget);
     });
+    unparentedDisposals.push(dispose);
+    return dispose;
   }
   function getView(id: string): View<AllProps> {
     const view = views.get(id);
@@ -365,12 +362,18 @@ export function MenuController<
   }
   function stopMenu(reason?: string) {
     collector.stop(reason);
-    cleanup();
+    dispose();
   }
-  function cleanup() {
-    // TODO(@raspberry-varg): Implement relevant cleanup.
+  function dispose() {
+    logger.debug('Disposing MenuController');
+    for (const dispose of unparentedDisposals) {
+      dispose();
+    }
+    renderer.dispose();
+    // TODO: @raspberry-varg - Dispose all root ViewNodes
     return;
   }
+  const unparentedDisposals: DisposeFn[] = [];
   const ctx: MenuContext = {
     get interaction(): RepliableInteraction {
       return getInteractionToPatch();
@@ -525,7 +528,7 @@ export function MenuController<
   }
 
   function onTimeout() {
-    cleanup();
+    dispose();
     return patchTimeout();
   }
 

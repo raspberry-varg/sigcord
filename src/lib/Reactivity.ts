@@ -1,3 +1,5 @@
+import { logger } from '../util/Logger.js';
+import type { DisposeFn } from './render/dispose.js';
 import type { PatchTarget } from './RenderingEngine.js';
 import * as core from '@preact/signals-core';
 
@@ -112,8 +114,22 @@ export function createComputed<T>(derived: () => T): Getter<T> {
   return () => computed.value;
 }
 
-export function createEffect(action: () => void) {
-  core.effect(action);
+export type EffectFn = () => void | DisposeFn;
+
+let id = 1;
+
+export function createEffect(action: EffectFn): DisposeFn {
+  const capturedId = id++;
+  logger.debug(
+    `creating a new effect. action=${action}, effectId=${capturedId}`,
+  );
+  return core.effect(() => {
+    const dispose = action();
+    return () => {
+      logger.debug(`disposing effectId=${capturedId}`);
+      dispose?.();
+    };
+  });
 }
 
 /**

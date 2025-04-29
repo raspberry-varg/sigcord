@@ -45,21 +45,26 @@ export function instantiateReactiveView<Props extends PropsBase = PropsBase>(
   view: ReactiveViewDefinition<Props>,
   props: ViewProps<Props>,
 ): ReactiveViewInstance {
-  const factoryResult = view.factory(props);
-  const isV2 = Array.isArray(factoryResult);
   const id = view.id;
-  const instance: ReactiveViewInstance = isV2
-    ? Object.assign(factoryResult, {
-        [IS_REACTIVE_SYMBOL]: true,
-        [IS_V2]: true,
-        id,
-      } as const)
-    : ({
-        [IS_REACTIVE_SYMBOL]: true,
-        [IS_V2]: false,
-        id: view.id,
-        ...factoryResult,
-      } as const);
+  const isV2 = true; // TODO: @raspberry-varg - Have flag for V2.
+  if (isV2) {
+    const instance: ReactiveViewInstance = {
+      [IS_REACTIVE_SYMBOL]: true,
+      [IS_V2]: true,
+      id,
+      root: undefined,
+      lastRender: undefined,
+      factory: () => view.factory(props) as any,
+    };
+    return instance;
+  }
+  const factoryResult = view.factory(props);
+  const instance: ReactiveViewInstance = {
+    [IS_REACTIVE_SYMBOL]: true,
+    [IS_V2]: false,
+    id: view.id as any,
+    ...(factoryResult as any),
+  } as const;
   postProcessReactiveViewInstance(instance);
   return instance;
 }
