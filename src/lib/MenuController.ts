@@ -184,7 +184,7 @@ export function MenuController<
         }
 
         flushModal();
-        await callback(response);
+        await batch(async () => await callback(response));
 
         const patchTargets = getPatchTargets();
         if (patchTargets !== PatchTarget.None) {
@@ -585,9 +585,8 @@ export function MenuController<
 
     const prevContext = getCurrentReactiveContext();
     try {
-      // using _resource = withReactiveContext(props.$);
       setReactiveContext(props.$);
-      await interactionCallback(collected);
+      await batch(async () => await interactionCallback(collected));
     } catch (e) {
       logger.error(
         `Error occurred while handling a collected component interaction: ${collected.customId}`,
