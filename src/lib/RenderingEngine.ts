@@ -13,7 +13,7 @@ import type {
 } from './MenuView.js';
 import { flattenChildren, isRenderedReactiveViewV2 } from './MenuView.js';
 import { logger } from '../util/Logger.js';
-import { read } from './Reactivity.js';
+import { isSignal, isWritableSignal, read } from './Reactivity.js';
 import { type PropsBase } from './MenuView/ViewBase.js';
 import type { NavigationPayload } from './Navigation.js';
 import {
@@ -28,6 +28,12 @@ import {
 import { instantiateClassView } from './MenuView/ClassicView.js';
 import { batch } from '@preact/signals-core';
 import type { Props } from '../index.js';
+import { render } from './render/render.js';
+import type { Recursive } from './recursive.js';
+import { ViewNode } from './dom/viewNode.js';
+import { ViewContentNode } from './dom/viewContentNode.js';
+import { ViewElementNode } from './dom/viewElementNode.js';
+import { getOpenOwner, owner, setCurrentOwner } from './render/owner.js';
 
 export type PatchTargetBitField = number;
 
@@ -180,6 +186,23 @@ export class RenderingEngine {
     this.queuedNavigation = navigationPayload;
   }
 
+  dispose(): void {
+    for (const instance of this.instances.values()) {
+      logger.debug(`Disposing instance.id=${instance.id}`, {
+        isReactiveViewInstance: isReactiveViewInstance(instance),
+        isRenderedReactiveViewV2:
+          isReactiveViewInstance(instance) &&
+          isRenderedReactiveViewV2(instance),
+      });
+      if (
+        isReactiveViewInstance(instance) &&
+        isRenderedReactiveViewV2(instance)
+      ) {
+        instance.dispose?.();
+      }
+    }
+  }
+
   async patch(
     props: Props,
     targets: PatchTargetBitField,
@@ -239,15 +262,70 @@ export class RenderingEngine {
           if (this.isQueuedForClear(PatchTarget.Components)) {
             payload.components = [];
           } else {
-            const result = instance
-              .flatMap((el) =>
-                flattenChildren($, el as ViewComponent, this.patchContext),
-              )
-              .filter((el) => !!el);
-
-            if (result) {
-              payload.components = result;
+            if (!instance.root) {
+              const [root, dispose] = render<ViewComponent>(() =>
+                instance.factory(),
+              );
+              instance.root = root;
+              instance.dispose = dispose;
             }
+
+            const flattened: ViewComponent[] = [];
+            const stack: Recursive<ViewComponent | ViewNode<ViewComponent>>[] =
+              [instance.root];
+            const prevOwner = setCurrentOwner(instance.owner ?? null);
+            try {
+              while (stack.length) {
+                const item = stack.pop();
+                if (Array.isArray(item)) {
+                  for (const inner of item) {
+                    stack.push(inner);
+                  }
+                  continue;
+                }
+                if (
+                  isSignal(item) ||
+                  isWritableSignal(item) ||
+                  typeof item === 'function'
+                ) {
+                  const childOwner = owner(() => read(item));
+                  childOwner.parent = getOpenOwner();
+                  stack.push(childOwner.root);
+                  continue;
+                }
+                if (item instanceof ViewContentNode) {
+                  const content = item.getContent();
+                  if (content) {
+                    flattened.push(content);
+                  }
+                  continue;
+                }
+                if (item instanceof ViewElementNode) {
+                  stack.push(item.children as ViewNode<any>[]);
+                  continue;
+                }
+                if (item instanceof ViewNode) {
+                  // How did we get here?
+                  throw new Error(`Unhandled ViewNode: ${item}`);
+                }
+                if (item) {
+                  flattened.push(item as any as ViewComponent);
+                }
+              }
+            } finally {
+              setCurrentOwner(prevOwner);
+            }
+
+            // const result = instance
+            //   .flatMap((el) =>
+            //     flattenChildren($, el as ViewComponent, this.patchContext),
+            //   )
+            //   .filter((el) => !!el);
+
+            // if (result) {
+            //   payload.components = result;
+            // }
+            instance.lastRender = payload.components = flattened.toReversed();
 
             if (this.queuedComponents) {
               payload.components = this.resolveWithQueuedItems(
@@ -376,6 +454,7 @@ export class RenderingEngine {
           setReactiveContext(props.$);
           reactiveInstance = instantiateReactiveView(viewDefinition, props);
           this.reactiveViewInstance = reactiveInstance;
+          this.instances.set(reactiveInstance.id, reactiveInstance);
         } catch (e) {
           logger.debug(
             'Encountered an error while rendering a reactive view:',

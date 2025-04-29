@@ -9,11 +9,12 @@ import type {
 } from 'discord.js';
 import type { DefinedView, MenuContext, View } from './FunctionalMenuView.js';
 import type { MessageComponentCallback } from './MenuView.js';
-import type { Signal, SignalTuple } from './Reactivity.js';
+import type { EffectFn, Signal, SignalTuple } from './Reactivity.js';
 import type { PatchTarget } from './RenderingEngine.js';
 import type { WritableSignal } from './Reactivity.js';
 import type { PropsBase } from './MenuView/ViewBase.js';
 import type { UnionToIntersection } from '../util/TypesUtil.js';
+import type { DisposeFn } from './render/dispose.js';
 
 type ModalRepliableInteraction =
   | CommandInteraction
@@ -110,12 +111,12 @@ export interface Synapse {
    * or components. To have a patch queued on effect run, use
    * {@link createEmbedEffect} or {@link createComponentEffect} instead. To
    * queue a patch for content, set content to a function that returns a string.
-   * @param fn The effect to run.
+   * @param fn The effect to run. Takes an optional cleanup fn.
    * @param params Extra configuration for debugging.
    * @param patchTarget Bitfield of {@link PatchTarget} to queue for rendering
    * when this effect runs.
    */
-  createEffect: <T>(fn: () => T, patchTarget?: PatchTarget) => void;
+  createEffect: (fn: EffectFn, patchTarget?: PatchTarget) => DisposeFn;
   /**
    * Create an effect that runs when the value of signals in the function are
    * changed.
@@ -125,7 +126,7 @@ export interface Synapse {
    * @param fn The effect to run.
    * @param params Extra configuration for debugging.
    */
-  createEmbedEffect: (fn: () => void) => void;
+  createEmbedEffect: (fn: EffectFn) => DisposeFn;
   /**
    * Create an effect that runs when the value of signals in the function are
    * changed.
@@ -135,7 +136,7 @@ export interface Synapse {
    * @param fn The effect to run.
    * @param params Extra configuration for debugging.
    */
-  createComponentEffect: (fn: () => void) => void;
+  createComponentEffect: (fn: EffectFn) => DisposeFn;
 
   /**
    * Instantiate and navigate to a different view.

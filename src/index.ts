@@ -55,3 +55,4 @@ export {
   ViewClass,
   defineClassView,
 } from './lib/MenuView/DefineClassicView.js';
+export { SlotOptions, Slot, slot } from './lib/Slot.js';
