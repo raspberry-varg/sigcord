@@ -11,7 +11,7 @@ import {
 } from '../Reactivity.js';
 import type { Recursive } from '../recursive.js';
 import { PatchTarget } from '../RenderingEngine.js';
-import { isSlot } from '../Slot.js';
+import { isSlot, SLOT_ENQUEUE_FLUSH_METHOD, type SlotImpl } from '../Slot.js';
 import { getOpenOwner } from './owner.js';
 
 export function flattenToContentNodes<T extends ViewNodeKind>(
@@ -54,6 +54,8 @@ export function flattenToContentNodes<T extends ViewNodeKind>(
         node.addChild(...flattenToContentNodes(el));
         root.addChild(node);
       }
+      // TODO: @raspberry-varg - Have this called by someone else cause this won't flush without an update.
+      (content as SlotImpl<T>)[SLOT_ENQUEUE_FLUSH_METHOD]();
     });
     getOpenOwner()?.registerDisposal(dispose);
     return [root];

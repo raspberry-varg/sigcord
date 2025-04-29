@@ -82,6 +82,14 @@ export class SlotImpl<T> {
    */
   [SLOT_ENQUEUE_FLUSH_METHOD](): void {
     this.flushQueued = true;
+    if (this.ephemeral) {
+      const values = this.writable?.peek();
+      if (values && values.length > 0) {
+        // TODO: @raspberry-varg - Maybe refactor to use a computed instead?
+        // This prevents upstream signal updates during this render cycle.
+        (values as T[]).length = 0;
+      }
+    }
   }
 
   registerEffect(): void {}
