@@ -1,3 +1,4 @@
+import { logger } from '../../util/Logger.js';
 import { ViewNode } from './viewNode.js';
 import type { ViewNodeKind } from './viewNodeKind.js';
 
@@ -102,6 +103,9 @@ export class ViewElementNode<T extends ViewNodeKind> extends ViewNode<T> {
 
   override dispose(): void {
     // TODO: @raspberry-varg - Implement disposal
+    if (this.disposed) return;
+
+    logger.debug('Disposing ViewElementNode', { childCount: this.childCount });
     this.children_.forEach((child) => child.dispose());
     this.children_.length = 0;
     this.childrenSet.clear();
