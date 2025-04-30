@@ -112,7 +112,7 @@ export function createUntracked<T>(signal: () => T): T {
 
 export function createComputed<T>(derived: () => T): Getter<T> {
   const computed = core.computed(derived);
-  return () => computed.value;
+  return Object.assign(() => computed.value, { [GETTER_STAMP]: true });
 }
 
 export type EffectFn = () => void | DisposeFn;

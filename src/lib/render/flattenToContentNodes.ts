@@ -25,11 +25,7 @@ export function flattenToContentNodes<T extends ViewNodeKind>(
     return [content];
   }
 
-  if (
-    isSignal(content) ||
-    isWritableSignal(content) ||
-    typeof content === 'function'
-  ) {
+  if (isSignal(content) || isWritableSignal(content)) {
     const fragment = new ViewElementNode<T>();
     const patchTarget = getOpenOwner()?.patchTarget ?? PatchTarget.None;
     const dispose = createEffect(() => {
@@ -43,6 +39,12 @@ export function flattenToContentNodes<T extends ViewNodeKind>(
     });
     getOpenOwner()?.registerDisposal(dispose);
     return [fragment];
+  }
+
+  if (typeof content === 'function') {
+    return flattenToContentNodes(
+      (content as () => Recursive<T | ViewNode<T>>)(),
+    );
   }
 
   if (isSlot(content)) {
