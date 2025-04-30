@@ -15,6 +15,7 @@ export class Owner<T extends ViewNodeKind = ViewNodeKind>
   patchTarget?: PatchTarget;
   parent: Owner<T> | null = null;
   childOwners = new Set<Owner<T>>();
+  debugName?: string;
 
   private disposals: DisposeFn[] = [];
   private readonly nodes: ViewNode<T>[] = [];
@@ -51,6 +52,7 @@ export class Owner<T extends ViewNodeKind = ViewNodeKind>
 
     // TODO: @raspberry-varg - Implement disposal.
     logger.debug('Disposing Owner.', {
+      debugName: this.debugName ?? '',
       toDispose: {
         disposalFns: this.disposals,
         nodes: this.nodes,
@@ -97,7 +99,7 @@ export function setCurrentOwner(newOwner: Owner | null): Owner | null {
 }
 
 export function owner<T extends ViewNodeKind>(
-  ownerFn: () => Children<T | ViewNode<T>>,
+  ownerFn: () => Children<T>,
   patchTarget?: PatchTarget,
 ): Owner<T> {
   logger.debug(`creating a new owner with fn=${ownerFn}`);
@@ -105,6 +107,7 @@ export function owner<T extends ViewNodeKind>(
   const prevOwner = setCurrentOwner(newOwner);
   newOwner.patchTarget = prevOwner?.patchTarget ?? patchTarget;
   newOwner.parent = prevOwner;
+  prevOwner?.addChild(newOwner);
 
   let content;
   try {

@@ -1,19 +1,17 @@
-import { MessageFlags, type EmbedBuilder } from 'discord.js';
+import { EmbedBuilder, MessageFlags } from 'discord.js';
 import { assert } from '../util/Assertions.js';
 import { isClassViewInstance } from './views/classic/classViewInstance.js';
 import { isReactiveViewInstance } from './views/reactive/reactiveViewInstance.js';
 import { type View, type ViewInstance } from './views/view.js';
 import type {
+  EmbedComponent,
   RenderedReactiveView,
   ViewComponent,
   ViewMessagePayload,
 } from './MenuView.js';
-import {
-  DEPRECATED_flattenChildren,
-  isRenderedReactiveViewV2,
-} from './MenuView.js';
+import { isRenderedReactiveViewV2 } from './MenuView.js';
 import { logger } from '../util/Logger.js';
-import { read } from './Reactivity.js';
+import { createUntracked, read } from './Reactivity.js';
 import { type PropsBase } from './MenuView/ViewBase.js';
 import type { NavigationPayload } from './Navigation.js';
 import {
@@ -29,11 +27,9 @@ import { instantiateClassView } from './views/classic/classViewInstance.js';
 import { batch } from '@preact/signals-core';
 import type { Props } from '../index.js';
 import { render } from './render/render.js';
-import type { Recursive } from './recursive.js';
-import { ViewNode } from './dom/viewNode.js';
-import { ViewContentNode } from './dom/viewContentNode.js';
 import { ViewElementNode } from './dom/viewElementNode.js';
-import { setCurrentOwner } from './render/owner.js';
+import { owner } from './render/owner.js';
+import { flatten } from './render/flatten.js';
 
 export type PatchTargetBitField = number;
 
@@ -187,18 +183,21 @@ export class RenderingEngine {
   }
 
   dispose(): void {
+    logger.debug('Disposing RenderingEngine');
     for (const instance of this.instances.values()) {
-      logger.debug(`Disposing instance.id=${instance.id}`, {
-        isReactiveViewInstance: isReactiveViewInstance(instance),
-        isRenderedReactiveViewV2:
-          isReactiveViewInstance(instance) &&
-          isRenderedReactiveViewV2(instance),
+      const isReactive = isReactiveViewInstance(instance);
+      const isV2 = isReactive && isRenderedReactiveViewV2(instance);
+      logger.debug(`Maybe disposing instance.id=${instance.id}`, {
+        isReactive,
+        isV2,
       });
-      if (
-        isReactiveViewInstance(instance) &&
-        isRenderedReactiveViewV2(instance)
-      ) {
+      if (isReactive) {
+        logger.debug('Calling disposal function', {
+          dispose: instance.dispose,
+        });
         instance.dispose?.();
+      } else {
+        logger.debug('Not disposing: Not reactive.');
       }
     }
   }
@@ -246,68 +245,41 @@ export class RenderingEngine {
     const prevContext = getCurrentReactiveContext();
     logger.debug('Patching reactive view', { targets, viewInstance: instance });
     try {
-      // using _resource = withReactiveContext($);
       setReactiveContext($);
       batch(() => {
-        if (isRenderedReactiveViewV2(instance)) {
-          // Using V2 components
-          logger.debug('Using V2 components');
-          if (!targets && !this.hasQueuedComponents()) {
-            logger.debug('No targets requested for V2 component instance.');
-            return;
+        const isV2 = isRenderedReactiveViewV2(instance);
+        logger.debug(`Patching with V${isV2 ? 2 : 1} components.`);
+        if (!targets) {
+          if (isV2) {
+            if (!this.hasQueuedComponents()) {
+              return;
+            }
+          } else {
+            // V1
+            if (!this.hasQueuedEmbeds()) {
+              return;
+            }
           }
+        }
 
+        if (isRenderedReactiveViewV2(instance)) {
           payload.flags = (payload.flags ?? 0) | MessageFlags.IsComponentsV2;
-          this.patchContext = PatchTarget.Components;
-          if (this.isQueuedForClear(PatchTarget.Components)) {
+          const patchTarget = (this.patchContext = PatchTarget.Components);
+          if (this.isQueuedForClear(patchTarget)) {
             payload.components = [];
           } else {
             if (!instance.root) {
-              const [root, dispose] = render<ViewComponent>(
+              const [root, dispose, owner] = render<ViewComponent>(
                 () => instance.factory(),
-                PatchTarget.Components,
+                patchTarget,
               );
+              owner.debugName = 'V2_root';
               instance.root = root;
               instance.dispose = dispose;
             }
 
-            const flattened: ViewComponent[] = [];
-            const stack: Recursive<ViewComponent | ViewNode<ViewComponent>>[] =
-              [instance.root];
-            const prevOwner = setCurrentOwner(instance.owner ?? null);
-            try {
-              while (stack.length) {
-                const item = stack.pop();
-                if (Array.isArray(item)) {
-                  for (const inner of item) {
-                    stack.push(inner);
-                  }
-                  continue;
-                }
-                if (item instanceof ViewContentNode) {
-                  const content = item.getContent();
-                  if (content) {
-                    flattened.push(content);
-                  }
-                  continue;
-                }
-                if (item instanceof ViewElementNode) {
-                  stack.push(item.children as ViewNode<any>[]);
-                  continue;
-                }
-                if (item instanceof ViewNode) {
-                  // How did we get here?
-                  throw new Error(`Unhandled ViewNode: ${item}`);
-                }
-                if (item) {
-                  flattened.push(item as any as ViewComponent);
-                }
-              }
-            } finally {
-              setCurrentOwner(prevOwner);
-            }
-
-            instance.lastRender = payload.components = flattened.toReversed();
+            const flattened = flatten(instance.root, instance.owner);
+            instance.lastRender = payload.components = flattened;
 
             if (this.queuedComponents) {
               payload.components = this.resolveWithQueuedItems(
@@ -320,47 +292,92 @@ export class RenderingEngine {
           return;
         }
 
-        if (instance.ephemeral !== undefined) {
-          payload.ephemeral = instance.ephemeral;
-        }
-        if (targets & PatchTarget.Content) {
-          this.patchContext = PatchTarget.Content;
-          const content = instance.content;
-          if (this.isQueuedForClear(PatchTarget.Content)) {
-            payload.content = '';
-          } else if (content !== undefined) {
-            payload.content = read(content);
+        if (!instance.roots) {
+          const superOwner = owner(() => {
+            instance.roots = {};
+            const roots: ViewElementNode<EmbedComponent | ViewComponent>[] = [];
+            const result = (instance.lastRender = instance.factory());
+            // TODO: @raspberry-varg - Content handling.
+            if (result.embeds) {
+              const [embedsRoot, , owner] = render<EmbedComponent>(
+                result.embeds,
+                PatchTarget.Embeds,
+              );
+              owner.debugName = 'V1_embeds_root';
+              instance.roots.embeds = embedsRoot;
+              roots.push(embedsRoot);
+            }
+            if (result.components) {
+              const [componentsRoot, , owner] = render<ViewComponent>(
+                result.components,
+                PatchTarget.Components,
+              );
+              owner.debugName = 'V1_components_root';
+              instance.roots.components = componentsRoot;
+              roots.push(componentsRoot);
+            }
+
+            return roots;
+          });
+          superOwner.debugName = 'V1_super_root';
+
+          instance.dispose = () => superOwner.dispose();
+          instance.owner = superOwner;
+
+          const wantEphemeral = instance.lastRender!.ephemeral;
+          if (wantEphemeral !== undefined) {
+            payload.ephemeral = wantEphemeral;
           }
+
+          assert(instance.roots);
         }
-        if (targets & PatchTarget.Embeds || this.hasQueuedEmbeds()) {
-          this.patchContext = PatchTarget.Embeds;
+
+        assert(instance.lastRender);
+
+        const { roots } = instance;
+        if (roots.embeds) {
           if (this.isQueuedForClear(PatchTarget.Embeds)) {
             payload.embeds = [];
           } else {
-            payload.embeds = DEPRECATED_flattenChildren(
-              $,
-              instance.embeds,
-              this.patchContext,
-            );
-          }
-          if (this.queuedEmbeds) {
-            payload.embeds = this.resolveWithQueuedItems(
-              payload.embeds,
-              this.queuedEmbeds,
-            );
+            const embedsRoot = roots.embeds;
+            payload.embeds = flatten(embedsRoot, instance.owner);
+            logger.debug('flattened embeds', payload.embeds);
           }
         }
-        if (targets & PatchTarget.Components) {
-          this.patchContext = PatchTarget.Components;
+        if (roots.components) {
           if (this.isQueuedForClear(PatchTarget.Components)) {
             payload.components = [];
-          } else if (instance.components !== undefined) {
-            payload.components = DEPRECATED_flattenChildren(
-              $,
-              instance.components,
-              this.patchContext,
-            );
+          } else {
+            const componentsRoot = roots.components;
+            payload.components = flatten(componentsRoot, instance.owner);
+            logger.debug('flattened components', payload.components);
           }
+        }
+
+        // TODO: @raspberry-varg - Content should be a tree as well.
+        if (this.isQueuedForClear(PatchTarget.Content)) {
+          payload.content = '';
+        } else if (instance.lastRender.content) {
+          payload.content = createUntracked(() => {
+            if (instance.lastRender?.content == null) {
+              return undefined;
+            }
+            return read(instance.lastRender.content);
+          });
+        }
+
+        if (this.queuedEmbeds) {
+          payload.embeds = this.resolveWithQueuedItems(
+            payload.embeds,
+            this.queuedEmbeds,
+          );
+        }
+
+        if (this.queuedComponents) {
+          payload.components = this.resolveWithQueuedItems(
+            payload.components,
+            this.queuedComponents,
+          );
         }
       });
     } finally {

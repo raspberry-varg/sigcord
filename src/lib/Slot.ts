@@ -12,12 +12,9 @@ import { flattenToContentNodes } from './render/flattenToContentNodes.js';
 import { getOpenOwner } from './render/owner.js';
 import { PatchTarget } from './RenderingEngine.js';
 
-// TODO: @raspberry-varg - Stop exporting when old flatten code is deleted.
-export const SLOT_ENQUEUE_FLUSH_METHOD: unique symbol =
-  Symbol('Flush accessor');
+const SLOT_ENQUEUE_FLUSH_METHOD: unique symbol = Symbol('Flush accessor');
 
-// TODO: @raspberry-varg - Stop exporting when old flatten code is deleted.
-export class SlotImpl<T extends ViewNodeKind> {
+class SlotImpl<T extends ViewNodeKind> {
   private writable?: WritableSignal<readonly T[]>;
   private rootNode?: ViewElementNode<T>;
   private flushQueued = false;
@@ -136,15 +133,15 @@ export class SlotImpl<T extends ViewNodeKind> {
 export interface Slot<T extends ViewNodeKind>
   extends Omit<SlotImpl<T>, typeof SLOT_ENQUEUE_FLUSH_METHOD> {}
 
-export interface SlotOptions<T> {
-  initial: T[];
+export interface SlotOptions {
   ephemeral: boolean;
 }
 
-export function slot(
-  options?: Partial<SlotOptions<ViewComponent>>,
-): Slot<ViewComponent> {
-  return new SlotImpl(options?.initial, options?.ephemeral);
+export function slot<T extends ViewNodeKind = ViewComponent>(
+  options?: Partial<SlotOptions>,
+  ...initialValue: T[]
+): Slot<T> {
+  return new SlotImpl(initialValue, options?.ephemeral);
 }
 
 export function isSlot(value: unknown): value is Slot<ViewComponent> {
