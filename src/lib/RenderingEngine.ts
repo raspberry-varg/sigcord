@@ -1,26 +1,26 @@
 import { MessageFlags, type EmbedBuilder } from 'discord.js';
 import { assert } from '../util/Assertions.js';
+import { isClassViewInstance } from './views/classic/classViewInstance.js';
+import { isReactiveViewInstance } from './views/reactive/reactiveViewInstance.js';
 import {
-  isClassViewInstance,
-  isReactiveViewInstance,
   type View,
-  type ViewInstance,
-} from './FunctionalMenuView.js';
+  type ViewInstance
+} from './views/view.js';
 import type {
   RenderedReactiveView,
   ViewComponent,
   ViewMessagePayload,
 } from './MenuView.js';
-import { flattenChildren, isRenderedReactiveViewV2 } from './MenuView.js';
+import { DEPRECATED_flattenChildren, isRenderedReactiveViewV2 } from './MenuView.js';
 import { logger } from '../util/Logger.js';
-import { isSignal, isWritableSignal, read } from './Reactivity.js';
+import { read } from './Reactivity.js';
 import { type PropsBase } from './MenuView/ViewBase.js';
 import type { NavigationPayload } from './Navigation.js';
 import {
   instantiateReactiveView,
-  isReactiveViewDefinition,
   type ReactiveViewInstance,
 } from './MenuView/ReactiveView.js';
+import { isReactiveViewDefinition } from './views/reactive/reactiveViewDefinition.js';
 import {
   getCurrentReactiveContext,
   setReactiveContext,
@@ -33,7 +33,7 @@ import type { Recursive } from './recursive.js';
 import { ViewNode } from './dom/viewNode.js';
 import { ViewContentNode } from './dom/viewContentNode.js';
 import { ViewElementNode } from './dom/viewElementNode.js';
-import { getOpenOwner, owner, setCurrentOwner } from './render/owner.js';
+import { setCurrentOwner } from './render/owner.js';
 
 export type PatchTargetBitField = number;
 
@@ -263,8 +263,9 @@ export class RenderingEngine {
             payload.components = [];
           } else {
             if (!instance.root) {
-              const [root, dispose] = render<ViewComponent>(() =>
-                instance.factory(),
+              const [root, dispose] = render<ViewComponent>(
+                () => instance.factory(),
+                PatchTarget.Components,
               );
               instance.root = root;
               instance.dispose = dispose;
@@ -281,16 +282,6 @@ export class RenderingEngine {
                   for (const inner of item) {
                     stack.push(inner);
                   }
-                  continue;
-                }
-                if (
-                  isSignal(item) ||
-                  isWritableSignal(item) ||
-                  typeof item === 'function'
-                ) {
-                  const childOwner = owner(() => read(item));
-                  childOwner.parent = getOpenOwner();
-                  stack.push(childOwner.root);
                   continue;
                 }
                 if (item instanceof ViewContentNode) {
@@ -316,15 +307,6 @@ export class RenderingEngine {
               setCurrentOwner(prevOwner);
             }
 
-            // const result = instance
-            //   .flatMap((el) =>
-            //     flattenChildren($, el as ViewComponent, this.patchContext),
-            //   )
-            //   .filter((el) => !!el);
-
-            // if (result) {
-            //   payload.components = result;
-            // }
             instance.lastRender = payload.components = flattened.toReversed();
 
             if (this.queuedComponents) {
@@ -355,7 +337,7 @@ export class RenderingEngine {
           if (this.isQueuedForClear(PatchTarget.Embeds)) {
             payload.embeds = [];
           } else {
-            payload.embeds = flattenChildren(
+            payload.embeds = DEPRECATED_flattenChildren(
               $,
               instance.embeds,
               this.patchContext,
@@ -373,7 +355,7 @@ export class RenderingEngine {
           if (this.isQueuedForClear(PatchTarget.Components)) {
             payload.components = [];
           } else if (instance.components !== undefined) {
-            payload.components = flattenChildren(
+            payload.components = DEPRECATED_flattenChildren(
               $,
               instance.components,
               this.patchContext,

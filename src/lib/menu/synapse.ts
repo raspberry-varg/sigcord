@@ -5,30 +5,21 @@ import type {
   ModalBuilder,
   AwaitModalSubmitOptions,
   ModalSubmitInteraction,
-  CommandInteraction,
 } from 'discord.js';
-import type { DefinedView, MenuContext, View } from './FunctionalMenuView.js';
-import type { MessageComponentCallback } from './MenuView.js';
-import type { EffectFn, Signal, SignalTuple } from './Reactivity.js';
-import type { PatchTarget } from './RenderingEngine.js';
-import type { WritableSignal } from './Reactivity.js';
-import type { PropsBase } from './MenuView/ViewBase.js';
-import type { UnionToIntersection } from '../util/TypesUtil.js';
-import type { DisposeFn } from './render/dispose.js';
-
-type ModalRepliableInteraction =
-  | CommandInteraction
-  | MessageComponentInteraction;
-
-export type ModalOnSubmitHandler = (
-  modal: ModalSubmitInteraction,
-) => void | Promise<void>;
-
-export interface ModalHandlingOptions
-  extends AwaitModalSubmitOptions<ModalSubmitInteraction> {
-  modal: ModalBuilder;
-  onSubmit: ModalOnSubmitHandler;
-}
+import type { MenuContext } from './menuContext.js';
+import type { DefinedView, View } from '../views/view.js';
+import type { MessageComponentCallback } from '../MenuView.js';
+import type { EffectFn, Signal, SignalTuple } from '../Reactivity.js';
+import type { PatchTarget } from '../RenderingEngine.js';
+import type { WritableSignal } from '../Reactivity.js';
+import type { PropsBase } from '../MenuView/ViewBase.js';
+import type { UnionToIntersection } from '../../util/TypesUtil.js';
+import type { DisposeFn } from '../render/dispose.js';
+import type {
+  ModalRepliableInteraction,
+  ModalHandlingOptions,
+  ModalOnSubmitHandler,
+} from '../interactivity/modalHandling.js';
 
 /**
  * Closure functions to manage and interact with a bound menu instance.

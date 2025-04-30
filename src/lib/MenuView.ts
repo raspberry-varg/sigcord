@@ -9,14 +9,14 @@ import {
   type TopLevelComponent,
   type TopLevelComponentData,
 } from 'discord.js';
-import type { IS_REACTIVE_SYMBOL } from './MenuView/ReactiveView.js';
+import type { REACTIVE_VIEW_SYMBOL } from './views/reactive/reactiveViewSymbol.js';
 import {
   isSignal,
   isWritableSignal,
   type WritableSignal,
   type Signalish,
 } from './Reactivity.js';
-import type { Synapse } from './Synapse.js';
+import type { Synapse } from './menu/synapse.js';
 import type { PatchTarget } from './RenderingEngine.js';
 import {
   SLOT_ENQUEUE_FLUSH_METHOD,
@@ -48,10 +48,10 @@ export type RenderedReactiveView =
   | RenderedReactiveViewV2;
 
 interface RenderedReactiveViewBase {
-  readonly [IS_REACTIVE_SYMBOL]: true;
+  readonly [REACTIVE_VIEW_SYMBOL]: true;
 }
 
-type LegacyRenderedReactiveView = LegacyReactiveViewPayload &
+type LegacyRenderedReactiveView = ReactiveViewPayloadV1 &
   RenderedReactiveViewBase & {
     [IS_V2]: false;
   };
@@ -71,17 +71,18 @@ export function isRenderedReactiveViewV2(
   return view[IS_V2];
 }
 
-export type ReactiveViewPayload = ReactiveViewPayloadV2;
-// | LegacyReactiveViewPayload;
+export type ReactiveViewPayload = ReactiveViewPayloadV1 | ReactiveViewPayloadV2;
 
-type ReactiveViewPayloadV2 = Children<ViewComponent | ViewNode<ViewComponent>>;
-
-interface LegacyReactiveViewPayload {
+export interface ReactiveViewPayloadV1 {
   ephemeral?: boolean;
   content?: string | Signalish<string>;
-  embeds?: EmbedChildren;
-  components?: ComponentChildren;
+  embeds?: Children<EmbedBuilder>;
+  components?: Children<ViewComponent>;
 }
+
+export type ReactiveViewPayloadV2 = Children<
+  ViewComponent | ViewNode<ViewComponent>
+>;
 
 export interface ViewMessagePayload {
   flags?: MessageFlags;
@@ -115,10 +116,9 @@ export type Children<T> =
   | null
   | undefined;
 
-type EmbedChildren = Children<EmbedBuilder>;
-type ComponentChildren = Children<ViewComponent>;
-
-export function flattenChildren<T extends EmbedBuilder | ViewComponent>(
+export function DEPRECATED_flattenChildren<
+  T extends EmbedBuilder | ViewComponent,
+>(
   $: Synapse,
   c: Children<T>,
   patchTarget: PatchTarget,
@@ -132,7 +132,7 @@ export function flattenChildren<T extends EmbedBuilder | ViewComponent>(
   // resolve nested
   if (Array.isArray(c)) {
     for (const nested of c) {
-      flattenChildren($, nested, patchTarget, out);
+      DEPRECATED_flattenChildren($, nested, patchTarget, out);
     }
   }
   // resolve writable signal
@@ -141,7 +141,7 @@ export function flattenChildren<T extends EmbedBuilder | ViewComponent>(
     $.createEffect(() => {
       initialVal = c.get();
     }, patchTarget);
-    flattenChildren($, initialVal, patchTarget, out);
+    DEPRECATED_flattenChildren($, initialVal, patchTarget, out);
   }
   // resolve a known signal
   else if (isSignal(c)) {
@@ -153,7 +153,7 @@ export function flattenChildren<T extends EmbedBuilder | ViewComponent>(
         logger.debug(`signal disposed: ${c}`);
       };
     }, patchTarget);
-    flattenChildren($, initialVal, patchTarget, out);
+    DEPRECATED_flattenChildren($, initialVal, patchTarget, out);
   }
   // resolve function call
   else if (typeof c === 'function') {
@@ -166,7 +166,7 @@ export function flattenChildren<T extends EmbedBuilder | ViewComponent>(
         logger.debug(`fn disposed: ${computed}`);
       };
     }, patchTarget);
-    flattenChildren($, initialVal, patchTarget, out);
+    DEPRECATED_flattenChildren($, initialVal, patchTarget, out);
   } else if (isSlot(c)) {
     const impl = c as SlotImpl<ViewComponent>;
     let initialVal;
@@ -174,7 +174,7 @@ export function flattenChildren<T extends EmbedBuilder | ViewComponent>(
       initialVal = impl.signal();
       impl[SLOT_ENQUEUE_FLUSH_METHOD]();
     }, patchTarget);
-    flattenChildren($, initialVal, patchTarget, out);
+    DEPRECATED_flattenChildren($, initialVal, patchTarget, out);
   } else if (c) {
     out.push(c);
   }

@@ -6,8 +6,11 @@ import {
   ModalBuilder,
   InteractionResponse,
 } from 'discord.js';
-import { Synapse, type ModalHandlingOptions } from './Synapse.js';
-import { View, ViewProps, MenuContext } from './FunctionalMenuView.js';
+import { Synapse } from './menu/synapse.js';
+import { type ModalHandlingOptions } from './interactivity/modalHandling.js';
+import { ClassViewProps } from './FunctionalMenuView.js';
+import { MenuContext } from './menu/menuContext.js';
+import { View } from './views/view.js';
 import { IntrinsicMenuProps } from './InteractiveMenu.js';
 import { SmartComponentType } from './SmartComponents.js';
 import { assert, assertAndReturn, assertNotNull } from '../util/Assertions.js';
@@ -28,6 +31,7 @@ import {
 import type { TimeoutEndReason } from '../util/CollectorUtil.js';
 import { batch } from '@preact/signals-core';
 import type { DisposeFn } from './render/dispose.js';
+import { getOpenOwner } from './render/owner.js';
 
 export interface MenuControllerAPI {
   // render API
@@ -243,7 +247,7 @@ export function MenuController<
       ) {
         const s = createSignal(fnOrValue, patchTarget);
         if (patchTarget !== PatchTarget.None) {
-          registerEffect(s.get.bind(s), patchTarget);
+          registerEffect(() => void s.get(), patchTarget);
         }
         return s.split();
       },
@@ -253,10 +257,11 @@ export function MenuController<
       ) {
         const s = createSignal(initialValue, patchTarget);
         if (patchTarget !== PatchTarget.None) {
-          registerEffect(s.get.bind(s), patchTarget);
+          registerEffect(() => void s.get(), patchTarget);
         }
         return s;
       },
+      // TODO: @raspberry-varg - The hope is to be able to get this from owners.
       createComputed: (fn) => createComputed(fn),
       createEffect: (fn, patchTarget) => registerEffect(fn, patchTarget),
       createEmbedEffect: (fn) => registerEffect(fn, PatchTarget.Embeds),
@@ -321,33 +326,28 @@ export function MenuController<
     return $;
   }
   function registerEffect(
-    fn: () => void,
+    fn: () => void | DisposeFn,
     patchTarget = PatchTarget.None,
   ): DisposeFn {
-    const effectRegisteredTo = renderer.getCurrentView();
-    const isActiveView = createComputed(
-      () => !effectRegisteredTo || activeView() === effectRegisteredTo,
-    );
-    const dispose = createEffect(() => {
-      if (!isActiveView()) {
-        logger.debug(`Not active view!`, {
-          effectRegisteredTo: effectRegisteredTo?.id ?? 'ALL VIEWS',
-          menuControllerActiveView: activeView()?.id,
-        });
-        return;
-      }
-
+    function menuEffect(): void | DisposeFn {
       const prevCtx = getCurrentReactiveContext();
+      let dispose;
       try {
         setReactiveContext(builtins);
-        fn();
+        dispose = fn();
       } finally {
         setReactiveContext(prevCtx);
       }
 
       builtins.patch(patchTarget);
-    });
-    unparentedDisposals.push(dispose);
+      return dispose;
+    }
+
+    const currentOwner = getOpenOwner();
+    const dispose = createEffect(menuEffect);
+    if (!currentOwner) {
+      hangingDisposals.push(dispose);
+    }
     return dispose;
   }
   function getView(id: string): View<AllProps> {
@@ -366,14 +366,14 @@ export function MenuController<
   }
   function dispose() {
     logger.debug('Disposing MenuController');
-    for (const dispose of unparentedDisposals) {
+    for (const dispose of hangingDisposals) {
       dispose();
     }
     renderer.dispose();
     // TODO: @raspberry-varg - Dispose all root ViewNodes
     return;
   }
-  const unparentedDisposals: DisposeFn[] = [];
+  const hangingDisposals: DisposeFn[] = [];
   const ctx: MenuContext = {
     get interaction(): RepliableInteraction {
       return getInteractionToPatch();
@@ -717,7 +717,7 @@ export function MenuController<
 function buildProps<Props extends NonNullable<unknown>>(
   initProps: Props,
   builtins: Synapse,
-): ViewProps<Props> & IntrinsicMenuProps {
+): ClassViewProps<Props> & IntrinsicMenuProps {
   return {
     ...DefaultProperties,
     ...initProps,

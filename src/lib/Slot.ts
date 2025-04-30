@@ -1,12 +1,25 @@
+import { ViewElementNode } from './dom/viewElementNode.js';
+import type { ViewNodeKind } from './dom/viewNodeKind.js';
 import type { ViewComponent } from './MenuView.js';
-import { writable } from './ReactiveBuiltIns.js';
-import type { Signal, WritableSignal } from './Reactivity.js';
+import { patch, writable } from './ReactiveBuiltIns.js';
+import {
+  createEffect,
+  read,
+  type Signal,
+  type WritableSignal,
+} from './Reactivity.js';
+import { flattenToContentNodes } from './render/flattenToContentNodes.js';
+import { getOpenOwner } from './render/owner.js';
+import { PatchTarget } from './RenderingEngine.js';
 
+// TODO: @raspberry-varg - Stop exporting when old flatten code is deleted.
 export const SLOT_ENQUEUE_FLUSH_METHOD: unique symbol =
   Symbol('Flush accessor');
 
-export class SlotImpl<T> {
+// TODO: @raspberry-varg - Stop exporting when old flatten code is deleted.
+export class SlotImpl<T extends ViewNodeKind> {
   private writable?: WritableSignal<readonly T[]>;
+  private rootNode?: ViewElementNode<T>;
   private flushQueued = false;
 
   constructor(
@@ -19,6 +32,31 @@ export class SlotImpl<T> {
    */
   get signal(): Signal<readonly T[]> {
     return this.getWritable().readonly();
+  }
+
+  get root(): ViewElementNode<T> {
+    if (this.rootNode) return this.rootNode;
+
+    const root = new ViewElementNode<T>();
+    const openOwner = getOpenOwner();
+    const patchTarget = openOwner?.patchTarget ?? PatchTarget.None;
+    const dispose = createEffect(() => {
+      patch(patchTarget);
+      const value = read<T[]>(this.signal as () => T[]);
+      for (const el of value) {
+        const node = new ViewElementNode();
+        node.addChild(...flattenToContentNodes(el));
+        root.addChild(node);
+      }
+      // TODO: @raspberry-varg - Have this called by someone else cause this won't flush without an update.
+      (this as SlotImpl<T>)[SLOT_ENQUEUE_FLUSH_METHOD]();
+
+      return () => {
+        root.clear();
+      };
+    });
+    openOwner?.registerDisposal(dispose);
+    return (this.rootNode = root);
   }
 
   /**
@@ -95,7 +133,7 @@ export class SlotImpl<T> {
   registerEffect(): void {}
 }
 
-export interface Slot<T>
+export interface Slot<T extends ViewNodeKind>
   extends Omit<SlotImpl<T>, typeof SLOT_ENQUEUE_FLUSH_METHOD> {}
 
 export interface SlotOptions<T> {
