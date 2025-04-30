@@ -1,21 +1,23 @@
-import type { ClassViewDefinition, ClassViewProps } from '../../FunctionalMenuView.js';
-import type { ClassicViewInstance } from '../../MenuView/ClassicView.js';
+import type {
+  ClassViewDefinition,
+  ClassViewProps,
+} from '../../FunctionalMenuView.js';
+import type { ViewClass } from '../../MenuView/DefineClassicView.js';
 import type { PropsBase } from '../../MenuView/ViewBase.js';
 import type { ViewInstance } from '../view.js';
 
-
 /** @internal */
-
 export function isClassViewInstance(
-  body: ViewInstance
+  body: ViewInstance,
 ): body is ClassicViewInstance<PropsBase> {
   return 'instance' in body;
-}/** @internal */
+}
 
-export async function instantiateClassView<Props extends PropsBase = PropsBase>(
+/** @internal */
+export function instantiateClassView<Props extends PropsBase = PropsBase>(
   view: ClassViewDefinition<Props>,
-  props: ClassViewProps<Props>
-): Promise<ClassicViewInstance<Props>> {
+  props: ClassViewProps<Props>,
+): ClassicViewInstance<Props> {
   return {
     id: view.id,
     defaults: {},
@@ -23,4 +25,7 @@ export async function instantiateClassView<Props extends PropsBase = PropsBase>(
     instance: new view.class(props),
   };
 }
-
+export type ClassicViewInstance<Props extends PropsBase> =
+  ClassViewDefinition<Props> & {
+    instance: ViewClass<Props>;
+  };

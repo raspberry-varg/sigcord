@@ -2,16 +2,16 @@ import { MessageFlags, type EmbedBuilder } from 'discord.js';
 import { assert } from '../util/Assertions.js';
 import { isClassViewInstance } from './views/classic/classViewInstance.js';
 import { isReactiveViewInstance } from './views/reactive/reactiveViewInstance.js';
-import {
-  type View,
-  type ViewInstance
-} from './views/view.js';
+import { type View, type ViewInstance } from './views/view.js';
 import type {
   RenderedReactiveView,
   ViewComponent,
   ViewMessagePayload,
 } from './MenuView.js';
-import { DEPRECATED_flattenChildren, isRenderedReactiveViewV2 } from './MenuView.js';
+import {
+  DEPRECATED_flattenChildren,
+  isRenderedReactiveViewV2,
+} from './MenuView.js';
 import { logger } from '../util/Logger.js';
 import { read } from './Reactivity.js';
 import { type PropsBase } from './MenuView/ViewBase.js';
@@ -25,7 +25,7 @@ import {
   getCurrentReactiveContext,
   setReactiveContext,
 } from './ReactiveBuiltIns.js';
-import { instantiateClassView } from './MenuView/ClassicView.js';
+import { instantiateClassView } from './views/classic/classViewInstance.js';
 import { batch } from '@preact/signals-core';
 import type { Props } from '../index.js';
 import { render } from './render/render.js';
