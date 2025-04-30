@@ -4,18 +4,27 @@ import { ViewNode } from '../dom/viewNode.js';
 import type { ViewNodeKind } from '../dom/viewNodeKind.js';
 import type { Children } from '../MenuView.js';
 import type { Recursive } from '../recursive.js';
+import { PatchTarget } from '../RenderingEngine.js';
 import type { DisposeFn } from './dispose.js';
 import { flattenToContentNodes } from './flattenToContentNodes.js';
 
 export class Owner<T extends ViewNodeKind = ViewNodeKind>
   implements Disposable
 {
-  private effectDisposals: DisposeFn[] = [];
-  private readonly nodes: ViewNode<T>[] = [];
+  readonly root = new ViewElementNode<T>();
+  patchTarget?: PatchTarget;
+  parent: Owner<T> | null = null;
+  childOwners = new Set<Owner<T>>();
 
-  public readonly root = new ViewElementNode<T>();
-  public parent: Owner<T> | null = null;
-  public childOwners = new Set<Owner<T>>();
+  private disposals: DisposeFn[] = [];
+  private readonly nodes: ViewNode<T>[] = [];
+  private disposed_ = false;
+
+  constructor() {}
+
+  get disposed() {
+    return this.disposed_;
+  }
 
   getNodes(): readonly ViewNode<T>[] {
     return this.nodes;
@@ -26,7 +35,7 @@ export class Owner<T extends ViewNodeKind = ViewNodeKind>
   }
 
   registerDisposal(disposal: DisposeFn): void {
-    this.effectDisposals.push(disposal);
+    this.disposals.push(disposal);
   }
 
   addChild(owner: Owner<T>): void {
@@ -38,16 +47,18 @@ export class Owner<T extends ViewNodeKind = ViewNodeKind>
   }
 
   dispose() {
+    if (this.disposed) return;
+
     // TODO: @raspberry-varg - Implement disposal.
     logger.debug('Disposing Owner.', {
       toDispose: {
-        effects: this.effectDisposals,
+        disposalFns: this.disposals,
         nodes: this.nodes,
         childOwners: this.childOwners,
       },
     });
-    this.effectDisposals.forEach((dispose) => dispose());
-    this.effectDisposals.length = 0;
+    this.disposals.forEach((dispose) => dispose());
+    this.disposals.length = 0;
     this.nodes.forEach((node) => node.dispose());
     this.nodes.length = 0;
     this.childOwners.forEach((owner) => owner.dispose());
@@ -87,10 +98,14 @@ export function setCurrentOwner(newOwner: Owner | null): Owner | null {
 
 export function owner<T extends ViewNodeKind>(
   ownerFn: () => Children<T | ViewNode<T>>,
+  patchTarget?: PatchTarget,
 ): Owner<T> {
   logger.debug(`creating a new owner with fn=${ownerFn}`);
   const newOwner = new Owner<T>();
   const prevOwner = setCurrentOwner(newOwner);
+  newOwner.patchTarget = prevOwner?.patchTarget ?? patchTarget;
+  newOwner.parent = prevOwner;
+
   let content;
   try {
     content = ownerFn();

@@ -1,6 +1,6 @@
 import type { Message, RepliableInteraction } from 'discord.js';
 import type { IntrinsicViewProps } from './MenuView.js';
-import { View, type DefinedView } from './FunctionalMenuView.js';
+import { View, type DefinedView } from './views/view.js';
 import { MenuController, type MenuControllerAPI } from './MenuController.js';
 import type { PropsBase } from './MenuView/ViewBase.js';
 import type { ArrayUnionToIntersection } from '../util/TypesUtil.js';

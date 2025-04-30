@@ -7,7 +7,7 @@
  * with non-reactive views.
  */
 
-import { Synapse } from './Synapse.js';
+import { Synapse } from './menu/synapse.js';
 import { PatchTarget } from './RenderingEngine.js';
 import { assert } from '../util/Assertions.js';
 import {

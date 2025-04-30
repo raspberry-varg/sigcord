@@ -1,12 +1,9 @@
 export { IntrinsicMenuProps, defineMenu } from './lib/InteractiveMenu.js';
 export * from './lib/MenuView.js';
-export {
-  View,
-  ViewProps,
-  ViewProps as Props,
-} from './lib/FunctionalMenuView.js';
+export { View } from './lib/views/view.js';
+export { ClassViewProps as ViewProps, ClassViewProps as Props } from './lib/FunctionalMenuView.js';
 export { ViewRender } from './lib/MenuView/ClassicView.js';
-export { Synapse, Synapse as ViewSynapse } from './lib/Synapse.js';
+export { Synapse, Synapse as ViewSynapse } from './lib/menu/synapse.js';
 export * from './lib/SmartComponents.js';
 export * from './lib/PrebuiltEmbeds.js';
 export * from './lib/Renderable.js';
@@ -50,9 +47,13 @@ export {
   useSynapse,
   resumableAction,
 } from './lib/ReactiveBuiltIns.js';
-export { defineView } from './lib/MenuView/DefineReactiveView.js';
+export {
+  defineView,
+  defineViewV2,
+} from './lib/views/reactive/defineReactiveView.js';
 export {
   ViewClass,
   defineClassView,
 } from './lib/MenuView/DefineClassicView.js';
-export { SlotOptions, Slot, slot } from './lib/Slot.js';
+export { SlotOptions, Slot, slot, isSlot } from './lib/Slot.js';
+export { onCleanup } from './lib/hooks/onCleanup.js';

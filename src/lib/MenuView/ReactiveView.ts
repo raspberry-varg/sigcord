@@ -1,55 +1,34 @@
-import { ViewProps, type View } from '../FunctionalMenuView.js';
-import type { IntrinsicMenuProps } from '../InteractiveMenu.js';
+import { ClassViewProps } from '../FunctionalMenuView.js';
+import { type View } from '../views/view.js';
 
 import {
   IS_V2,
   type Children,
-  type ReactiveViewPayload,
   type RenderedReactiveView,
 } from '../MenuView.js';
 import { createComputed, isSignal, isWritableSignal } from '../Reactivity.js';
+import type { ReactiveViewDefinition } from '../views/reactive/reactiveViewDefinition.js';
+import { REACTIVE_VIEW_SYMBOL } from '../views/reactive/reactiveViewSymbol.js';
 import type { PropsBase } from './ViewBase.js';
-
-export type ReactiveViewFactory<Props extends PropsBase> = (
-  props: ViewProps<Props>,
-) => ReactiveViewPayload;
-
-export type ReactiveViewBody<Props extends PropsBase = PropsBase> =
-  ReactiveViewDefinition<Props>;
-
-export interface ReactiveViewDefinition<Props extends PropsBase = PropsBase> {
-  readonly id: string;
-  defaults: Partial<IntrinsicMenuProps>;
-  factory: ReactiveViewFactory<Props>;
-  [IS_REACTIVE_SYMBOL]: true;
-}
 
 export type ReactiveViewInstance = {
   readonly id: string;
 } & RenderedReactiveView;
 
-export const IS_REACTIVE_SYMBOL = Symbol('is_reactive');
-
-export function isReactiveViewDefinition(
-  maybeView: View,
-): maybeView is ReactiveViewDefinition {
-  return IS_REACTIVE_SYMBOL in maybeView;
-}
-
 export function isReactiveView(view: View): view is ReactiveViewDefinition {
-  return IS_REACTIVE_SYMBOL in view;
+  return REACTIVE_VIEW_SYMBOL in view;
 }
 
 /** @internal */
 export function instantiateReactiveView<Props extends PropsBase = PropsBase>(
   view: ReactiveViewDefinition<Props>,
-  props: ViewProps<Props>,
+  props: ClassViewProps<Props>,
 ): ReactiveViewInstance {
   const id = view.id;
   const isV2 = true; // TODO: @raspberry-varg - Have flag for V2.
   if (isV2) {
     const instance: ReactiveViewInstance = {
-      [IS_REACTIVE_SYMBOL]: true,
+      [REACTIVE_VIEW_SYMBOL]: true,
       [IS_V2]: true,
       id,
       root: undefined,
@@ -60,7 +39,7 @@ export function instantiateReactiveView<Props extends PropsBase = PropsBase>(
   }
   const factoryResult = view.factory(props);
   const instance: ReactiveViewInstance = {
-    [IS_REACTIVE_SYMBOL]: true,
+    [REACTIVE_VIEW_SYMBOL]: true,
     [IS_V2]: false,
     id: view.id as any,
     ...(factoryResult as any),
