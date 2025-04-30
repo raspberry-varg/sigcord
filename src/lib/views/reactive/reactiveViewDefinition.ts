@@ -34,14 +34,14 @@ export interface ReactiveViewDefinitionV2<Props extends PropsBase>
   factory: ReactiveViewFactoryV2<Props>;
 }
 
-export function isReactiveViewDefinition(
-  maybeView: View,
-): maybeView is ReactiveViewDefinition {
+export function isReactiveViewDefinition<Props extends PropsBase>(
+  maybeView: View<Props>,
+): maybeView is ReactiveViewDefinition<Props> {
   return REACTIVE_VIEW_SYMBOL in maybeView;
 }
 
-export function isReactiveViewDefinitionV2(
-  view: View,
-): view is ReactiveViewDefinitionV2<PropsBase> {
+export function isReactiveViewDefinitionV2<Props extends PropsBase>(
+  view: View<Props>,
+): view is ReactiveViewDefinitionV2<Props> {
   return isReactiveViewDefinition(view) && IS_V2 in view;
 }

@@ -1,4 +1,6 @@
-import type { EmbedBuilder } from 'discord.js';
-import type { Children, ViewComponent } from '../MenuView.js';
+import type { Children, EmbedComponent, ViewComponent } from '../MenuView.js';
 
-export type ViewNodeKind = Children<EmbedBuilder | ViewComponent>;
+export type ViewNodeKind =
+  | EmbedComponent
+  | ViewComponent
+  | Children<EmbedComponent | ViewComponent>;
