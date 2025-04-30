@@ -1,8 +1,11 @@
 export { IntrinsicMenuProps, defineMenu } from './lib/InteractiveMenu.js';
 export * from './lib/MenuView.js';
 export { View } from './lib/views/view.js';
-export { ClassViewProps as ViewProps, ClassViewProps as Props } from './lib/FunctionalMenuView.js';
-export { ViewRender } from './lib/MenuView/ClassicView.js';
+export {
+  ClassViewProps as ViewProps,
+  ClassViewProps as Props,
+} from './lib/FunctionalMenuView.js';
+export { ViewRender } from './lib/views/classic/classViewRender.js';
 export { Synapse, Synapse as ViewSynapse } from './lib/menu/synapse.js';
 export * from './lib/SmartComponents.js';
 export * from './lib/PrebuiltEmbeds.js';
