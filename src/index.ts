@@ -60,3 +60,4 @@ export {
 } from './lib/MenuView/DefineClassicView.js';
 export { SlotOptions, Slot, slot, isSlot } from './lib/Slot.js';
 export { onCleanup } from './lib/hooks/onCleanup.js';
+export { batch } from '@preact/signals-core';
