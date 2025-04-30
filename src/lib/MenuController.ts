@@ -366,7 +366,9 @@ export function MenuController<
   }
   function dispose() {
     logger.debug('Disposing MenuController');
-    logger.debug(`Disposing ${hangingDisposals.length} hanging disposal(s)`);
+    logger.debug(
+      `Disposing ${hangingDisposals.length} hanging effect disposal(s)`,
+    );
     for (const dispose of hangingDisposals) {
       dispose();
     }
