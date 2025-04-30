@@ -1,3 +1,4 @@
+import { logger } from '../../util/Logger.js';
 import { ViewNode } from './viewNode.js';
 import type { ViewNodeKind } from './viewNodeKind.js';
 
@@ -18,6 +19,9 @@ export class ViewContentNode<T extends ViewNodeKind> extends ViewNode<T> {
   }
 
   override dispose(): void {
+    if (this.disposed) return;
+
+    logger.debug('Disposing ViewContentNode', { content: this.content });
     this.content = undefined;
   }
 }

@@ -61,6 +61,7 @@ export class Owner<T extends ViewNodeKind = ViewNodeKind>
     });
     this.disposals.forEach((dispose) => dispose());
     this.disposals.length = 0;
+    this.root.dispose();
     this.nodes.forEach((node) => node.dispose());
     this.nodes.length = 0;
     this.childOwners.forEach((owner) => owner.dispose());
