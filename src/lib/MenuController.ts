@@ -721,7 +721,6 @@ export function MenuController<
   return {
     // render API
     reply,
-    /**@deprecated Please use `.start` instead. */
     render: start,
     start,
     // listener API
