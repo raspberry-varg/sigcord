@@ -66,3 +66,4 @@ export {
   ComponentWithController,
   ComponentWithHandler,
 } from './lib/components/componentDefinition.js';
+export { owner } from './lib/render/owner.js';
