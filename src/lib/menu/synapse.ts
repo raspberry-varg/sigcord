@@ -103,7 +103,7 @@ export interface Synapse {
    * queue a patch for content, set content to a function that returns a string.
    * @param fn The effect to run. Takes an optional cleanup fn.
    * @param params Extra configuration for debugging.
-   * @param patchTarget Bitfield of {@link PatchTarget} to queue for rendering
+   * @param patchTarget Bit mask of {@link PatchTarget} to queue for rendering
    * when this effect runs.
    */
   createEffect: (fn: EffectFn, patchTarget?: PatchTarget) => DisposeFn;

@@ -185,9 +185,9 @@ export function resource<T>(
  * change.
  *
  * @param fn The effect to run.
- * @param patchTarget {@link PatchTarget} bitmap to queue for rendering. Useful
- *   when mutating content objects like component or embed builders to have the
- *   change reflected to the user.
+ * @param patchTarget {@link PatchTarget} bit mask to queue for rendering.
+ *   Useful when mutating content objects like component or embed builders to
+ *   have the change reflected to the user.
  */
 export const effect: Synapse['createEffect'] = (fn, patchTarget) =>
   useSynapse().createEffect(fn, patchTarget);
@@ -250,7 +250,7 @@ export function patchEffect(effectFn: EffectFn): DisposeFn {
     'patchEffect() was called outside of the embed or component render ' +
       'lifecycle. If effects that mutate content in the embed or component ' +
       'must be set up in the body of the view, use patch() with the ' +
-      'appropriate PatchTarget bitmap.',
+      'appropriate PatchTarget bit mask instead.',
   );
   return effect(effectFn, target);
 }

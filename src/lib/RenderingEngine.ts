@@ -31,7 +31,7 @@ import { ViewElementNode } from './dom/viewElementNode.js';
 import { owner } from './render/owner.js';
 import { flatten } from './render/flatten.js';
 
-export type PatchTargetBitField = number;
+export type PatchTargetBitMask = number;
 
 /**
  * The portion of a {@link ViewMessagePayload message payload} to update.
@@ -71,7 +71,7 @@ export class RenderingEngine {
   private wantRender = true;
   private queuedEmbeds?: Partial<QueuedEmbeds>;
   private queuedComponents?: Partial<QueuedComponents>;
-  private queuedClears: PatchTargetBitField = 0;
+  private queuedClears: PatchTargetBitMask = 0;
   private reactiveViewInstance?: ReactiveViewInstance;
   private patchContext = PatchTarget.None;
   private queuedNavigation?: NavigationPayload;
@@ -158,7 +158,7 @@ export class RenderingEngine {
     this.wantRender;
   }
 
-  queueClear(patchTargets: PatchTargetBitField): void {
+  queueClear(patchTargets: PatchTargetBitMask): void {
     this.queuedClears |= patchTargets;
   }
 
@@ -207,7 +207,7 @@ export class RenderingEngine {
 
   async patch(
     props: Props,
-    targets: PatchTargetBitField,
+    targets: PatchTargetBitMask,
   ): Promise<ViewMessagePayload> {
     assert(this.viewDefinition, 'Internal error: View was not set.');
     logger.debug('Patch requested', {
@@ -240,7 +240,7 @@ export class RenderingEngine {
   patchReactive(
     instance: ReactiveViewInstance,
     props: Props,
-    targets: PatchTargetBitField,
+    targets: PatchTargetBitMask,
   ) {
     const $ = props.$;
     targets |= this.queuedClears;
@@ -532,7 +532,7 @@ export class RenderingEngine {
     return final;
   }
 
-  private isQueuedForClear(target: PatchTargetBitField): boolean {
+  private isQueuedForClear(target: PatchTargetBitMask): boolean {
     return !!(target & this.queuedClears);
   }
 }

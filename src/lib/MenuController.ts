@@ -21,7 +21,7 @@ import { InteractionPatcher } from './InteractionPatcher.js';
 import { CollectorService } from './CollectorService.js';
 import { TimeoutComponent, TimeoutEmbed } from './PrebuiltEmbeds.js';
 import { createComputed, createEffect, createSignal } from './Reactivity.js';
-import { PatchTarget, PatchTargetBitField } from './RenderingEngine.js';
+import { PatchTarget, PatchTargetBitMask } from './RenderingEngine.js';
 import type { PropsBase } from './MenuView/ViewBase.js';
 import { Navigation } from './Navigation.js';
 import {
@@ -253,9 +253,9 @@ export function MenuController<
         }
       },
       patch: (...targets) => {
-        manualPatchQueued |= targets.reduce<PatchTargetBitField>(
-          (bitField, target) => {
-            return bitField | target;
+        manualPatchQueued |= targets.reduce<PatchTargetBitMask>(
+          (bitMask, target) => {
+            return bitMask | target;
           },
           PatchTarget.None,
         );
@@ -442,7 +442,7 @@ export function MenuController<
     customId: '',
   };
   let skipRender = false;
-  let manualPatchQueued: PatchTargetBitField = 0;
+  let manualPatchQueued: PatchTargetBitMask = 0;
 
   const [activeView, setActiveView] = builtins.createSignal<View | null>(null);
   if (debug) {
@@ -451,7 +451,7 @@ export function MenuController<
     });
   }
 
-  function getPatchTargets(): PatchTargetBitField {
+  function getPatchTargets(): PatchTargetBitMask {
     logger.debug({
       skipRender,
       collectorEnded: collector.hasEnded(),
@@ -467,14 +467,14 @@ export function MenuController<
       return PatchTarget.All;
     }
     if (renderer.isCurrentViewReactive()) {
-      let patchTargets: PatchTargetBitField = manualPatchQueued;
+      let patchTargets: PatchTargetBitMask = manualPatchQueued;
       if (renderer.hasQueuedEmbeds()) {
         patchTargets |= PatchTarget.Embeds;
       }
       if (renderer.hasQueuedNavigation()) {
         patchTargets |= PatchTarget.All;
       }
-      logger.debug({ patchTargetBitField: patchTargets });
+      logger.debug({ patchTargetBitMask: patchTargets });
       return patchTargets;
     }
     return PatchTarget.All;
@@ -647,7 +647,7 @@ export function MenuController<
   }
 
   /** Handles subsequent rerenders. */
-  async function update(patchTargets: PatchTargetBitField): Promise<void> {
+  async function update(patchTargets: PatchTargetBitMask): Promise<void> {
     beforeRender();
     try {
       const payload = await batch(
