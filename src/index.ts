@@ -32,6 +32,7 @@ export {
   computed,
   resource,
   effect,
+  patchEffect,
   embedEffect,
   componentEffect,
   goTo,

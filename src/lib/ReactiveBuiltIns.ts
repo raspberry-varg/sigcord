@@ -12,9 +12,13 @@ import { PatchTarget } from './RenderingEngine.js';
 import { assert } from '../util/Assertions.js';
 import {
   createUntracked,
+  type EffectFn,
   type Resource,
   type ResourceTuple,
 } from './Reactivity.js';
+import type { DisposeFn } from './render/dispose.js';
+import { getOpenOwnerStrict } from './render/owner.js';
+import type { ReactiveViewPayloadV1 } from './MenuView.js';
 
 let currentSynapse: Synapse | null = null;
 
@@ -177,22 +181,92 @@ export function resource<T>(
 // Signal effects
 
 /**
- * Create an effect that runs when the value of signals in the function are
- * changed.
+ * Create an effect that runs when signals referenced in the effect function
+ * change.
  *
- * **Note:** This does **not** queue a patch to the message content, embeds,
- * or components. To have a patch queued on effect run, use
- * {@link embedEffect} or {@link componentEffect} instead. To
- * queue a patch for content, set content to a function that returns a string.
  * @param fn The effect to run.
- * @param params Extra configuration for debugging.
- * @param patchTarget Bitfield of {@link PatchTarget} to queue for rendering
- * when this effect runs.
+ * @param patchTarget {@link PatchTarget} bitmap to queue for rendering. Useful
+ *   when mutating content objects like component or embed builders to have the
+ *   change reflected to the user.
  */
 export const effect: Synapse['createEffect'] = (fn, patchTarget) =>
   useSynapse().createEffect(fn, patchTarget);
 
 /**
+ * Create an effect that runs when signals referenced in the effect function
+ * change. This effect will automatically request an update to the user's UI
+ * based on the current rendering context.
+ *
+ * Useful for mutating state of content objects like component or embed builders
+ * and having the change reflected to the user.
+ *
+ * Note: This is not required if you use a {@link computed} embed or component.
+ *
+ * @example
+ * ```ts
+ * function CountingButton() {
+ *   const [clicks, setClicks] = signal(0);
+ *    const button = new ButtonBuilder().setStyle(ButtonStyle.Primary);
+ *    patchEffect(() => {
+ *      // effect runs each time setClicks mutates the value
+ *      button.setLabel(`You have clicked me ${clicks()} times.`);
+ *    });
+ *    // register component handler; the `button` variable is returned directly
+ *    return component({
+ *      component: button,
+ *      handler: () => setClicks((prev) => prev + 1),
+ *    });
+ * }
+ *
+ * // components V2: anywhere within the top-level view call
+ * const viewV2 = defineViewV2('my-view', () => {
+ *   return [
+ *     new ActionRowBuilder<ButtonBuilder>().setComponents(
+ *       CountingButton(),
+ *     ),
+ *   ];
+ * });
+ *
+ * // components V1: within the function passed to ReactiveViewPayloadV1#components.
+ * const viewV1 = defineView('my-view', () => {
+ *   return {
+ *     components: () => [
+ *       new ActionRowBuilder<ButtonBuilder>().setComponents(
+ *         CountingButton(),
+ *       ),
+ *     ];
+ *   };
+ * });
+ * ```
+ *
+ * @param effectFn Effect function that mutates content in the current
+ *   {@link PatchTarget} context.
+ */
+export function patchEffect(effectFn: EffectFn): DisposeFn {
+  const owner = getOpenOwnerStrict();
+  const target = owner.patchTarget;
+  assert(
+    target != null && target !== PatchTarget.None,
+    'patchEffect() was called outside of the embed or component render ' +
+      'lifecycle. If effects that mutate content in the embed or component ' +
+      'must be set up in the body of the view, use patch() with the ' +
+      'appropriate PatchTarget bitmap.',
+  );
+  return effect(effectFn, target);
+}
+
+/**
+ * @deprecated
+ * Effect context is now dynamically-tracked as a component is rendered and
+ * re-rendered. Please use {@link patchEffect} instead to have updates to embed
+ * objects automatically reflected to the user.
+ *
+ * Components V1: If you must set up effects that mutate embed objects outside
+ * of the call to {@link ReactiveViewPayloadV1.embeds}, please pass
+ * {@link PatchTarget.Embeds} to the optional second parameter in
+ * {@link effect}.
+ *
+ * @summary
  * Create an effect that runs when the value of signals in the function are
  * changed.
  *
@@ -205,6 +279,17 @@ export const embedEffect: Synapse['createEmbedEffect'] = (fn) =>
   useSynapse().createEmbedEffect(fn);
 
 /**
+ * @deprecated
+ * Effect context is now dynamically-tracked as a component is rendered and
+ * re-rendered. Please use {@link patchEffect} instead to have updates to
+ * component objects automatically reflected to the user.
+ *
+ * Components V1: If you must set up effects that mutate embed objects outside
+ * of the call to {@link ReactiveViewPayloadV1.components}, please pass
+ * {@link PatchTarget.Components} to the optional second parameter in
+ * {@link effect}.
+ *
+ * @summary
  * Create an effect that runs when the value of signals in the function are
  * changed.
  *

@@ -33,6 +33,9 @@ import { flatten } from './render/flatten.js';
 
 export type PatchTargetBitField = number;
 
+/**
+ * The portion of a {@link ViewMessagePayload message payload} to update.
+ */
 export enum PatchTarget {
   None = 0,
   Embeds = 1,
