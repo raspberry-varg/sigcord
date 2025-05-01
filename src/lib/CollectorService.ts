@@ -42,10 +42,16 @@ export class CollectorService {
     componentId: string,
     callback: MessageComponentCallback<any>,
   ): void {
+    logger.debug('CollectorService: Subscribed to component', {
+      id: componentId,
+    });
     this.componentCallbacks.set(componentId, callback);
   }
 
   unsubscribeTo(componentId: string): void {
+    logger.debug('CollectorService: Unsubscribed from component', {
+      id: componentId,
+    });
     this.componentCallbacks.delete(componentId);
   }
 
