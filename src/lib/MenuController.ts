@@ -33,6 +33,7 @@ import { batch } from '@preact/signals-core';
 import type { DisposeFn } from './render/dispose.js';
 import { getOpenOwner } from './render/owner.js';
 import { onCleanup } from './hooks/onCleanup.js';
+import { NamedIdGenerator } from './ids/namedIdGenerator.js';
 
 export interface MenuControllerAPI {
   // render API
@@ -143,7 +144,9 @@ export function MenuController<
           'controller' in definition
             ? definition.controller
             : definition.handler;
-        const componentId = createComponentId(definition.id);
+        const componentId = createComponentId(
+          definition.id ? definition.id : componentIdGenerator.next(),
+        );
         definition.component.setCustomId(componentId);
         collector.onComponent(componentId, controller);
 
@@ -424,6 +427,7 @@ export function MenuController<
     MenuViewComponentId,
     MessageComponentCallback<any>
   >();
+  const componentIdGenerator = new NamedIdGenerator('component');
   let idle: number =
     props.idleTimeMs === undefined
       ? DEFAULT_IDLE
