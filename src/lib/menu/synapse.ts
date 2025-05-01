@@ -1,6 +1,5 @@
 import type {
   MessageActionRowComponentBuilder,
-  MessageComponentInteraction,
   EmbedBuilder,
   ModalBuilder,
   AwaitModalSubmitOptions,
@@ -8,7 +7,6 @@ import type {
 } from 'discord.js';
 import type { MenuContext } from './menuContext.js';
 import type { DefinedView, View } from '../views/view.js';
-import type { MessageComponentCallback } from '../MenuView.js';
 import type { EffectFn, Signal, SignalTuple } from '../Reactivity.js';
 import type { PatchTarget } from '../RenderingEngine.js';
 import type { WritableSignal } from '../Reactivity.js';
@@ -20,12 +18,15 @@ import type {
   ModalHandlingOptions,
   ModalOnSubmitHandler,
 } from '../interactivity/modalHandling.js';
+import type { ComponentDefinition } from '../components/componentDefinition.js';
 
 /**
  * Closure functions to manage and interact with a bound menu instance.
  *
  * The `Synapse` is a collection of closure functions bound to a menu instance.
  * These act as the central nervous system for your interactive menus.
+ *
+ * Prefer reactive hooks over using the Synapse directly for reactive menus.
  */
 export interface Synapse {
   /**
@@ -38,13 +39,11 @@ export interface Synapse {
    * @returns The provided component builder.
    */
   component<
-    ComponentType extends MessageActionRowComponentBuilder,
-    ComponentInteractionType extends MessageComponentInteraction,
-  >(definition: {
-    id: string;
-    component: ComponentType;
-    controller: MessageComponentCallback<ComponentInteractionType>;
-  }): ComponentType;
+    Builder extends MessageActionRowComponentBuilder,
+    Cached extends boolean = boolean,
+  >(
+    definition: ComponentDefinition<Builder, Cached>,
+  ): Builder;
   swap(toViewId: string, ...args: any[]): void;
   swap<ViewDefinition extends View<P>, P extends PropsBase>(
     viewDefinition: ViewDefinition & View<P>,

@@ -32,6 +32,7 @@ import type { TimeoutEndReason } from '../util/CollectorUtil.js';
 import { batch } from '@preact/signals-core';
 import type { DisposeFn } from './render/dispose.js';
 import { getOpenOwner } from './render/owner.js';
+import { onCleanup } from './hooks/onCleanup.js';
 
 export interface MenuControllerAPI {
   // render API
@@ -110,6 +111,15 @@ export function MenuController<
   interaction: RepliableInteraction,
   initProps: MenuProps,
 ): MenuControllerAPI {
+  function routeDisposalFn(disposal: DisposeFn): void {
+    const openOwner = getOpenOwner();
+    if (openOwner) {
+      onCleanup(disposal);
+    } else {
+      hangingDisposals.push(disposal);
+    }
+  }
+
   function createSynapse(): Synapse {
     const $: Synapse = {
       ctx,
@@ -128,11 +138,17 @@ export function MenuController<
           renderer.queueViewSwap(view as View, args);
         }
       },
-      component: ({ id, component, controller }) => {
-        const componentId = createComponentId(id);
-        component.setCustomId(componentId);
+      component: (definition) => {
+        const controller =
+          'controller' in definition
+            ? definition.controller
+            : definition.handler;
+        const componentId = createComponentId(definition.id);
+        definition.component.setCustomId(componentId);
         collector.onComponent(componentId, controller);
-        return component;
+
+        routeDisposalFn(() => collector.unsubscribeTo(componentId));
+        return definition.component;
       },
       async showModal(interaction, modalOrOptions) {
         let modal: ModalBuilder;
@@ -373,7 +389,6 @@ export function MenuController<
       dispose();
     }
     renderer.dispose();
-    // TODO: @raspberry-varg - Dispose all root ViewNodes
     return;
   }
   const hangingDisposals: DisposeFn[] = [];
