@@ -45,6 +45,10 @@ export class CollectorService {
     this.componentCallbacks.set(componentId, callback);
   }
 
+  unsubscribeTo(componentId: string): void {
+    this.componentCallbacks.delete(componentId);
+  }
+
   getComponentCallback(componentId: string) {
     return this.componentCallbacks.get(componentId);
   }
