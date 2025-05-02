@@ -58,7 +58,7 @@ export interface ComponentWithController<
   /**
    * @deprecated Please use the 'handler' property instead. This will soon
    *   become a field for a full controller class for the component itself.
-   *   Currently functions the same as {@link ComponentWithHandler#handler}.
+   *   Currently functions the same as {@link ComponentWithHandler.handler}.
    */
   controller: MessageComponentCallback<InteractionFromBuilder<Builder, Cached>>;
 }

@@ -100,7 +100,7 @@ export function setCurrentOwner(newOwner: Owner | null): Owner | null {
 }
 
 export function owner<T extends ViewNodeKind>(
-  ownerFn: () => Children<T>,
+  ownerFn: () => Children<T> | void,
   patchTarget?: PatchTarget,
 ): Owner<T> {
   logger.debug(`creating a new owner with fn=${ownerFn}`);
@@ -113,9 +113,13 @@ export function owner<T extends ViewNodeKind>(
   let content;
   try {
     content = ownerFn();
-    const root = newOwner.root;
-    const nodes = flattenToContentNodes(content as Recursive<T | ViewNode<T>>);
-    root.addChild(...nodes);
+    if (content) {
+      const root = newOwner.root;
+      const nodes = flattenToContentNodes(
+        content as Recursive<T | ViewNode<T>>,
+      );
+      root.addChild(...nodes);
+    }
   } finally {
     setCurrentOwner(prevOwner);
   }
