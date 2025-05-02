@@ -12,7 +12,6 @@ import { ClassViewProps } from './FunctionalMenuView.js';
 import { MenuContext } from './menu/menuContext.js';
 import { View } from './views/view.js';
 import { IntrinsicMenuProps } from './InteractiveMenu.js';
-import { SmartComponentType } from './SmartComponents.js';
 import { assert, assertAndReturn, assertNotNull } from '../util/Assertions.js';
 import { Listener } from './Listener.js';
 import { debug, logger } from '../util/Logger.js';
@@ -31,6 +30,7 @@ import type { DisposeFn } from './render/dispose.js';
 import { getOpenOwner } from './render/owner.js';
 import { onCleanup } from './hooks/onCleanup.js';
 import { NamedIdGenerator } from './ids/namedIdGenerator.js';
+import { AutoComponentId } from './components/autoComponents.js';
 
 export interface MenuControllerAPI {
   // render API
@@ -575,15 +575,17 @@ export function MenuController<
   function handlePrebuiltComponents(collected: CollectedMessageInteraction) {
     const id = collected.customId;
     if (collected.isButton()) {
-      switch (id) {
-        case SmartComponentType.CloseButton: {
+      switch (id as AutoComponentId) {
+        case AutoComponentId.CloseMenuButton: {
           logger.debug('Closing Menu via official CloseMenuButton');
           closeMenu();
-          return true;
+          break;
         }
+        default:
+          return false;
       }
     }
-    return false;
+    return true;
   }
 
   async function onCollect(collected: CollectedMessageInteraction) {
