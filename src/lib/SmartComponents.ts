@@ -1,14 +1,8 @@
-import { ButtonBuilder, ButtonStyle } from 'discord.js';
-
-export enum SmartComponentType {
-  CloseButton = '__RESERVED__Close',
-}
+import { AutoComponents } from './components/autoComponents.js';
 
 /**
- * `Button` that triggers the parent `InteractiveMenu` to close.
+ * @deprecated Use {@link AutoComponents.CloseMenuButton} instead.
+ *
+ * @summary `Button` that triggers the parent `InteractiveMenu` to close.
  */
-export const SmartCloseButton = new ButtonBuilder({
-  custom_id: SmartComponentType.CloseButton,
-  style: ButtonStyle.Secondary,
-  label: 'Close',
-});
+export const SmartCloseButton = AutoComponents.CloseMenuButton();

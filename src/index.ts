@@ -72,3 +72,8 @@ export {
 } from './lib/components/componentDefinition.js';
 export { owner } from './lib/render/owner.js';
 export { DisposeFn } from './lib/render/dispose.js';
+export {
+  AutoComponentId,
+  AutoComponents,
+  configureAutoComponents,
+} from './lib/components/autoComponents.js';
