@@ -24,10 +24,7 @@ import { createComputed, createEffect, createSignal } from './Reactivity.js';
 import { PatchTarget, PatchTargetBitMask } from './RenderingEngine.js';
 import type { PropsBase } from './MenuView/ViewBase.js';
 import { Navigation } from './Navigation.js';
-import {
-  getCurrentReactiveContext,
-  setReactiveContext,
-} from './ReactiveBuiltIns.js';
+import { setReactiveContext } from './ReactiveBuiltIns.js';
 import type { TimeoutEndReason } from '../util/CollectorUtil.js';
 import { batch } from '@preact/signals-core';
 import type { DisposeFn } from './render/dispose.js';
@@ -349,13 +346,12 @@ export function MenuController<
     patchTarget = PatchTarget.None,
   ): DisposeFn {
     function menuEffect(): void | DisposeFn {
-      const prevCtx = getCurrentReactiveContext();
       let dispose;
       try {
         setReactiveContext(builtins);
         dispose = fn();
       } finally {
-        setReactiveContext(prevCtx);
+        setReactiveContext(null);
       }
 
       builtins.patch(patchTarget);
@@ -608,9 +604,8 @@ export function MenuController<
       return;
     }
 
-    const prevContext = getCurrentReactiveContext();
     try {
-      setReactiveContext(props.$);
+      setReactiveContext(builtins);
       await batch(async () => await interactionCallback(collected));
     } catch (e) {
       logger.error(
@@ -618,7 +613,7 @@ export function MenuController<
       );
       throw e;
     } finally {
-      setReactiveContext(prevContext);
+      setReactiveContext(null);
     }
 
     const patchTargets = getPatchTargets();

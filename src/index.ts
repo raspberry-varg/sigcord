@@ -50,6 +50,8 @@ export {
   patch,
   useSynapse,
   resumableAction,
+  suspend,
+  asyncBoundary,
 } from './lib/ReactiveBuiltIns.js';
 export {
   defineView,
