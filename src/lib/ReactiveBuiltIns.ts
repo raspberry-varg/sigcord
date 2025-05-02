@@ -12,9 +12,11 @@ import { PatchTarget } from './RenderingEngine.js';
 import { assert } from '../util/Assertions.js';
 import {
   createUntracked,
+  isWritableSignal,
   type EffectFn,
   type Resource,
   type ResourceTuple,
+  type Signalish,
 } from './Reactivity.js';
 import type { DisposeFn } from './render/dispose.js';
 import { getOpenOwnerStrict } from './render/owner.js';
@@ -122,13 +124,15 @@ export const computed: Synapse['createComputed'] = <T>(derived: () => T) =>
   useSynapse().createComputed(derived);
 
 /**
- * Read a signal without subscribing it to the current reactive context or
- * effect.
- * @param signal Signal to read from.
- * @returns
+ * Read a signal or callback of signals without subscribing it to the current
+ * reactive context or effect.
+ * @param signalOrFn Signal to read from or a function reading signals.
  */
-export function untracked<T>(signal: () => T): T {
-  return createUntracked(signal);
+export function untracked<T>(signalOrFn: Signalish<T> | (() => T)): T {
+  if (isWritableSignal(signalOrFn)) {
+    signalOrFn = signalOrFn.readonly();
+  }
+  return createUntracked(signalOrFn);
 }
 
 /**
