@@ -24,7 +24,7 @@ import { createComputed, createEffect, createSignal } from './Reactivity.js';
 import { PatchTarget, PatchTargetBitMask } from './RenderingEngine.js';
 import type { PropsBase } from './MenuView/ViewBase.js';
 import { Navigation } from './Navigation.js';
-import { setReactiveContext } from './ReactiveBuiltIns.js';
+import { asyncBoundary, setReactiveContext } from './ReactiveBuiltIns.js';
 import type { TimeoutEndReason } from '../util/CollectorUtil.js';
 import { batch } from '@preact/signals-core';
 import type { DisposeFn } from './render/dispose.js';
@@ -168,13 +168,13 @@ export function MenuController<
       },
       awaitModalSubmit: async (interaction, options) => {
         latestModal.interactionId = interaction.id;
-        const response = await interaction
-          .awaitModalSubmit(options)
-          .catch(() => {
+        const response = await asyncBoundary(() =>
+          interaction.awaitModalSubmit(options).catch(() => {
             logger.debug('Modal ended without receiving a response.');
             flushModal();
             return null;
-          });
+          }),
+        );
         if (
           !response ||
           (latestModal.interactionId.length &&
@@ -189,13 +189,13 @@ export function MenuController<
       },
       onModalSubmit: async (interaction, options, callback) => {
         latestModal.interactionId = interaction.id;
-        const response = await interaction
-          .awaitModalSubmit(options)
-          .catch(() => {
+        const response = await asyncBoundary(() =>
+          interaction.awaitModalSubmit(options).catch(() => {
             logger.debug('Modal ended without receiving a response.');
             flushModal();
             return;
-          });
+          }),
+        );
         if (
           !response ||
           latestModal.interactionId !== interaction.id ||
@@ -205,7 +205,7 @@ export function MenuController<
         }
 
         flushModal();
-        await batch(async () => await callback(response));
+        await batch(() => asyncBoundary(() => callback(response)));
 
         const patchTargets = getPatchTargets();
         if (patchTargets !== PatchTarget.None) {
