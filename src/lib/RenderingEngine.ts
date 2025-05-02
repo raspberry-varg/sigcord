@@ -19,10 +19,7 @@ import {
   type ReactiveViewInstance,
 } from './MenuView/ReactiveView.js';
 import { isReactiveViewDefinition } from './views/reactive/reactiveViewDefinition.js';
-import {
-  getCurrentReactiveContext,
-  setReactiveContext,
-} from './ReactiveBuiltIns.js';
+import { setReactiveContext } from './ReactiveBuiltIns.js';
 import { instantiateClassView } from './views/classic/classViewInstance.js';
 import { batch } from '@preact/signals-core';
 import type { Props } from '../index.js';
@@ -245,7 +242,6 @@ export class RenderingEngine {
     const $ = props.$;
     targets |= this.queuedClears;
     const payload: ViewMessagePayload = {};
-    const prevContext = getCurrentReactiveContext();
     logger.debug('Patching reactive view', { targets, viewInstance: instance });
     try {
       setReactiveContext($);
@@ -385,7 +381,7 @@ export class RenderingEngine {
       });
     } finally {
       this.postRender();
-      setReactiveContext(prevContext);
+      setReactiveContext(null);
     }
     return payload;
   }
@@ -450,8 +446,6 @@ export class RenderingEngine {
       if (!reactiveInstance || viewDefinition.id !== reactiveInstance.id) {
         // rendering must be synchronous; built-ins rely on the single-threaded
         // nature of JS
-        // using _resource = withReactiveContext(props.$);
-        const prevContext = getCurrentReactiveContext();
         try {
           setReactiveContext(props.$);
           reactiveInstance = instantiateReactiveView(viewDefinition, props);
@@ -464,7 +458,7 @@ export class RenderingEngine {
           );
           throw e;
         } finally {
-          setReactiveContext(prevContext);
+          setReactiveContext(null);
         }
       }
       return reactiveInstance;

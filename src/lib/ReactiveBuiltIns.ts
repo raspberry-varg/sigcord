@@ -39,10 +39,6 @@ export function withReactiveContext(synapse: Synapse) {
   };
 }
 
-export function getCurrentReactiveContext(): Synapse | null {
-  return currentSynapse;
-}
-
 export function setReactiveContext(synapse: Synapse | null) {
   currentSynapse = synapse;
 }
@@ -308,6 +304,8 @@ export const componentEffect: Synapse['createComponentEffect'] = (fn) =>
 // Asynchronous escape-hatches
 
 /**
+ * @deprecated Use {@link asyncBoundary()} instead.
+ *
  * Perform an asynchronous action, resetting the reactive context back to the
  * current menu once the action's promise resolves.
  *
@@ -326,6 +324,59 @@ export const componentEffect: Synapse['createComponentEffect'] = (fn) =>
  */
 export const resumableAction: Synapse['resumableSuspend'] = (action) =>
   useSynapse().resumableSuspend(action);
+
+/**
+ * Resumes a reactive hook context to the value before an `await` expression.
+ */
+type ResumeCtxFn = () => void;
+
+/**
+ * Suspend the current reactive hook context. Returns a function to resume the
+ * context.
+ *
+ * @returns Function to resume the current reactive hook context, allowing hooks
+ *   to continue to be used after an `await`.
+ */
+export function suspend(): ResumeCtxFn {
+  const capturedContext = currentSynapse;
+  assert(
+    capturedContext,
+    'Attempted to suspend the current reactive context, but none was found. ' +
+      'Did you forget to use the returned resume() function from a previous ' +
+      'call to suspend()? If in an async boundary, nested awaits must also ' +
+      'be pulled into their own async boundary.',
+  );
+  return function resumeSuspendedContext() {
+    setReactiveContext(capturedContext);
+  };
+}
+
+/**
+ * Perform an asynchronous action within a component handler. The reactive hook
+ * context will be automatically suspended and resumed when {@link boundaryFn}
+ * resolves.
+ *
+ * @example
+ * ```ts
+ * function onClick(buttonInteraction) {
+ *   const user = await asyncBoundary(() => fetchUserFromDb());
+ *   // reactive hook context restored, allowing hooks to safely resume their work
+ *   goTo(UserInfoView, {user});
+ * }
+ * ```
+ *
+ * @param action The asynchronous action to perform immediately.
+ * @returns Promise which resets the current reactive context when the provided
+ *    action's promise resolves.
+ */
+export async function asyncBoundary<T>(
+  boundaryFn: () => Promise<T>,
+): Promise<T> {
+  const resume = suspend();
+  const result = await boundaryFn();
+  resume();
+  return result;
+}
 
 // Component
 
