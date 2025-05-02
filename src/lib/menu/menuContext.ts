@@ -18,4 +18,12 @@ export interface MenuContext {
    * The current menu idle time in milliseconds.
    */
   get idleTimeMs(): number;
+  /**
+   * The id of this context's menu.
+   */
+  menuId: string;
+  /**
+   * The id of the initial view.
+   */
+  initialViewId: string;
 }

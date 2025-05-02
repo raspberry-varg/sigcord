@@ -162,6 +162,13 @@ export interface Synapse {
 
   resumableSuspend<R>(action: () => Promise<R>): Promise<R>;
 
-  /** The current menu controller's context. */
+  getMenuInfo(): Readonly<MenuContext>;
+
+  /**
+   * @deprecated Property will be removed soon. Please use {@link getMenuInfo()}
+   *   or its reactive hook.
+   *
+   * @summary The current menu controller's context.
+   */
   ctx: MenuContext;
 }

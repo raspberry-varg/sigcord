@@ -338,6 +338,7 @@ export function MenuController<
           setReactiveContext($);
           return r;
         }),
+      getMenuInfo: () => ctx,
     };
     return $;
   }
@@ -347,11 +348,11 @@ export function MenuController<
   ): DisposeFn {
     function menuEffect(): void | DisposeFn {
       let dispose;
+      const prevContext = setReactiveContext(builtins);
       try {
-        setReactiveContext(builtins);
         dispose = fn();
       } finally {
-        setReactiveContext(null);
+        setReactiveContext(prevContext);
       }
 
       builtins.patch(patchTarget);
@@ -399,6 +400,8 @@ export function MenuController<
     get idleTimeMs(): number {
       return idle;
     },
+    menuId,
+    initialViewId,
   };
   const builtins = createSynapse();
   const views = new Map<string, View<AllProps>>(
@@ -604,8 +607,8 @@ export function MenuController<
       return;
     }
 
+    const prevContext = setReactiveContext(builtins);
     try {
-      setReactiveContext(builtins);
       await batch(async () => await interactionCallback(collected));
     } catch (e) {
       logger.error(
@@ -613,7 +616,7 @@ export function MenuController<
       );
       throw e;
     } finally {
-      setReactiveContext(null);
+      setReactiveContext(prevContext);
     }
 
     const patchTargets = getPatchTargets();
