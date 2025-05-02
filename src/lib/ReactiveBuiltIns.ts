@@ -22,26 +22,40 @@ import type { DisposeFn } from './render/dispose.js';
 import { getOpenOwnerStrict } from './render/owner.js';
 import type { ReactiveViewPayloadV1 } from './MenuView.js';
 import type { MaybePromise } from '../util/TypesUtil.js';
+import type { MenuContext } from './menu/menuContext.js';
 
 let currentSynapse: Synapse | null = null;
 
 export function useSynapse(): Synapse {
-  assert(currentSynapse, 'Not currently in a reactive view.');
+  assert(
+    currentSynapse,
+    'Attempted to use a hook outside of a reactive context. Was this called ' +
+      'outside of a reactive view?\n\nClassic menu views should use the ' +
+      'Synapse parameter directly ($).\n\n' +
+      'Did you forget to use the returned resume() function from a previous ' +
+      'call to suspend()? If in an async boundary, nested awaits must also ' +
+      'be pulled into their own async boundary.',
+  );
   return currentSynapse;
 }
 
-export function withReactiveContext(synapse: Synapse) {
-  const prev = currentSynapse;
-  currentSynapse = synapse;
-  return {
-    [Symbol.dispose]: () => {
-      currentSynapse = prev;
-    },
-  };
+/**
+ * Get info and state about the current menu.
+ */
+export function useMenuInfo(): Readonly<MenuContext> {
+  return useSynapse().getMenuInfo();
 }
 
-export function setReactiveContext(synapse: Synapse | null) {
+/**
+ * Replace the current active reactive context.
+ *
+ * @param synapse The new active context.
+ * @returns The previous context.
+ */
+export function setReactiveContext(synapse: Synapse | null): Synapse | null {
+  const prev = currentSynapse;
   currentSynapse = synapse;
+  return prev;
 }
 
 // - - - - - - -

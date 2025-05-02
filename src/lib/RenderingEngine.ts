@@ -243,8 +243,8 @@ export class RenderingEngine {
     targets |= this.queuedClears;
     const payload: ViewMessagePayload = {};
     logger.debug('Patching reactive view', { targets, viewInstance: instance });
+    const prevContext = setReactiveContext($);
     try {
-      setReactiveContext($);
       batch(() => {
         const isV2 = isRenderedReactiveViewV2(instance);
         logger.debug(`Patching with V${isV2 ? 2 : 1} components.`);
@@ -381,7 +381,7 @@ export class RenderingEngine {
       });
     } finally {
       this.postRender();
-      setReactiveContext(null);
+      setReactiveContext(prevContext);
     }
     return payload;
   }
@@ -446,8 +446,8 @@ export class RenderingEngine {
       if (!reactiveInstance || viewDefinition.id !== reactiveInstance.id) {
         // rendering must be synchronous; built-ins rely on the single-threaded
         // nature of JS
+        const prevContext = setReactiveContext(props.$);
         try {
-          setReactiveContext(props.$);
           reactiveInstance = instantiateReactiveView(viewDefinition, props);
           this.reactiveViewInstance = reactiveInstance;
           this.instances.set(reactiveInstance.id, reactiveInstance);
@@ -458,7 +458,7 @@ export class RenderingEngine {
           );
           throw e;
         } finally {
-          setReactiveContext(null);
+          setReactiveContext(prevContext);
         }
       }
       return reactiveInstance;
