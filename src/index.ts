@@ -75,5 +75,5 @@ export { DisposeFn } from './lib/render/dispose.js';
 export {
   AutoComponentId,
   AutoComponents,
-  configureAutoComponents,
+  configureAutoComponent,
 } from './lib/components/autoComponents.js';

@@ -54,10 +54,17 @@ function withConfiguration<T extends AutoComponentId>(
   return instance as ReturnType<Factories[T]>;
 }
 
-export function configureAutoComponents(configuration: {
-  [K in AutoComponentId]: ComponentMutator<BuilderDef<K>>;
-}) {
-  for (const [key, val] of Object.entries(configuration)) {
-    configurations.set(key as AutoComponentId, val);
-  }
+// export function configureAutoComponents(configuration: {
+//   [K in AutoComponentId]: ComponentMutator<BuilderDef<K>>;
+// }) {
+//   for (const [key, val] of Object.entries(configuration)) {
+//     configurations.set(key as AutoComponentId, val);
+//   }
+// }
+
+export function configureAutoComponent<Id extends AutoComponentId>(
+  id: Id,
+  mutator: ComponentMutator<BuilderDef<Id>>,
+) {
+  configurations.set(id, mutator as any);
 }
