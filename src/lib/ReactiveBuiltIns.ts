@@ -21,6 +21,7 @@ import {
 import type { DisposeFn } from './render/dispose.js';
 import { getOpenOwnerStrict } from './render/owner.js';
 import type { ReactiveViewPayloadV1 } from './MenuView.js';
+import type { MaybePromise } from '../util/TypesUtil.js';
 
 let currentSynapse: Synapse | null = null;
 
@@ -370,7 +371,7 @@ export function suspend(): ResumeCtxFn {
  *    action's promise resolves.
  */
 export async function asyncBoundary<T>(
-  boundaryFn: () => Promise<T>,
+  boundaryFn: () => MaybePromise<T>,
 ): Promise<T> {
   const resume = suspend();
   const result = await boundaryFn();
@@ -419,21 +420,26 @@ export const canNavigateBack: Synapse['canGoBack'] = () =>
 // Modals
 
 export const showModal: Synapse['showModal'] = (interaction, modalOrOptions) =>
-  useSynapse().showModal(
-    interaction,
-    modalOrOptions as Parameters<Synapse['showModal']>[1],
+  asyncBoundary(() =>
+    useSynapse().showModal(
+      interaction,
+      modalOrOptions as Parameters<Synapse['showModal']>[1],
+    ),
   );
 
 export const awaitModalSubmit: Synapse['awaitModalSubmit'] = (
   interaction,
   options,
-) => useSynapse().awaitModalSubmit(interaction, options);
+) => asyncBoundary(() => useSynapse().awaitModalSubmit(interaction, options));
 
 export const onModalSubmit: Synapse['onModalSubmit'] = (
   interaction,
   options,
   callback,
-) => useSynapse().onModalSubmit(interaction, options, callback);
+) =>
+  asyncBoundary(() =>
+    useSynapse().onModalSubmit(interaction, options, callback),
+  );
 
 // Embed manipulation
 
