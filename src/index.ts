@@ -68,3 +68,4 @@ export {
   ComponentWithHandler,
 } from './lib/components/componentDefinition.js';
 export { owner } from './lib/render/owner.js';
+export { DisposeFn } from './lib/render/dispose.js';
