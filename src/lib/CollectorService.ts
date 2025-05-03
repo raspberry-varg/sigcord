@@ -1,7 +1,8 @@
-import type {
-  CollectedMessageInteraction,
-  Interaction,
-  Message,
+import {
+  ComponentType,
+  type CollectedMessageInteraction,
+  type Interaction,
+  type Message,
 } from 'discord.js';
 import type { Listener } from './Listener.js';
 import { logger } from '../util/Logger.js';
@@ -94,6 +95,10 @@ export class CollectorService {
 
     collector.on('collect', async (collected) => {
       this.lastCollected = collected;
+      logger.debug('CollectorService: Collected a new interaction.', {
+        id: collected.customId,
+        type: ComponentType[collected.componentType],
+      });
       await onCollect?.(collected);
     });
 

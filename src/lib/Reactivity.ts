@@ -113,7 +113,17 @@ export function createUntracked<T>(signal: () => T): T {
 }
 
 export function createComputed<T>(derived: () => T): Getter<T> {
-  const computed = core.computed(derived);
+  const capturedOwner = getOpenOwner();
+  const computed = core.computed(() => {
+    const prevOwner = setCurrentOwner(capturedOwner);
+    let value;
+    try {
+      value = derived();
+    } finally {
+      setCurrentOwner(prevOwner);
+    }
+    return value;
+  });
   return Object.assign(() => computed.value, { [GETTER_STAMP]: true });
 }
 
