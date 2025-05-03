@@ -13,9 +13,12 @@ export * from './lib/Renderable.js';
 export { ModalBundle, useValues } from './lib/ModalBundle.js';
 export { PatchTarget } from './lib/RenderingEngine.js';
 export {
-  WritableSignal,
   MaybeSignal,
+  WritableSignal,
   MaybeWritableSignal,
+  Signalish,
+  MaybeSignalish,
+  UnwrapSignalish,
   Signal,
   Setter,
   Updater,

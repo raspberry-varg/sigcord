@@ -10,6 +10,8 @@ const SETTER_STAMP = Symbol('setter');
 const FROM_SIGNAL = Symbol('signal source instance');
 
 export type Signalish<T> = Signal<T> | WritableSignal<T>;
+export type MaybeSignalish<T> = T | Signalish<T>;
+export type UnwrapSignalish<T> = T extends Signalish<infer S> ? S : T;
 
 export type MaybeSignal<T> = T | Signalish<T>;
 export function isSignal<T>(value?: T | Signalish<T>): value is Signal<T> {
