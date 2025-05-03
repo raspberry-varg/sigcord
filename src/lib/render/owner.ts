@@ -35,12 +35,6 @@ export class Owner<T extends ViewNodeKind = ViewNodeKind>
     return this.suspended_;
   }
 
-  set suspended(value) {
-    this.suspended_ = value;
-    if (value) {
-    }
-  }
-
   getNodes(): readonly ViewNode<T>[] {
     return this.nodes;
   }
@@ -105,6 +99,9 @@ export class Owner<T extends ViewNodeKind = ViewNodeKind>
     if (this.disposed) return;
 
     // TODO: @raspberry-varg - Implement disposal.
+    this.childOwners.forEach((owner) => owner.dispose());
+    this.childOwners.clear();
+
     logger.debug('Disposing Owner.', {
       debugName: this.debugName ?? '',
       toDispose: {
@@ -113,6 +110,7 @@ export class Owner<T extends ViewNodeKind = ViewNodeKind>
         childOwners: this.childOwners,
       },
     });
+
     this.disposals.forEach((dispose) => dispose());
     this.disposals.length = 0;
     this.componentDisposals.forEach((dispose) => dispose());
@@ -120,8 +118,6 @@ export class Owner<T extends ViewNodeKind = ViewNodeKind>
     this.root.dispose();
     this.nodes.forEach((node) => node.dispose());
     this.nodes.length = 0;
-    this.childOwners.forEach((owner) => owner.dispose());
-    this.childOwners.clear();
 
     if (this.parent) {
       this.parent.removeChild(this);
