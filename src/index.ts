@@ -76,10 +76,14 @@ export {
   ComponentWithController,
   ComponentWithHandler,
 } from './lib/components/componentDefinition.js';
-export { owner } from './lib/render/owner.js';
+export { owner, Owner } from './lib/render/owner.js';
 export { DisposeFn } from './lib/render/dispose.js';
 export {
   AutoComponentId,
   AutoComponents,
   configureAutoComponent,
 } from './lib/components/autoComponents.js';
+export { ViewNodeKind } from './lib/dom/viewNodeKind.js';
+export { ViewContentNode } from './lib/dom/viewContentNode.js';
+export { ViewElementNode } from './lib/dom/viewElementNode.js';
+export { ViewNode } from './lib/dom/viewNode.js';
