@@ -4,7 +4,7 @@ import type {
 } from 'discord.js';
 import type { MessageComponentCallback } from '../MenuController.js';
 import type { Synapse } from '../menu/synapse.js';
-import type { resumableAction } from '../ReactiveBuiltIns.js';
+import type { asyncBoundary } from '../ReactiveBuiltIns.js';
 
 type InteractionFromBuilder<
   Builder extends MessageActionRowComponentBuilder,
@@ -46,7 +46,7 @@ export interface ComponentWithHandler<
    * **Warning:** Reactive hooks rely on the single-threaded nature of JS. If
    *   you foresee asynchronous operations (`await`/`.then(() => {})), store the
    *   current reactive context {@link Synapse} in a captured variable. You may
-   *   also use the {@link resumableAction} hook.
+   *   also use the {@link asyncBoundary} hook.
    */
   handler: MessageComponentCallback<InteractionFromBuilder<Builder, Cached>>;
 }
