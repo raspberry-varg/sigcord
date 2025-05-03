@@ -5,7 +5,7 @@ import type { ViewNodeKind } from '../dom/viewNodeKind.js';
 import type { Children } from '../MenuView.js';
 import type { Recursive } from '../recursive.js';
 import { PatchTarget } from '../RenderingEngine.js';
-import type { DisposeFn } from './dispose.js';
+import type { DisposeFn, ResumeFn, SuspendFn } from './dispose.js';
 import { flattenToContentNodes } from './flattenToContentNodes.js';
 
 export class Owner<T extends ViewNodeKind = ViewNodeKind>
@@ -19,13 +19,26 @@ export class Owner<T extends ViewNodeKind = ViewNodeKind>
 
   private disposals: DisposeFn[] = [];
   private componentDisposals = new Map<string, DisposeFn>();
+  private onSuspendFns: SuspendFn[] = [];
+  private onResumeFns: ResumeFn[] = [];
   private readonly nodes: ViewNode<T>[] = [];
   private disposed_ = false;
+  private suspended_ = false;
 
   constructor() {}
 
   get disposed() {
     return this.disposed_;
+  }
+
+  get suspended() {
+    return this.suspended_;
+  }
+
+  set suspended(value) {
+    this.suspended_ = value;
+    if (value) {
+    }
   }
 
   getNodes(): readonly ViewNode<T>[] {
@@ -46,12 +59,46 @@ export class Owner<T extends ViewNodeKind = ViewNodeKind>
     this.componentDisposals.set(id, disposal);
   }
 
+  registerOnSuspend(onSuspend: SuspendFn): void {
+    this.onSuspendFns.push(onSuspend);
+  }
+
+  registerOnResume(onResume: ResumeFn): void {
+    this.onResumeFns.push(onResume);
+  }
+
   addChild(owner: Owner<T>): void {
     this.childOwners.add(owner);
   }
 
   removeChild(owner: Owner<T>): void {
     this.childOwners.delete(owner);
+  }
+
+  suspend() {
+    if (this.disposed || this.suspended === true) return;
+    this.suspended_ = true;
+
+    for (let i = 0; i < this.onSuspendFns.length; i++) {
+      this.onSuspendFns[i]();
+    }
+
+    for (const child of this.childOwners) {
+      child.suspend();
+    }
+  }
+
+  resume() {
+    if (this.disposed || this.suspended === false) return;
+    this.suspended_ = false;
+
+    for (let i = 0; i < this.onResumeFns.length; i++) {
+      this.onResumeFns[i]();
+    }
+
+    for (const child of this.childOwners) {
+      child.resume();
+    }
   }
 
   dispose() {

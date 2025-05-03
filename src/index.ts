@@ -56,6 +56,9 @@ export {
   resumableAction,
   suspend,
   asyncBoundary,
+  onSuspend,
+  onResume,
+  isSuspended,
 } from './lib/ReactiveBuiltIns.js';
 export {
   defineView,

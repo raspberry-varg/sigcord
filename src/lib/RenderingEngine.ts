@@ -275,6 +275,7 @@ export class RenderingEngine {
               owner.debugName = 'V2_root';
               instance.root = root;
               instance.dispose = dispose;
+              instance.owner = owner;
             }
 
             const flattened = flatten(instance.root, instance.owner);
@@ -478,27 +479,34 @@ export class RenderingEngine {
       this.queuedNavigation,
       'Internal error: Tried to apply queuedNavigation before being assigned a value.',
     );
+    const prevReactiveInstance = this.reactiveViewInstance;
     this.viewDefinition = this.queuedNavigation.view;
 
-    const instance = this.queuedNavigation.reactiveInstance;
-    const id = this.queuedNavigation.view.id;
+    const newReactiveInstance = this.queuedNavigation.reactiveInstance;
+    const newViewId = this.queuedNavigation.view.id;
     this.queuedNavigation = undefined;
 
-    if (!instance) {
+    if (prevReactiveInstance) {
+      prevReactiveInstance.owner?.suspend();
+    }
+
+    if (!newReactiveInstance) {
       this.reactiveViewInstance = undefined;
       return;
     }
 
-    if (isRenderedReactiveViewV2(instance)) {
-      const clone = Object.assign({}, instance, {
-        id,
+    newReactiveInstance.owner?.resume();
+
+    if (isRenderedReactiveViewV2(newReactiveInstance)) {
+      const clone = Object.assign({}, newReactiveInstance, {
+        id: newViewId,
       });
       this.reactiveViewInstance = clone;
     } else {
       // legacy
       const clone = {
-        ...instance,
-        id,
+        ...newReactiveInstance,
+        id: newViewId,
       };
       this.reactiveViewInstance = clone;
     }

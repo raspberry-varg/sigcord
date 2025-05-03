@@ -12,13 +12,15 @@ import type { PatchTarget } from '../RenderingEngine.js';
 import type { WritableSignal } from '../Reactivity.js';
 import type { PropsBase } from '../MenuView/ViewBase.js';
 import type { UnionToIntersection } from '../../util/TypesUtil.js';
-import type { DisposeFn } from '../render/dispose.js';
+import type { DisposeFn, ResumeFn, SuspendFn } from '../render/dispose.js';
 import type {
   ModalRepliableInteraction,
   ModalHandlingOptions,
   ModalOnSubmitHandler,
 } from '../interactivity/modalHandling.js';
 import type { ComponentDefinition } from '../components/componentDefinition.js';
+import type { effect, patchEffect } from '../ReactiveBuiltIns.js';
+import type { ReactiveViewPayloadV1 } from '../MenuView.js';
 
 /**
  * Closure functions to manage and interact with a bound menu instance.
@@ -94,44 +96,87 @@ export interface Synapse {
   createComputed<T>(fn: () => T): Signal<T>;
 
   /**
-   * Create an effect that runs when the value of signals in the function are
-   * changed.
+   * @deprecated Use the {@link patchEffect()} hook instead.
    *
-   * **Note:** This does **not** queue a patch to the message content, embeds,
-   * or components. To have a patch queued on effect run, use
-   * {@link createEmbedEffect} or {@link createComponentEffect} instead. To
-   * queue a patch for content, set content to a function that returns a string.
-   * @param fn The effect to run. Takes an optional cleanup fn.
-   * @param params Extra configuration for debugging.
-   * @param patchTarget Bit mask of {@link PatchTarget} to queue for rendering
-   * when this effect runs.
-   */
+   * @summary Create an effect that runs when signals referenced in the effect
+   * function change.
+   *
+   * @param fn The effect to run.
+   * @param patchTarget {@link PatchTarget} bit mask to queue for rendering.
+   *   Useful when mutating content objects like component or embed builders to
+   *   have the change reflected to the user.   */
   createEffect: (fn: EffectFn, patchTarget?: PatchTarget) => DisposeFn;
+
   /**
+   * @deprecated
+   * Effect context is now dynamically-tracked as a component is rendered and
+   * re-rendered. Please use {@link patchEffect} instead to have updates to embed
+   * objects automatically reflected to the user.
+   *
+   * Components V1: If you must set up effects that mutate embed objects outside
+   * of the call to {@link ReactiveViewPayloadV1.embeds}, please pass
+   * {@link PatchTarget.Embeds} to the optional second parameter in
+   * {@link effect}.
+   *
+   * @summary
    * Create an effect that runs when the value of signals in the function are
    * changed.
    *
    * Automatically queues a patch to the menu's message embeds when the effect
    * is run.
    * @param fn The effect to run.
-   * @param params Extra configuration for debugging.
-   */
+   * @param params Extra configuration for debugging.   */
   createEmbedEffect: (fn: EffectFn) => DisposeFn;
+
   /**
+   * @deprecated
+   * Effect context is now dynamically-tracked as a component is rendered and
+   * re-rendered. Please use {@link patchEffect} instead to have updates to
+   * component objects automatically reflected to the user.
+   *
+   * Components V1: If you must set up effects that mutate embed objects outside
+   * of the call to {@link ReactiveViewPayloadV1.components}, please pass
+   * {@link PatchTarget.Components} to the optional second parameter in
+   * {@link effect}.
+   *
+   * @summary
    * Create an effect that runs when the value of signals in the function are
    * changed.
    *
    * Automatically queues a patch to the menu's message components when the
    * effect is run.
    * @param fn The effect to run.
-   * @param params Extra configuration for debugging.
-   */
+   * @param params Extra configuration for debugging.   */
   createComponentEffect: (fn: EffectFn) => DisposeFn;
 
   /**
-   * Instantiate and navigate to a different view.
+   * Instantiate and navigate to a different view. The current view will be
+   * suspended, but signals and effects will be unaffected.
    *
-   * - Can navigate back out of the view using {@link goBack}
+   * **Note:** Take extra care to not let state leak in any direction of the
+   *   current navigation stack. Use {@link onNavigate()} and {@link onResume()}
+   *   to properly manage state based on navigation.
+   *
+   * @example
+   * ```
+   * import {OtherView} from './otherView';
+   * import {NavigateButton} from './navigateButton';
+   *
+   * function MyView = defineView<MyViewProps>(() => {
+   *   const button = component({
+   *     button: NavigateButton,
+   *     onClick: () => goTo(OtherView, {/* *\/})
+   *   });
+   * });
+   * ```
+   * fefe
+   * wefwf
+   *
+   * @see {@link goBack()} for navigating back.
+   * @see {@link canGoBack()} for checking if
+   * @see {@link onResume()} for configuring behavior when the view is navigated
+   *   back to.
+   * @see {@link onSuspend()} for configuring suspension behavior.
    */
   goTo<
     ViewDef extends DefinedView<any>,
@@ -159,6 +204,20 @@ export interface Synapse {
    * the use of {@link goBack} since the previous menu is on the navigation stack.
    */
   canGoBack(): boolean;
+
+  /**
+   * Perform an action when this reactive view is navigated away from.
+   *
+   * @param action Action to perform when this view suspends.
+   */
+  onSuspend(action: SuspendFn): void;
+
+  /**
+   * Perform an action when this reactive view is navigated back to.
+   *
+   * @param action Action to perform when this menu is navigated back to.
+   */
+  onResume(action: ResumeFn): void;
 
   resumableSuspend<R>(action: () => Promise<R>): Promise<R>;
 

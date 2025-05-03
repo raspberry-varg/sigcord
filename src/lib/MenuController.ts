@@ -285,7 +285,6 @@ export function MenuController<
         }
         return s;
       },
-      // TODO: @raspberry-varg - The hope is to be able to get this from owners.
       createComputed: (fn) => createComputed(fn),
       createEffect: (fn, patchTarget) => registerEffect(fn, patchTarget),
       createEmbedEffect: (fn) => registerEffect(fn, PatchTarget.Embeds),
@@ -302,6 +301,7 @@ export function MenuController<
             reactivePayload,
             'Tried to navigate before initial render in a reactive view.',
           );
+          reactivePayload.owner?.suspend();
           navigation.pushReactive(currentView, reactivePayload);
         } else {
           navigation.push(currentView);
@@ -336,10 +336,25 @@ export function MenuController<
           'Tried to navigate backwards without a parent view. Have you called goTo() in the parent view?',
         );
         const payload = navigation.pop();
+        payload.reactiveInstance?.owner?.resume();
         renderer.queueNavigation(payload);
       },
       canGoBack: () => {
         return !navigation.empty();
+      },
+      onResume(action) {
+        const owner = getOpenOwner();
+        if (!owner) {
+          throw new Error('onResume must be called in a reactive context.');
+        }
+        owner.registerOnResume(action);
+      },
+      onSuspend(action) {
+        const owner = getOpenOwner();
+        if (!owner) {
+          throw new Error('onSuspend must be called in a reactive context.');
+        }
+        owner.registerOnSuspend(action);
       },
       resumableSuspend: async (action) =>
         await action().then((r) => {

@@ -431,6 +431,33 @@ export const goBack: Synapse['goBack'] = () => useSynapse().goBack();
 export const canNavigateBack: Synapse['canGoBack'] = () =>
   useSynapse().canGoBack();
 
+/**
+ * Perform an action when this reactive view is navigated away from.
+ *
+ * @param action Action to perform when this view suspends.
+ */
+export const onSuspend: Synapse['onSuspend'] = (action) =>
+  useSynapse().onSuspend(action);
+
+/**
+ * Perform an action when this reactive view is navigated back to.
+ *
+ * @param action Action to perform when this menu is navigated back to.
+ */
+export const onResume: Synapse['onResume'] = (action) =>
+  useSynapse().onResume(action);
+
+/**
+ * Check if the current reactive view is suspended.
+ *
+ * @description
+ * Views are marked as suspended when they are navigated away from with
+ * {@link goTo()}.
+ */
+export function isSuspended(): boolean {
+  return getOpenOwnerStrict().suspended;
+}
+
 // Modals
 
 export const showModal: Synapse['showModal'] = (interaction, modalOrOptions) =>
