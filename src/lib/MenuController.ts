@@ -28,7 +28,6 @@ import type { TimeoutEndReason } from '../util/CollectorUtil.js';
 import { batch } from '@preact/signals-core';
 import type { DisposeFn } from './render/dispose.js';
 import { getOpenOwner } from './render/owner.js';
-import { onCleanup } from './hooks/onCleanup.js';
 import { NamedIdGenerator } from './ids/namedIdGenerator.js';
 import { AutoComponentId } from './components/autoComponents.js';
 
@@ -109,12 +108,14 @@ export function MenuController<
   interaction: RepliableInteraction,
   initProps: MenuProps,
 ): MenuControllerAPI {
-  function routeDisposalFn(disposal: DisposeFn): void {
+  function routeComponentDisposalFn(id: string, disposal: DisposeFn): void {
     const openOwner = getOpenOwner();
     if (openOwner) {
-      onCleanup(disposal);
+      openOwner.registerComponentDisposal(id, disposal);
     } else {
-      hangingDisposals.push(disposal);
+      const existing = hangingComponentDisposals.get(id);
+      existing?.();
+      hangingComponentDisposals.set(id, disposal);
     }
   }
 
@@ -136,18 +137,25 @@ export function MenuController<
           renderer.queueViewSwap(view as View, args);
         }
       },
-      component: (definition) => {
+      component(definition) {
         const controller =
           'controller' in definition
             ? definition.controller
             : definition.handler;
+
         const componentId = createComponentId(
           definition.id ? definition.id : componentIdGenerator.next(),
         );
+
         definition.component.setCustomId(componentId);
+
+        routeComponentDisposalFn(componentId, () => {
+          collector.unsubscribeTo(componentId);
+        });
+
+        // Must come after in case it's an existing componentId.
         collector.onComponent(componentId, controller);
 
-        routeDisposalFn(() => collector.unsubscribeTo(componentId));
         return definition.component;
       },
       async showModal(interaction, modalOrOptions) {
@@ -388,10 +396,15 @@ export function MenuController<
     for (const dispose of hangingDisposals) {
       dispose();
     }
+    logger.debug(
+      `Disposing ${hangingComponentDisposals.size} hanging component effect disposal(s)`,
+    );
+    hangingComponentDisposals.forEach((dispose) => dispose());
     renderer.dispose();
     return;
   }
   const hangingDisposals: DisposeFn[] = [];
+  const hangingComponentDisposals = new Map<string, DisposeFn>();
   const ctx: MenuContext = {
     get interaction(): RepliableInteraction {
       return getInteractionToPatch();
@@ -579,13 +592,11 @@ export function MenuController<
         case AutoComponentId.CloseMenuButton: {
           logger.debug('Closing Menu via official CloseMenuButton');
           closeMenu();
-          break;
+          return true;
         }
-        default:
-          return false;
       }
     }
-    return true;
+    return false;
   }
 
   async function onCollect(collected: CollectedMessageInteraction) {

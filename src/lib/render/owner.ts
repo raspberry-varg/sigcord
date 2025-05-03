@@ -18,6 +18,7 @@ export class Owner<T extends ViewNodeKind = ViewNodeKind>
   debugName?: string;
 
   private disposals: DisposeFn[] = [];
+  private componentDisposals = new Map<string, DisposeFn>();
   private readonly nodes: ViewNode<T>[] = [];
   private disposed_ = false;
 
@@ -37,6 +38,12 @@ export class Owner<T extends ViewNodeKind = ViewNodeKind>
 
   registerDisposal(disposal: DisposeFn): void {
     this.disposals.push(disposal);
+  }
+
+  registerComponentDisposal(id: string, disposal: DisposeFn): void {
+    const existing = this.componentDisposals.get(id);
+    existing?.();
+    this.componentDisposals.set(id, disposal);
   }
 
   addChild(owner: Owner<T>): void {
@@ -61,6 +68,8 @@ export class Owner<T extends ViewNodeKind = ViewNodeKind>
     });
     this.disposals.forEach((dispose) => dispose());
     this.disposals.length = 0;
+    this.componentDisposals.forEach((dispose) => dispose());
+    this.componentDisposals.clear();
     this.root.dispose();
     this.nodes.forEach((node) => node.dispose());
     this.nodes.length = 0;
