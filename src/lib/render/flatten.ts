@@ -1,16 +1,19 @@
-import type { EmbedComponent, ViewComponent } from '../MenuView.js';
+import type { ViewComponent } from '../MenuView.js';
 import { ViewElementNode } from '../dom/viewElementNode.js';
-import type { Recursive } from '../recursive.js';
+import type { ReadonlyRecursive } from '../recursive.js';
 import { ViewNode } from '../dom/viewNode.js';
 import { setCurrentOwner, type Owner } from './owner.js';
 import { ViewContentNode } from '../dom/viewContentNode.js';
+import { ViewComputedElementNode } from '../dom/viewComputedElementNode.js';
+import type { BaseViewNodeKind } from '../dom/viewNodeKind.js';
 
-export function flatten<T extends EmbedComponent | ViewComponent>(
-  root: ViewElementNode<T>,
+export function flatten<T extends BaseViewNodeKind>(
+  root: ViewNode<T> | ReadonlyArray<ViewNode<T>>,
   owner: Owner | null | undefined,
 ): T[] {
   const flattened: T[] = [];
-  const stack: Recursive<ViewComponent | ViewNode<ViewComponent>>[] = [root];
+  const stack: ReadonlyRecursive<ViewComponent | ViewNode<ViewComponent>>[] =
+    Array.isArray(root) ? [...root] : [root];
   const prevOwner = setCurrentOwner(owner ?? null);
   try {
     while (stack.length) {
@@ -25,6 +28,17 @@ export function flatten<T extends EmbedComponent | ViewComponent>(
         const content = item.getContent();
         if (content) {
           flattened.push(content);
+        }
+        continue;
+      }
+      if (item instanceof ViewComputedElementNode) {
+        const content = item.computer(flatten(item.children, owner));
+        if (content) {
+          if (Array.isArray(content)) {
+            flattened.push(...(content as T[]));
+          } else {
+            flattened.push(content as T);
+          }
         }
         continue;
       }
