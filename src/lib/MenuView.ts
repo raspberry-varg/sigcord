@@ -1,9 +1,6 @@
 import {
   EmbedBuilder,
-  MessageActionRowComponentBuilder,
   MessageComponentInteraction,
-  type ActionRowData,
-  type MessageActionRowComponentData,
   type MessageComponentBuilder,
   type MessageFlags,
   type TopLevelComponent,
@@ -25,10 +22,7 @@ export type ViewComponent = ViewComponentKind;
 type ViewComponentKind =
   | TopLevelComponent
   | TopLevelComponentData
-  | MessageComponentBuilder
-  | ActionRowData<
-      MessageActionRowComponentData | MessageActionRowComponentBuilder
-    >;
+  | MessageComponentBuilder;
 
 export const IS_V2: unique symbol = Symbol('using v2 components');
 
@@ -107,6 +101,7 @@ export type Children<T extends ViewNodeKind> =
   | WritableSignal<Children<T>>
   | ViewNode<T>
   | Slot<T>
+  | T[]
   | T
   | false
   | null

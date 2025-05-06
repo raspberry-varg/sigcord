@@ -84,6 +84,12 @@ export {
   configureAutoComponent,
 } from './lib/components/autoComponents.js';
 export { ViewNodeKind } from './lib/dom/viewNodeKind.js';
+export { ViewNode } from './lib/dom/viewNode.js';
 export { ViewContentNode } from './lib/dom/viewContentNode.js';
 export { ViewElementNode } from './lib/dom/viewElementNode.js';
-export { ViewNode } from './lib/dom/viewNode.js';
+export {
+  ViewComputedElementNode,
+  elementComputed,
+  NodeContentComputer,
+} from './lib/dom/viewComputedElementNode.js';
+export { getViewNodeContent } from './lib/dom/getViewNodeContent.js';

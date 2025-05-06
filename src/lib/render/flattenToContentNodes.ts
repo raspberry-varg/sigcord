@@ -2,15 +2,9 @@ import { ViewContentNode } from '../dom/viewContentNode.js';
 import { ViewElementNode } from '../dom/viewElementNode.js';
 import { ViewNode } from '../dom/viewNode.js';
 import type { ViewNodeKind } from '../dom/viewNodeKind.js';
-import { patch } from '../ReactiveBuiltIns.js';
-import {
-  isSignal,
-  isWritableSignal,
-  createEffect,
-  read,
-} from '../Reactivity.js';
+import { patchEffect } from '../ReactiveBuiltIns.js';
+import { isSignal, isWritableSignal, read } from '../Reactivity.js';
 import type { Recursive } from '../recursive.js';
-import { PatchTarget } from '../RenderingEngine.js';
 import { isSlot } from '../Slot.js';
 import { getOpenOwner } from './owner.js';
 
@@ -27,9 +21,7 @@ export function flattenToContentNodes<T extends ViewNodeKind>(
 
   if (isSignal(content) || isWritableSignal(content)) {
     const fragment = new ViewElementNode<T>();
-    const patchTarget = getOpenOwner()?.patchTarget ?? PatchTarget.None;
-    const dispose = createEffect(() => {
-      patch(patchTarget);
+    const dispose = patchEffect(() => {
       // TODO: @raspberry-varg - Reuse nodes.
       let value = read<T>(content);
       fragment.addChild(...flattenToContentNodes<T>(value));

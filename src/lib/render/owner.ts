@@ -98,7 +98,6 @@ export class Owner<T extends ViewNodeKind = ViewNodeKind>
   dispose() {
     if (this.disposed) return;
 
-    // TODO: @raspberry-varg - Implement disposal.
     this.childOwners.forEach((owner) => owner.dispose());
     this.childOwners.clear();
 
@@ -133,7 +132,7 @@ export class Owner<T extends ViewNodeKind = ViewNodeKind>
 let currentOwner: Owner | null = null;
 
 export function getOpenOwner(): Owner | null {
-  logger.debug('getting current open owner', { currentOwner });
+  logger.verbose('getting current open owner', { currentOwner });
   return currentOwner;
 }
 
@@ -155,7 +154,7 @@ export function owner<T extends ViewNodeKind>(
   ownerFn: () => Children<T> | void,
   patchTarget?: PatchTarget,
 ): Owner<T> {
-  logger.debug(`creating a new owner with fn=${ownerFn}`);
+  logger.verbose(`creating a new owner with fn=${ownerFn}`);
   const newOwner = new Owner<T>();
   const prevOwner = setCurrentOwner(newOwner);
   newOwner.patchTarget = prevOwner?.patchTarget ?? patchTarget;

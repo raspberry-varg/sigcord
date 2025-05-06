@@ -9,6 +9,6 @@ export function render<T extends ViewNodeKind>(
   renderFn: () => Children<T>,
   patchTarget: PatchTarget,
 ): [root: ViewElementNode<T>, dispose: DisposeFn, owner: Owner<T>] {
-  const o = owner(renderFn, patchTarget);
+  const o = owner<T>(renderFn, patchTarget);
   return [o.root, o.dispose.bind(o), o];
 }
