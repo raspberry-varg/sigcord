@@ -341,7 +341,7 @@ export class RenderingEngine {
           } else {
             const embedsRoot = roots.embeds;
             payload.embeds = flatten(embedsRoot, instance.owner);
-            logger.debug('flattened embeds', payload.embeds);
+            logger.verbose('flattened embeds', payload.embeds);
           }
         }
         if (roots.components) {
@@ -350,7 +350,7 @@ export class RenderingEngine {
           } else {
             const componentsRoot = roots.components;
             payload.components = flatten(componentsRoot, instance.owner);
-            logger.debug('flattened components', payload.components);
+            logger.verbose('flattened components', payload.components);
           }
         }
 
