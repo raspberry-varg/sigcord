@@ -25,7 +25,9 @@ export function isWritableSignal<T>(
   return value != null && typeof value === 'object' && WRITABLE_STAMP in value;
 }
 
-export type Signal<T> = () => T;
+export interface Signal<T> {
+  (): T;
+}
 
 export type Resource<T> = Signal<T> & {
   isLoading: Signal<boolean>;
