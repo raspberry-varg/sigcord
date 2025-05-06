@@ -14,7 +14,7 @@ import { View } from './views/view.js';
 import { IntrinsicMenuProps } from './InteractiveMenu.js';
 import { assert, assertAndReturn, assertNotNull } from '../util/Assertions.js';
 import { Listener } from './Listener.js';
-import { debug, logger } from '../util/Logger.js';
+import { logger, LogLevel, shouldLog } from '../util/Logger.js';
 import { RenderingEngine } from './RenderingEngine.js';
 import { InteractionPatcher } from './InteractionPatcher.js';
 import { CollectorService } from './CollectorService.js';
@@ -472,7 +472,7 @@ export function MenuController<
   let manualPatchQueued: PatchTargetBitMask = 0;
 
   const [activeView, setActiveView] = builtins.createSignal<View | null>(null);
-  if (debug) {
+  if (shouldLog(LogLevel.Debug)) {
     createEffect(() => {
       logger.debug(`activeView set to --> ${activeView()?.id ?? null}`);
     });
