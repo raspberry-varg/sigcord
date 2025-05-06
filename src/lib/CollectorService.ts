@@ -43,14 +43,14 @@ export class CollectorService {
     componentId: string,
     callback: MessageComponentCallback<any>,
   ): void {
-    logger.debug('CollectorService: Subscribed to component', {
+    logger.info('CollectorService: Subscribed to component', {
       id: componentId,
     });
     this.componentCallbacks.set(componentId, callback);
   }
 
   unsubscribeTo(componentId: string): void {
-    logger.debug('CollectorService: Unsubscribed from component', {
+    logger.info('CollectorService: Unsubscribed from component', {
       id: componentId,
     });
     this.componentCallbacks.delete(componentId);
@@ -95,7 +95,7 @@ export class CollectorService {
 
     collector.on('collect', async (collected) => {
       this.lastCollected = collected;
-      logger.debug('CollectorService: Collected a new interaction.', {
+      logger.info('CollectorService: Collected a new interaction.', {
         id: collected.customId,
         type: ComponentType[collected.componentType],
       });
@@ -114,7 +114,7 @@ export class CollectorService {
         this.listeners.onStop?.fire(endReason);
       }
       this.listeners.onEnd?.fire(endReason);
-      logger.debug(
+      logger.info(
         `Component listener successfully stopped due to reason: ` + endReason,
       );
     });

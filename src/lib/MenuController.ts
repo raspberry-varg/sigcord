@@ -178,7 +178,7 @@ export function MenuController<
         latestModal.interactionId = interaction.id;
         const response = await asyncBoundary(() =>
           interaction.awaitModalSubmit(options).catch(() => {
-            logger.debug('Modal ended without receiving a response.');
+            logger.info('Modal ended without receiving a response.');
             flushModal();
             return null;
           }),
@@ -199,7 +199,7 @@ export function MenuController<
         latestModal.interactionId = interaction.id;
         const response = await asyncBoundary(() =>
           interaction.awaitModalSubmit(options).catch(() => {
-            logger.debug('Modal ended without receiving a response.');
+            logger.info('Modal ended without receiving a response.');
             flushModal();
             return;
           }),

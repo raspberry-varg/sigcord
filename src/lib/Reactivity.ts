@@ -135,7 +135,7 @@ let id = 1;
 
 export function createEffect(action: EffectFn): DisposeFn {
   const capturedId = id++;
-  logger.debug(
+  logger.verbose(
     `creating a new effect. action=${action}, effectId=${capturedId}`,
   );
   const capturedOwner = getOpenOwner();
