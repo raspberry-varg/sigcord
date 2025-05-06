@@ -1,5 +1,5 @@
 // TODO(@raspberry-varg): Use an actual logger
-enum LogLevel {
+export enum LogLevel {
   None = 0,
   Error = 1,
   Warn = 2,
@@ -10,7 +10,7 @@ enum LogLevel {
 
 export const logLevel: LogLevel = Number(process.env.DIM_LOGGING_LEVEL || 0);
 
-function shouldLog(level: LogLevel): boolean {
+export function shouldLog(level: LogLevel): boolean {
   return logLevel >= level;
 }
 
