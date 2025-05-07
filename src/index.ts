@@ -26,6 +26,7 @@ export {
   read,
   isSignal,
   isWritableSignal,
+  EffectFn,
 } from './lib/Reactivity.js';
 export {
   component,
