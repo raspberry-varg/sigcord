@@ -388,8 +388,12 @@ export async function asyncBoundary<T>(
   boundaryFn: () => MaybePromise<T>,
 ): Promise<T> {
   const resume = suspend();
-  const result = await boundaryFn();
-  resume();
+  let result;
+  try {
+    result = await boundaryFn();
+  } finally {
+    resume();
+  }
   return result;
 }
 
