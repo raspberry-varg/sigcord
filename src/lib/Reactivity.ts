@@ -129,6 +129,10 @@ export function createComputed<T>(derived: () => T): Getter<T> {
   return Object.assign(() => computed.value, { [GETTER_STAMP]: true });
 }
 
+/**
+ * Effect function that optionally returns a disposal function to call when the
+ * effect reruns or is disposed.
+ */
 export type EffectFn = () => void | DisposeFn;
 
 let id = 1;
