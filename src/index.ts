@@ -42,6 +42,8 @@ export {
   onModalSubmit,
   queueEmbeds,
   queueEmbedsAtHead,
+  queueComponents,
+  queueComponentsAtHead,
   setIdleMs,
   setIdleSec,
   closeMenu,
