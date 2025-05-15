@@ -5,6 +5,7 @@ import {
   type RepliableInteraction,
   ModalBuilder,
   InteractionResponse,
+  type MessageComponentBuilder,
 } from 'discord.js';
 import { Synapse } from './menu/synapse.js';
 import { type ModalHandlingOptions } from './interactivity/modalHandling.js';
@@ -57,6 +58,8 @@ export interface MenuControllerAPI {
 export interface ControllerContext {
   appendedEmbeds: EmbedBuilder[];
   prependedEmbeds: EmbedBuilder[];
+  appendedComponents: MessageComponentBuilder[];
+  prependedComponents: MessageComponentBuilder[];
   smartComponents: Map<string, { component: any; callback: any }>;
   queuedViewChange: string | null;
 }
@@ -126,6 +129,10 @@ export function MenuController<
         renderer.appendEmbeds(...embeds),
       prependEmbeds: (...embeds: EmbedBuilder[]) =>
         renderer.prependEmbeds(...embeds),
+      appendComponents: (...components: MessageComponentBuilder[]) =>
+        renderer.appendComponents(...components),
+      prependComponents: (...components: MessageComponentBuilder[]) =>
+        renderer.prependComponents(...components),
       swap: (idOrView: string | View, ...args: unknown[] | [PropsBase]) => {
         clearViewArtifacts();
 

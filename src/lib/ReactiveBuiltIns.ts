@@ -355,6 +355,13 @@ export const queueEmbeds: Synapse['appendEmbeds'] = (...embeds) =>
 export const queueEmbedsAtHead: Synapse['prependEmbeds'] = (...embeds) =>
   useSynapse().prependEmbeds(...embeds);
 
+export const queueComponents: Synapse['appendComponents'] = (...components) =>
+  useSynapse().appendComponents(...components);
+
+export const queueComponentsAtHead: Synapse['prependComponents'] = (
+  ...components
+) => useSynapse().prependComponents(...components);
+
 // Menu manipulation
 
 export const setIdleMs: Synapse['setIdleMs'] = (idleMilliseconds) =>
