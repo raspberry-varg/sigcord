@@ -30,11 +30,6 @@ export {
 } from './lib/Reactivity.js';
 export {
   component,
-  signal,
-  untracked,
-  writable,
-  computed,
-  resource,
   effect,
   patchEffect,
   embedEffect,
@@ -94,3 +89,6 @@ export {
   NodeContentComputer,
 } from './lib/dom/viewComputedElementNode.js';
 export { getViewNodeContent } from './lib/dom/getViewNodeContent.js';
+export { staticRender } from './lib/render/staticRender.js';
+export * from './lib/primitives.js';
+export { untracked } from './lib/reactivity/untracked.js';

@@ -10,19 +10,13 @@
 import { Synapse } from './menu/synapse.js';
 import { PatchTarget } from './RenderingEngine.js';
 import { assert } from '../util/Assertions.js';
-import {
-  createUntracked,
-  isWritableSignal,
-  type EffectFn,
-  type Resource,
-  type ResourceTuple,
-  type Signalish,
-} from './Reactivity.js';
+import type { EffectFn } from './Reactivity.js';
 import type { DisposeFn } from './render/dispose.js';
 import { getOpenOwnerStrict } from './render/owner.js';
 import type { ReactiveViewPayloadV1 } from './MenuView.js';
 import type { MaybePromise } from '../util/TypesUtil.js';
 import type { MenuContext } from './menu/menuContext.js';
+import { STATIC_RENDER_SYNAPSE } from './render/staticRenderSynapse.js';
 
 let currentSynapse: Synapse | null = null;
 
@@ -56,141 +50,6 @@ export function setReactiveContext(synapse: Synapse | null): Synapse | null {
   const prev = currentSynapse;
   currentSynapse = synapse;
   return prev;
-}
-
-// - - - - - - -
-// Begin globals
-// - - - - - - -
-
-// Signals
-
-/**
- * Create a new signal.
- *
- * Signals are functions that allow for fine-grained reactivity in an app,
- * triggering reactions ("effects") **only if** their value changes.
- *
- * ```ts
- * const [clicks, setClicks] = signal(0);
- * const button = createDiscordButton();
- * componentEffect(() => {
- *   // subscribes to this signal and re-runs any time this signal changes
- *   button.label = `You have clicked me ${clicks()} times.`;
- * });
- *
- * return component({
- *   id: 'my-component',
- *   controller: (buttonInteraction) => {
- *     // updates clicks without reading the signal
- *     setClicks((prev) => prev + 1);
- *   }
- * });
- * ```
- *
- * In DIM, signals automatically bind to the render cycle. If you need to
- * completely re-run an entire function if any subscribed signal changes, or to
- * incrementally migrate a component to be fully reactive, wrap the embed or
- * component in a closure:
- *
- * ```ts
- * const [clicks, setClicks] = signal(0);
- * return {
- *   embeds: [
- *     () =>
- *       new EmbedBuilder()
- *         .setDescription(`You clicked the button below ${clicks()} times!`),
- *   ],
- *   components: [
- *     // ...
- *   ]
- * }
- * ```
- *
- * @param initialValue The initial value to set to the signal. Omit to assign
- *    later.
- * @returns Signal tuple with a signal getter and setter.
- */
-export const signal: Synapse['createSignal'] = <T>(
-  initialValue: T | undefined = undefined,
-) => useSynapse().createSignal(initialValue);
-
-/**
- * Create an object to modify and read from a single signal. Capable of being
- * split into a signal tuple or standalone signal.
- * @param initialValue The initial value to set to the signal. Omit to assign
- *    later.
- * @returns Object containing signal read and mutators.
- */
-export const writable: Synapse['createWritableSignal'] = <T>(
-  initialValue: T | undefined = undefined,
-) => useSynapse().createWritableSignal(initialValue);
-
-/**
- * Create a signal that only updates if any of its dependencies change.
- * @param derived Function with signal reads.
- * @returns Signal that has subscribed to any signals read during its initial
- *    call.
- */
-export const computed: Synapse['createComputed'] = <T>(derived: () => T) =>
-  useSynapse().createComputed(derived);
-
-/**
- * Read a signal or callback of signals without subscribing it to the current
- * reactive context or effect.
- * @param signalOrFn Signal to read from or a function reading signals.
- */
-export function untracked<T>(signalOrFn: Signalish<T> | (() => T)): T {
-  if (isWritableSignal(signalOrFn)) {
-    signalOrFn = signalOrFn.readonly();
-  }
-  return createUntracked(signalOrFn);
-}
-
-/**
- * Create a computed signal that auto-populates with the resolved value from the
- * provided asynchronous task.
- *
- * ```ts
- * const [user, mutateUser, refreshUser] = resource(() => fetchUserDb());
- * const embed = createEmbed().setTitle('User Info');
- * componentEffect(() => {
- *   if (user.isLoading()) {
- *     embed.setDescription('Loading...');
- *   }
- *   const u = user();
- *   embed.setDescription(`Viewing information for ${u.name}.`);
- *   // ...
- * });
- * return {
- *   embeds: [embed],
- * };
- * ```
- *
- * @param getResource Getter function that resolves to the wanted resource kind.
- * @returns Tuple with a resource, mutator for optimistic updates, and a refresh
- * function that reruns the provided task.
- */
-export function resource<T>(
-  getResource: () => Promise<T>,
-): ResourceTuple<T | undefined> {
-  const [resolvedResource, setResolvedResource] = signal<T>();
-  const [loading, setLoading] = signal(false);
-  const fetch = () => {
-    setLoading(true);
-    getResource().then((result) => {
-      setResolvedResource(result);
-      setLoading(false);
-    });
-  };
-  fetch();
-
-  return [
-    Object.assign(resolvedResource, {
-      isLoading: loading,
-    }) satisfies Resource<T | undefined>,
-    setResolvedResource,
-    fetch,
-  ];
 }
 
 // Signal effects
@@ -260,8 +119,10 @@ export const effect: Synapse['createEffect'] = (fn, patchTarget) =>
 export function patchEffect(effectFn: EffectFn): DisposeFn {
   const owner = getOpenOwnerStrict();
   const target = owner.patchTarget;
+  const isValidTarget = target !== PatchTarget.None;
   assert(
-    target != null && target !== PatchTarget.None,
+    target != null &&
+      (isValidTarget || currentSynapse === STATIC_RENDER_SYNAPSE),
     'patchEffect() was called outside of the embed or component render ' +
       'lifecycle. If effects that mutate content in the embed or component ' +
       'must be set up in the body of the view, use patch() with the ' +

@@ -1,6 +1,7 @@
 import {
   EmbedBuilder,
   MessageComponentInteraction,
+  type ContainerComponentBuilder,
   type MessageComponentBuilder,
   type MessageFlags,
   type TopLevelComponent,
@@ -23,7 +24,8 @@ export type ViewComponent = ViewComponentKind;
 type ViewComponentKind =
   | TopLevelComponent
   | TopLevelComponentData
-  | MessageComponentBuilder;
+  | MessageComponentBuilder
+  | ContainerComponentBuilder;
 
 export const IS_V2: unique symbol = Symbol('using v2 components');
 
