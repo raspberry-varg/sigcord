@@ -8,7 +8,9 @@ export enum LogLevel {
   Verbose = 5,
 }
 
-export const logLevel: LogLevel = Number(process.env.DIM_LOGGING_LEVEL || 0);
+export const logLevel: LogLevel = Number(
+  process.env.DIM_LOGGING_LEVEL || LogLevel.None,
+);
 
 export function shouldLog(level: LogLevel): boolean {
   return logLevel >= level;
