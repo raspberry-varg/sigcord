@@ -10,6 +10,8 @@ const noop = (() => {}) as any;
 export const STATIC_RENDER_SYNAPSE: Synapse = {
   appendEmbeds: unsupported('appendEmbeds', 'Use a slot instead.'),
   prependEmbeds: unsupported('prependEmbeds', 'Use a slot instead.'),
+  appendComponents: unsupported('appendComponents', 'Use a slot instead.'),
+  prependComponents: unsupported('prependComponents', 'Use a slot instead.'),
   awaitModalSubmit: unsupported('awaitModalSubmit'),
   close: noop,
   component(definition) {

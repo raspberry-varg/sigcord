@@ -4,6 +4,7 @@ import type {
   ModalBuilder,
   AwaitModalSubmitOptions,
   ModalSubmitInteraction,
+  MessageComponentBuilder,
 } from 'discord.js';
 import type { MenuContext } from './menuContext.js';
 import type { DefinedView, View } from '../views/view.js';
@@ -53,6 +54,8 @@ export interface Synapse {
   ): void;
   appendEmbeds(...embeds: EmbedBuilder[]): void;
   prependEmbeds(...embeds: EmbedBuilder[]): void;
+  appendComponents(...components: MessageComponentBuilder[]): void;
+  prependComponents(...components: MessageComponentBuilder[]): void;
   showModal(
     interaction: ModalRepliableInteraction,
     modal: ModalBuilder,
