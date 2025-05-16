@@ -1,15 +1,16 @@
-import type {
-  ActionRowBuilder,
-  EmbedBuilder,
-  Message,
-  MessageActionRowComponentBuilder,
-  RepliableInteraction,
+import {
+  MessageFlags,
+  type ActionRowBuilder,
+  type EmbedBuilder,
+  type Message,
+  type MessageActionRowComponentBuilder,
+  type RepliableInteraction,
 } from 'discord.js';
 import { safeRender } from '../util/RenderingUtil.js';
 import { ViewMessagePayload } from './MenuView.js';
 
 interface RenderOptions {
-  ephemeral: boolean;
+  flags?: MessageFlags;
   replyToComponentOnFirstRender: boolean;
 }
 
@@ -19,7 +20,7 @@ export class Renderable {
   constructor(
     public interaction: RepliableInteraction,
     private readonly options: RenderOptions = {
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
       replyToComponentOnFirstRender: false,
     },
   ) {}
@@ -31,8 +32,8 @@ export class Renderable {
 
   messagePayload(): ViewMessagePayload {
     return {
+      flags: this.options.flags,
       embeds: this.embeds(),
-      ephemeral: this.options.ephemeral,
       content: this.content(),
       components: this.components(),
     };
@@ -58,8 +59,10 @@ export class Renderable {
     this.message = await safeRender(
       this.interaction,
       this.messagePayload(),
-      this.options.replyToComponentOnFirstRender,
+      /* props= */ undefined,
+      /* preferReplyForComponent= */ this.options.replyToComponentOnFirstRender,
     );
+
     this.options.replyToComponentOnFirstRender = false;
     return this.message;
   }

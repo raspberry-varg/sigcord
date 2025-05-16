@@ -1,3 +1,6 @@
+import { logger } from '../util/Logger.js';
+import type { DisposeFn } from './render/dispose.js';
+import { getOpenOwner, setCurrentOwner } from './render/owner.js';
 import type { PatchTarget } from './RenderingEngine.js';
 import * as core from '@preact/signals-core';
 
@@ -7,6 +10,8 @@ const SETTER_STAMP = Symbol('setter');
 const FROM_SIGNAL = Symbol('signal source instance');
 
 export type Signalish<T> = Signal<T> | WritableSignal<T>;
+export type MaybeSignalish<T> = T | Signalish<T>;
+export type UnwrapSignalish<T> = T extends Signalish<infer S> ? S : T;
 
 export type MaybeSignal<T> = T | Signalish<T>;
 export function isSignal<T>(value?: T | Signalish<T>): value is Signal<T> {
@@ -20,7 +25,9 @@ export function isWritableSignal<T>(
   return value != null && typeof value === 'object' && WRITABLE_STAMP in value;
 }
 
-export type Signal<T> = () => T;
+export interface Signal<T> {
+  (): T;
+}
 
 export type Resource<T> = Signal<T> & {
   isLoading: Signal<boolean>;
@@ -108,12 +115,47 @@ export function createUntracked<T>(signal: () => T): T {
 }
 
 export function createComputed<T>(derived: () => T): Getter<T> {
-  const computed = core.computed(derived);
-  return () => computed.value;
+  const capturedOwner = getOpenOwner();
+  const computed = core.computed(() => {
+    const prevOwner = setCurrentOwner(capturedOwner);
+    let value;
+    try {
+      value = derived();
+    } finally {
+      setCurrentOwner(prevOwner);
+    }
+    return value;
+  });
+  return Object.assign(() => computed.value, { [GETTER_STAMP]: true });
 }
 
-export function createEffect(action: () => void) {
-  core.effect(action);
+/**
+ * Effect function that optionally returns a disposal function to call when the
+ * effect reruns or is disposed.
+ */
+export type EffectFn = () => void | DisposeFn;
+
+let id = 1;
+
+export function createEffect(action: EffectFn): DisposeFn {
+  const capturedId = id++;
+  logger.verbose(
+    `creating a new effect. action=${action}, effectId=${capturedId}`,
+  );
+  const capturedOwner = getOpenOwner();
+  return core.effect(() => {
+    const prevOwner = setCurrentOwner(capturedOwner);
+    let dispose;
+    try {
+      dispose = action();
+    } finally {
+      setCurrentOwner(prevOwner);
+    }
+    return () => {
+      logger.debug(`disposing effectId=${capturedId}`);
+      dispose?.();
+    };
+  });
 }
 
 /**

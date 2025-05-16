@@ -4,28 +4,33 @@ import {
   type MessageComponentInteraction,
   type RepliableInteraction,
   ModalBuilder,
+  InteractionResponse,
+  type MessageComponentBuilder,
 } from 'discord.js';
-import { Synapse, type ModalHandlingOptions } from './Synapse.js';
-import { View, ViewProps, MenuContext } from './FunctionalMenuView.js';
+import { Synapse } from './menu/synapse.js';
+import { type ModalHandlingOptions } from './interactivity/modalHandling.js';
+import { ClassViewProps } from './FunctionalMenuView.js';
+import { MenuContext } from './menu/menuContext.js';
+import { View } from './views/view.js';
 import { IntrinsicMenuProps } from './InteractiveMenu.js';
-import { SmartComponentType } from './SmartComponents.js';
 import { assert, assertAndReturn, assertNotNull } from '../util/Assertions.js';
 import { Listener } from './Listener.js';
-import { debug, logger } from '../util/Logger.js';
+import { logger, LogLevel, shouldLog } from '../util/Logger.js';
 import { RenderingEngine } from './RenderingEngine.js';
 import { InteractionPatcher } from './InteractionPatcher.js';
 import { CollectorService } from './CollectorService.js';
-import { TimeoutEmbed } from './PrebuiltEmbeds.js';
+import { TimeoutComponent, TimeoutEmbed } from './PrebuiltEmbeds.js';
 import { createComputed, createEffect, createSignal } from './Reactivity.js';
-import { PatchTarget, PatchTargetBitField } from './RenderingEngine.js';
+import { PatchTarget, PatchTargetBitMask } from './RenderingEngine.js';
 import type { PropsBase } from './MenuView/ViewBase.js';
 import { Navigation } from './Navigation.js';
-import {
-  getCurrentReactiveContext,
-  setReactiveContext,
-} from './ReactiveBuiltIns.js';
+import { asyncBoundary, setReactiveContext } from './ReactiveBuiltIns.js';
 import type { TimeoutEndReason } from '../util/CollectorUtil.js';
 import { batch } from '@preact/signals-core';
+import type { DisposeFn } from './render/dispose.js';
+import { getOpenOwner } from './render/owner.js';
+import { NamedIdGenerator } from './ids/namedIdGenerator.js';
+import { AutoComponentId } from './components/autoComponents.js';
 
 export interface MenuControllerAPI {
   // render API
@@ -53,6 +58,8 @@ export interface MenuControllerAPI {
 export interface ControllerContext {
   appendedEmbeds: EmbedBuilder[];
   prependedEmbeds: EmbedBuilder[];
+  appendedComponents: MessageComponentBuilder[];
+  prependedComponents: MessageComponentBuilder[];
   smartComponents: Map<string, { component: any; callback: any }>;
   queuedViewChange: string | null;
 }
@@ -104,6 +111,17 @@ export function MenuController<
   interaction: RepliableInteraction,
   initProps: MenuProps,
 ): MenuControllerAPI {
+  function routeComponentDisposalFn(id: string, disposal: DisposeFn): void {
+    const openOwner = getOpenOwner();
+    if (openOwner) {
+      openOwner.registerComponentDisposal(id, disposal);
+    } else {
+      const existing = hangingComponentDisposals.get(id);
+      existing?.();
+      hangingComponentDisposals.set(id, disposal);
+    }
+  }
+
   function createSynapse(): Synapse {
     const $: Synapse = {
       ctx,
@@ -111,6 +129,10 @@ export function MenuController<
         renderer.appendEmbeds(...embeds),
       prependEmbeds: (...embeds: EmbedBuilder[]) =>
         renderer.prependEmbeds(...embeds),
+      appendComponents: (...components: MessageComponentBuilder[]) =>
+        renderer.appendComponents(...components),
+      prependComponents: (...components: MessageComponentBuilder[]) =>
+        renderer.prependComponents(...components),
       swap: (idOrView: string | View, ...args: unknown[] | [PropsBase]) => {
         clearViewArtifacts();
 
@@ -122,11 +144,26 @@ export function MenuController<
           renderer.queueViewSwap(view as View, args);
         }
       },
-      component: ({ id, component, controller }) => {
-        const componentId = createComponentId(id);
-        component.setCustomId(componentId);
+      component(definition) {
+        const controller =
+          'controller' in definition
+            ? definition.controller
+            : definition.handler;
+
+        const componentId = createComponentId(
+          definition.id ? definition.id : componentIdGenerator.next(),
+        );
+
+        definition.component.setCustomId(componentId);
+
+        routeComponentDisposalFn(componentId, () => {
+          collector.unsubscribeTo(componentId);
+        });
+
+        // Must come after in case it's an existing componentId.
         collector.onComponent(componentId, controller);
-        return component;
+
+        return definition.component;
       },
       async showModal(interaction, modalOrOptions) {
         let modal: ModalBuilder;
@@ -146,13 +183,13 @@ export function MenuController<
       },
       awaitModalSubmit: async (interaction, options) => {
         latestModal.interactionId = interaction.id;
-        const response = await interaction
-          .awaitModalSubmit(options)
-          .catch(() => {
-            logger.debug('Modal ended without receiving a response.');
+        const response = await asyncBoundary(() =>
+          interaction.awaitModalSubmit(options).catch(() => {
+            logger.info('Modal ended without receiving a response.');
             flushModal();
             return null;
-          });
+          }),
+        );
         if (
           !response ||
           (latestModal.interactionId.length &&
@@ -167,13 +204,13 @@ export function MenuController<
       },
       onModalSubmit: async (interaction, options, callback) => {
         latestModal.interactionId = interaction.id;
-        const response = await interaction
-          .awaitModalSubmit(options)
-          .catch(() => {
-            logger.debug('Modal ended without receiving a response.');
+        const response = await asyncBoundary(() =>
+          interaction.awaitModalSubmit(options).catch(() => {
+            logger.info('Modal ended without receiving a response.');
             flushModal();
             return;
-          });
+          }),
+        );
         if (
           !response ||
           latestModal.interactionId !== interaction.id ||
@@ -183,7 +220,7 @@ export function MenuController<
         }
 
         flushModal();
-        await callback(response);
+        await batch(() => asyncBoundary(() => callback(response)));
 
         const patchTargets = getPatchTargets();
         if (patchTargets !== PatchTarget.None) {
@@ -228,9 +265,9 @@ export function MenuController<
         }
       },
       patch: (...targets) => {
-        manualPatchQueued |= targets.reduce<PatchTargetBitField>(
-          (bitField, target) => {
-            return bitField | target;
+        manualPatchQueued |= targets.reduce<PatchTargetBitMask>(
+          (bitMask, target) => {
+            return bitMask | target;
           },
           PatchTarget.None,
         );
@@ -241,7 +278,7 @@ export function MenuController<
       ) {
         const s = createSignal(fnOrValue, patchTarget);
         if (patchTarget !== PatchTarget.None) {
-          registerEffect(s.get.bind(s), patchTarget);
+          registerEffect(() => void s.get(), patchTarget);
         }
         return s.split();
       },
@@ -251,20 +288,14 @@ export function MenuController<
       ) {
         const s = createSignal(initialValue, patchTarget);
         if (patchTarget !== PatchTarget.None) {
-          registerEffect(s.get.bind(s), patchTarget);
+          registerEffect(() => void s.get(), patchTarget);
         }
         return s;
       },
       createComputed: (fn) => createComputed(fn),
-      createEffect: (fn, patchTarget) => {
-        registerEffect(fn, patchTarget);
-      },
-      createEmbedEffect: (fn) => {
-        registerEffect(fn, PatchTarget.Embeds);
-      },
-      createComponentEffect: (fn) => {
-        registerEffect(fn, PatchTarget.Components);
-      },
+      createEffect: (fn, patchTarget) => registerEffect(fn, patchTarget),
+      createEmbedEffect: (fn) => registerEffect(fn, PatchTarget.Embeds),
+      createComponentEffect: (fn) => registerEffect(fn, PatchTarget.Components),
       goTo(view, props) {
         const currentView = renderer.getCurrentView();
         assert(
@@ -277,6 +308,7 @@ export function MenuController<
             reactivePayload,
             'Tried to navigate before initial render in a reactive view.',
           );
+          reactivePayload.owner?.suspend();
           navigation.pushReactive(currentView, reactivePayload);
         } else {
           navigation.push(currentView);
@@ -311,46 +343,58 @@ export function MenuController<
           'Tried to navigate backwards without a parent view. Have you called goTo() in the parent view?',
         );
         const payload = navigation.pop();
+        payload.reactiveInstance?.owner?.resume();
         renderer.queueNavigation(payload);
       },
       canGoBack: () => {
         return !navigation.empty();
+      },
+      onResume(action) {
+        const owner = getOpenOwner();
+        if (!owner) {
+          throw new Error('onResume must be called in a reactive context.');
+        }
+        owner.registerOnResume(action);
+      },
+      onSuspend(action) {
+        const owner = getOpenOwner();
+        if (!owner) {
+          throw new Error('onSuspend must be called in a reactive context.');
+        }
+        owner.registerOnSuspend(action);
       },
       resumableSuspend: async (action) =>
         await action().then((r) => {
           setReactiveContext($);
           return r;
         }),
+      getMenuInfo: () => ctx,
     };
     return $;
   }
   function registerEffect(
-    fn: () => void,
+    fn: () => void | DisposeFn,
     patchTarget = PatchTarget.None,
-  ): void {
-    const effectRegisteredTo = assertNotNull(renderer.getCurrentView());
-    const isActiveView = createComputed(
-      () => activeView() === effectRegisteredTo,
-    );
-    createEffect(() => {
-      if (!isActiveView()) {
-        logger.debug(`Not active view!`, {
-          effectRegisteredTo: effectRegisteredTo.id,
-          menuControllerActiveView: activeView()?.id,
-        });
-        return;
-      }
-
-      const prevCtx = getCurrentReactiveContext();
+  ): DisposeFn {
+    function menuEffect(): void | DisposeFn {
+      let dispose;
+      const prevContext = setReactiveContext(builtins);
       try {
-        setReactiveContext(builtins);
-        fn();
+        dispose = fn();
       } finally {
-        setReactiveContext(prevCtx);
+        setReactiveContext(prevContext);
       }
 
       builtins.patch(patchTarget);
-    });
+      return dispose;
+    }
+
+    const currentOwner = getOpenOwner();
+    const dispose = createEffect(menuEffect);
+    if (!currentOwner) {
+      hangingDisposals.push(dispose);
+    }
+    return dispose;
   }
   function getView(id: string): View<AllProps> {
     const view = views.get(id);
@@ -364,12 +408,25 @@ export function MenuController<
   }
   function stopMenu(reason?: string) {
     collector.stop(reason);
-    cleanup();
+    dispose();
   }
-  function cleanup() {
-    // TODO(@raspberry-varg): Implement relevant cleanup.
+  function dispose() {
+    logger.debug('Disposing MenuController');
+    logger.debug(
+      `Disposing ${hangingDisposals.length} hanging effect disposal(s)`,
+    );
+    for (const dispose of hangingDisposals) {
+      dispose();
+    }
+    logger.debug(
+      `Disposing ${hangingComponentDisposals.size} hanging component effect disposal(s)`,
+    );
+    hangingComponentDisposals.forEach((dispose) => dispose());
+    renderer.dispose();
     return;
   }
+  const hangingDisposals: DisposeFn[] = [];
+  const hangingComponentDisposals = new Map<string, DisposeFn>();
   const ctx: MenuContext = {
     get interaction(): RepliableInteraction {
       return getInteractionToPatch();
@@ -378,14 +435,10 @@ export function MenuController<
     get idleTimeMs(): number {
       return idle;
     },
+    menuId,
+    initialViewId,
   };
   const builtins = createSynapse();
-  const [activeView, setActiveView] = builtins.createSignal<View | null>(null);
-  if (debug) {
-    createEffect(() => {
-      logger.debug(`activeView set to --> ${activeView()?.id ?? null}`);
-    });
-  }
   const views = new Map<string, View<AllProps>>(
     registeredViews.map((v) => [v.id, v]),
   );
@@ -408,6 +461,7 @@ export function MenuController<
     MenuViewComponentId,
     MessageComponentCallback<any>
   >();
+  const componentIdGenerator = new NamedIdGenerator('component');
   let idle: number =
     props.idleTimeMs === undefined
       ? DEFAULT_IDLE
@@ -422,9 +476,16 @@ export function MenuController<
     customId: '',
   };
   let skipRender = false;
-  let manualPatchQueued: PatchTargetBitField = 0;
+  let manualPatchQueued: PatchTargetBitMask = 0;
 
-  function getPatchTargets(): PatchTargetBitField {
+  const [activeView, setActiveView] = builtins.createSignal<View | null>(null);
+  if (shouldLog(LogLevel.Debug)) {
+    createEffect(() => {
+      logger.debug(`activeView set to --> ${activeView()?.id ?? null}`);
+    });
+  }
+
+  function getPatchTargets(): PatchTargetBitMask {
     logger.debug({
       skipRender,
       collectorEnded: collector.hasEnded(),
@@ -440,14 +501,14 @@ export function MenuController<
       return PatchTarget.All;
     }
     if (renderer.isCurrentViewReactive()) {
-      let patchTargets: PatchTargetBitField = manualPatchQueued;
+      let patchTargets: PatchTargetBitMask = manualPatchQueued;
       if (renderer.hasQueuedEmbeds()) {
         patchTargets |= PatchTarget.Embeds;
       }
       if (renderer.hasQueuedNavigation()) {
         patchTargets |= PatchTarget.All;
       }
-      logger.debug({ patchTargetBitField: patchTargets });
+      logger.debug({ patchTargetBitMask: patchTargets });
       return patchTargets;
     }
     return PatchTarget.All;
@@ -523,12 +584,12 @@ export function MenuController<
   }
 
   function onTimeout() {
-    cleanup();
+    dispose();
     return patchTimeout();
   }
 
   function initCollector() {
-    const message = patcher.message;
+    const { message } = patcher;
     assert(message, `Unable to initialize collectors; 'message' is undefined.`);
     collector.init({
       idle,
@@ -549,8 +610,8 @@ export function MenuController<
   function handlePrebuiltComponents(collected: CollectedMessageInteraction) {
     const id = collected.customId;
     if (collected.isButton()) {
-      switch (id) {
-        case SmartComponentType.CloseButton: {
+      switch (id as AutoComponentId) {
+        case AutoComponentId.CloseMenuButton: {
           logger.debug('Closing Menu via official CloseMenuButton');
           closeMenu();
           return true;
@@ -581,11 +642,9 @@ export function MenuController<
       return;
     }
 
-    const prevContext = getCurrentReactiveContext();
+    const prevContext = setReactiveContext(builtins);
     try {
-      // using _resource = withReactiveContext(props.$);
-      setReactiveContext(props.$);
-      await interactionCallback(collected);
+      await batch(async () => await interactionCallback(collected));
     } catch (e) {
       logger.error(
         `Error occurred while handling a collected component interaction: ${collected.customId}`,
@@ -621,7 +680,7 @@ export function MenuController<
   }
 
   /** Handles subsequent rerenders. */
-  async function update(patchTargets: PatchTargetBitField): Promise<void> {
+  async function update(patchTargets: PatchTargetBitMask): Promise<void> {
     beforeRender();
     try {
       const payload = await batch(
@@ -643,12 +702,17 @@ export function MenuController<
   }
 
   async function patchTimeout() {
-    renderer.appendEmbeds(TimeoutEmbed);
-    renderer.queueClear(PatchTarget.Components);
-    const payload = await renderer.patch(
-      props,
-      PatchTarget.Embeds | PatchTarget.Content,
-    );
+    let target: PatchTarget;
+    if (renderer.isCurrentViewV2()) {
+      target = PatchTarget.Components;
+      renderer.appendComponents(TimeoutComponent);
+    } else {
+      target = PatchTarget.Embeds | PatchTarget.Content;
+      renderer.appendEmbeds(TimeoutEmbed);
+      renderer.queueClear(PatchTarget.Components);
+    }
+
+    const payload = await renderer.patch(props, target);
     await patcher.patch(payload, {});
   }
 
@@ -658,6 +722,8 @@ export function MenuController<
   async function start(options: Partial<RenderOptions> = {}) {
     options = { ...DefaultRenderOptions, ...options };
     await initialRender(options);
+    if (patcher.message instanceof InteractionResponse)
+      patcher.message = await patcher.message.fetch();
     initCollector();
   }
 
@@ -688,7 +754,6 @@ export function MenuController<
   return {
     // render API
     reply,
-    /**@deprecated Please use `.start` instead. */
     render: start,
     start,
     // listener API
@@ -706,7 +771,7 @@ export function MenuController<
 function buildProps<Props extends NonNullable<unknown>>(
   initProps: Props,
   builtins: Synapse,
-): ViewProps<Props> & IntrinsicMenuProps {
+): ClassViewProps<Props> & IntrinsicMenuProps {
   return {
     ...DefaultProperties,
     ...initProps,
