@@ -3,7 +3,7 @@ import type { ClassViewDefinition } from '../FunctionalMenuView.js';
 import type { IntrinsicMenuProps, MenuFactory } from '../InteractiveMenu.js';
 import { MenuController } from '../MenuController.js';
 import type { ViewMessagePayload } from '../MenuView.js';
-import type { Synapse } from '../Synapse.js';
+import type { Synapse } from '../menu/synapse.js';
 import type { PropsBase } from './ViewBase.js';
 
 export interface ViewClassImplementation<Props extends PropsBase> {

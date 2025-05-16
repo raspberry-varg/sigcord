@@ -1,7 +1,8 @@
-import type {
-  CollectedMessageInteraction,
-  Interaction,
-  Message,
+import {
+  ComponentType,
+  type CollectedMessageInteraction,
+  type Interaction,
+  type Message,
 } from 'discord.js';
 import type { Listener } from './Listener.js';
 import { logger } from '../util/Logger.js';
@@ -42,7 +43,17 @@ export class CollectorService {
     componentId: string,
     callback: MessageComponentCallback<any>,
   ): void {
+    logger.info('CollectorService: Subscribed to component', {
+      id: componentId,
+    });
     this.componentCallbacks.set(componentId, callback);
+  }
+
+  unsubscribeTo(componentId: string): void {
+    logger.info('CollectorService: Unsubscribed from component', {
+      id: componentId,
+    });
+    this.componentCallbacks.delete(componentId);
   }
 
   getComponentCallback(componentId: string) {
@@ -84,6 +95,10 @@ export class CollectorService {
 
     collector.on('collect', async (collected) => {
       this.lastCollected = collected;
+      logger.info('CollectorService: Collected a new interaction.', {
+        id: collected.customId,
+        type: ComponentType[collected.componentType],
+      });
       await onCollect?.(collected);
     });
 
@@ -99,7 +114,7 @@ export class CollectorService {
         this.listeners.onStop?.fire(endReason);
       }
       this.listeners.onEnd?.fire(endReason);
-      logger.debug(
+      logger.info(
         `Component listener successfully stopped due to reason: ` + endReason,
       );
     });
