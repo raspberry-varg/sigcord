@@ -1,21 +1,24 @@
 export { IntrinsicMenuProps, defineMenu } from './lib/InteractiveMenu.js';
 export * from './lib/MenuView.js';
+export { View } from './lib/views/view.js';
 export {
-  View,
-  ViewProps,
-  ViewProps as Props,
+  ClassViewProps as ViewProps,
+  ClassViewProps as Props,
 } from './lib/FunctionalMenuView.js';
-export { ViewRender } from './lib/MenuView/ClassicView.js';
-export { Synapse, Synapse as ViewSynapse } from './lib/Synapse.js';
+export { ViewRender } from './lib/views/classic/classViewRender.js';
+export { Synapse, Synapse as ViewSynapse } from './lib/menu/synapse.js';
 export * from './lib/SmartComponents.js';
 export * from './lib/PrebuiltEmbeds.js';
 export * from './lib/Renderable.js';
 export { ModalBundle, useValues } from './lib/ModalBundle.js';
 export { PatchTarget } from './lib/RenderingEngine.js';
 export {
-  WritableSignal,
   MaybeSignal,
+  WritableSignal,
   MaybeWritableSignal,
+  Signalish,
+  MaybeSignalish,
+  UnwrapSignalish,
   Signal,
   Setter,
   Updater,
@@ -23,15 +26,12 @@ export {
   read,
   isSignal,
   isWritableSignal,
+  EffectFn,
 } from './lib/Reactivity.js';
 export {
   component,
-  signal,
-  untracked,
-  writable,
-  computed,
-  resource,
   effect,
+  patchEffect,
   embedEffect,
   componentEffect,
   goTo,
@@ -42,16 +42,55 @@ export {
   onModalSubmit,
   queueEmbeds,
   queueEmbedsAtHead,
+  queueComponents,
+  queueComponentsAtHead,
   setIdleMs,
   setIdleSec,
   closeMenu,
   stopMenu,
   patch,
   useSynapse,
+  useMenuInfo,
   resumableAction,
+  suspend,
+  asyncBoundary,
+  onSuspend,
+  onResume,
+  isSuspended,
 } from './lib/ReactiveBuiltIns.js';
-export { defineView } from './lib/MenuView/DefineReactiveView.js';
+export {
+  defineView,
+  defineViewV2,
+} from './lib/views/reactive/defineReactiveView.js';
 export {
   ViewClass,
   defineClassView,
 } from './lib/MenuView/DefineClassicView.js';
+export { SlotOptions, Slot, slot, isSlot } from './lib/Slot.js';
+export { onCleanup } from './lib/hooks/onCleanup.js';
+export { batch } from '@preact/signals-core';
+export {
+  ComponentDefinition,
+  ComponentWithController,
+  ComponentWithHandler,
+} from './lib/components/componentDefinition.js';
+export { owner, Owner } from './lib/render/owner.js';
+export { DisposeFn } from './lib/render/dispose.js';
+export {
+  AutoComponentId,
+  AutoComponents,
+  configureAutoComponent,
+} from './lib/components/autoComponents.js';
+export { ViewNodeKind } from './lib/dom/viewNodeKind.js';
+export { ViewNode } from './lib/dom/viewNode.js';
+export { ViewContentNode } from './lib/dom/viewContentNode.js';
+export { ViewElementNode } from './lib/dom/viewElementNode.js';
+export {
+  ViewComputedElementNode,
+  elementComputed,
+  NodeContentComputer,
+} from './lib/dom/viewComputedElementNode.js';
+export { getViewNodeContent } from './lib/dom/getViewNodeContent.js';
+export { staticRender } from './lib/render/staticRender.js';
+export * from './lib/primitives.js';
+export { untracked } from './lib/reactivity/untracked.js';

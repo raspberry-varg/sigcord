@@ -1,31 +1,38 @@
-import type { EmbedBuilder } from 'discord.js';
-import { flattenChildren, type Props } from '../index.js';
+import { EmbedBuilder, MessageFlags } from 'discord.js';
 import { assert } from '../util/Assertions.js';
-import {
-  isClassViewInstance,
-  isReactiveViewInstance,
-  type View,
-  type ViewInstance,
-} from './FunctionalMenuView.js';
-import type { RenderedReactiveView, ViewMessagePayload } from './MenuView.js';
+import { isClassViewInstance } from './views/classic/classViewInstance.js';
+import { isReactiveViewInstance } from './views/reactive/reactiveViewInstance.js';
+import { type View, type ViewInstance } from './views/view.js';
+import type {
+  EmbedComponent,
+  RenderedReactiveView,
+  ViewComponent,
+  ViewMessagePayload,
+} from './MenuView.js';
+import { isRenderedReactiveViewV2 } from './MenuView.js';
 import { logger } from '../util/Logger.js';
-import { read } from './Reactivity.js';
+import { createUntracked, read } from './Reactivity.js';
 import { type PropsBase } from './MenuView/ViewBase.js';
 import type { NavigationPayload } from './Navigation.js';
 import {
   instantiateReactiveView,
-  isReactiveViewDefinition,
   type ReactiveViewInstance,
 } from './MenuView/ReactiveView.js';
-import {
-  getCurrentReactiveContext,
-  setReactiveContext,
-} from './ReactiveBuiltIns.js';
-import { instantiateClassView } from './MenuView/ClassicView.js';
+import { isReactiveViewDefinition } from './views/reactive/reactiveViewDefinition.js';
+import { setReactiveContext } from './ReactiveBuiltIns.js';
+import { instantiateClassView } from './views/classic/classViewInstance.js';
 import { batch } from '@preact/signals-core';
+import type { Props } from '../index.js';
+import { render } from './render/render.js';
+import { ViewElementNode } from './dom/viewElementNode.js';
+import { owner } from './render/owner.js';
+import { flatten } from './render/flatten.js';
 
-export type PatchTargetBitField = number;
+export type PatchTargetBitMask = number;
 
+/**
+ * The portion of a {@link ViewMessagePayload message payload} to update.
+ */
 export enum PatchTarget {
   None = 0,
   Embeds = 1,
@@ -46,10 +53,13 @@ type QueuedView = {
     }
 );
 
-interface QueuedEmbeds {
-  prepend: EmbedBuilder[];
-  append: EmbedBuilder[];
+interface QueuedMessagePart<T> {
+  prepend: T[];
+  append: T[];
 }
+
+type QueuedEmbeds = QueuedMessagePart<EmbedBuilder>;
+type QueuedComponents = QueuedMessagePart<ViewComponent>;
 
 export class RenderingEngine {
   viewDefinition?: View;
@@ -57,7 +67,8 @@ export class RenderingEngine {
   private instances = new Map<string, ViewInstance>();
   private wantRender = true;
   private queuedEmbeds?: Partial<QueuedEmbeds>;
-  private queuedClears: PatchTargetBitField = 0;
+  private queuedComponents?: Partial<QueuedComponents>;
+  private queuedClears: PatchTargetBitMask = 0;
   private reactiveViewInstance?: ReactiveViewInstance;
   private patchContext = PatchTarget.None;
   private queuedNavigation?: NavigationPayload;
@@ -65,6 +76,13 @@ export class RenderingEngine {
   isCurrentViewReactive(): boolean {
     return (
       !!this.viewDefinition && isReactiveViewDefinition(this.viewDefinition)
+    );
+  }
+
+  isCurrentViewV2(): boolean {
+    return (
+      !!this.reactiveViewInstance &&
+      isRenderedReactiveViewV2(this.reactiveViewInstance!)
     );
   }
 
@@ -78,6 +96,10 @@ export class RenderingEngine {
 
   hasQueuedEmbeds(): boolean {
     return !!this.queuedEmbeds;
+  }
+
+  hasQueuedComponents(): boolean {
+    return !!this.queuedComponents;
   }
 
   clearCachedView(id: string): void {
@@ -116,12 +138,24 @@ export class RenderingEngine {
     this.queuedEmbeds.append.push(...embeds);
   }
 
+  prependComponents(...components: ViewComponent[]): void {
+    this.queuedComponents ??= {};
+    this.queuedComponents.prepend ??= [];
+    this.queuedComponents.prepend.push(...components);
+  }
+
+  appendComponents(...components: ViewComponent[]): void {
+    this.queuedComponents ??= {};
+    this.queuedComponents.append ??= [];
+    this.queuedComponents.append.push(...components);
+  }
+
   queueRender(wantRender = true) {
     this.wantRender = wantRender;
     this.wantRender;
   }
 
-  queueClear(patchTargets: PatchTargetBitField): void {
+  queueClear(patchTargets: PatchTargetBitMask): void {
     this.queuedClears |= patchTargets;
   }
 
@@ -148,11 +182,35 @@ export class RenderingEngine {
     this.queuedNavigation = navigationPayload;
   }
 
+  dispose(): void {
+    logger.debug('Disposing RenderingEngine');
+    for (const instance of this.instances.values()) {
+      const isReactive = isReactiveViewInstance(instance);
+      const isV2 = isReactive && isRenderedReactiveViewV2(instance);
+      logger.debug(`Maybe disposing instance.id=${instance.id}`, {
+        isReactive,
+        isV2,
+      });
+      if (isReactive) {
+        logger.debug('Calling disposal function', {
+          dispose: instance.dispose,
+        });
+        instance.dispose?.();
+      } else {
+        logger.debug('Not disposing: Not reactive.');
+      }
+    }
+  }
+
   async patch(
     props: Props,
-    targets: PatchTargetBitField,
+    targets: PatchTargetBitMask,
   ): Promise<ViewMessagePayload> {
     assert(this.viewDefinition, 'Internal error: View was not set.');
+    logger.debug('Patch requested', {
+      targets,
+      reactiveViewInstance: this.reactiveViewInstance,
+    });
     const queuedNav = this.queuedNavigation;
     if (
       this.queuedView ||
@@ -179,54 +237,147 @@ export class RenderingEngine {
   patchReactive(
     instance: ReactiveViewInstance,
     props: Props,
-    targets: PatchTargetBitField,
+    targets: PatchTargetBitMask,
   ) {
     const $ = props.$;
     targets |= this.queuedClears;
     const payload: ViewMessagePayload = {};
-    const prevContext = getCurrentReactiveContext();
+    logger.debug('Patching reactive view', { targets, viewInstance: instance });
+    const prevContext = setReactiveContext($);
     try {
-      // using _resource = withReactiveContext($);
-      setReactiveContext($);
       batch(() => {
-        if (instance.ephemeral !== undefined) {
-          payload.ephemeral = instance.ephemeral;
-        }
-        if (targets & PatchTarget.Content) {
-          this.patchContext = PatchTarget.Content;
-          const content = instance.content;
-          if (this.isQueuedForClear(PatchTarget.Content)) {
-            payload.content = '';
-          } else if (content !== undefined) {
-            payload.content = read(content);
+        const isV2 = isRenderedReactiveViewV2(instance);
+        logger.debug(`Patching with V${isV2 ? 2 : 1} components.`);
+        if (!targets) {
+          if (isV2) {
+            if (!this.hasQueuedComponents()) {
+              return;
+            }
+          } else {
+            // V1
+            if (!this.hasQueuedEmbeds()) {
+              return;
+            }
           }
         }
-        if (targets & PatchTarget.Embeds || this.hasQueuedEmbeds()) {
-          this.patchContext = PatchTarget.Embeds;
+
+        if (isRenderedReactiveViewV2(instance)) {
+          payload.flags = (payload.flags ?? 0) | MessageFlags.IsComponentsV2;
+          const patchTarget = (this.patchContext = PatchTarget.Components);
+          if (this.isQueuedForClear(patchTarget)) {
+            payload.components = [];
+          } else {
+            if (!instance.root) {
+              const [root, dispose, owner] = render<ViewComponent>(
+                () => instance.factory(),
+                patchTarget,
+              );
+              owner.debugName = 'V2_root';
+              instance.root = root;
+              instance.dispose = dispose;
+              instance.owner = owner;
+            }
+
+            const flattened = flatten(instance.root, instance.owner);
+            instance.lastRender = payload.components = flattened;
+
+            if (this.queuedComponents) {
+              payload.components = this.resolveWithQueuedItems(
+                payload.components,
+                this.queuedComponents,
+              );
+            }
+          }
+
+          return;
+        }
+
+        if (!instance.roots) {
+          const superOwner = owner(() => {
+            instance.roots = {};
+            const roots: ViewElementNode<EmbedComponent | ViewComponent>[] = [];
+            const result = (instance.lastRender = instance.factory());
+            // TODO: @raspberry-varg - Content handling.
+            if (result.embeds) {
+              const [embedsRoot, , owner] = render<EmbedComponent>(
+                result.embeds,
+                PatchTarget.Embeds,
+              );
+              owner.debugName = 'V1_embeds_root';
+              instance.roots.embeds = embedsRoot;
+              roots.push(embedsRoot);
+            }
+            if (result.components) {
+              const [componentsRoot, , owner] = render<ViewComponent>(
+                result.components,
+                PatchTarget.Components,
+              );
+              owner.debugName = 'V1_components_root';
+              instance.roots.components = componentsRoot;
+              roots.push(componentsRoot);
+            }
+
+            return roots;
+          });
+          superOwner.debugName = 'V1_super_root';
+
+          instance.dispose = () => superOwner.dispose();
+          instance.owner = superOwner;
+
+          const wantEphemeral = instance.lastRender!.ephemeral;
+          if (wantEphemeral !== undefined) {
+            payload.ephemeral = wantEphemeral;
+          }
+
+          assert(instance.roots);
+        }
+
+        assert(instance.lastRender);
+
+        const { roots } = instance;
+        if (roots.embeds) {
           if (this.isQueuedForClear(PatchTarget.Embeds)) {
             payload.embeds = [];
           } else {
-            payload.embeds = flattenChildren(
-              $,
-              instance.embeds,
-              this.patchContext,
-            );
-          }
-          if (this.queuedEmbeds) {
-            payload.embeds = this.attachEnqueuedEmbeds(payload.embeds ?? []);
+            const embedsRoot = roots.embeds;
+            payload.embeds = flatten(embedsRoot, instance.owner);
+            logger.verbose('flattened embeds', payload.embeds);
           }
         }
-        if (targets & PatchTarget.Components) {
-          this.patchContext = PatchTarget.Components;
+        if (roots.components) {
           if (this.isQueuedForClear(PatchTarget.Components)) {
             payload.components = [];
-          } else if (instance.components !== undefined) {
-            payload.components = flattenChildren(
-              $,
-              instance.components,
-              this.patchContext,
-            );
+          } else {
+            const componentsRoot = roots.components;
+            payload.components = flatten(componentsRoot, instance.owner);
+            logger.verbose('flattened components', payload.components);
           }
+        }
+
+        // TODO: @raspberry-varg - Content should be a tree as well.
+        if (this.isQueuedForClear(PatchTarget.Content)) {
+          payload.content = '';
+        } else if (instance.lastRender.content) {
+          payload.content = createUntracked(() => {
+            if (instance.lastRender?.content == null) {
+              return undefined;
+            }
+            return read(instance.lastRender.content);
+          });
+        }
+
+        if (this.queuedEmbeds) {
+          payload.embeds = this.resolveWithQueuedItems(
+            payload.embeds,
+            this.queuedEmbeds,
+          );
+        }
+
+        if (this.queuedComponents) {
+          payload.components = this.resolveWithQueuedItems(
+            payload.components,
+            this.queuedComponents,
+          );
         }
       });
     } finally {
@@ -270,7 +421,10 @@ export class RenderingEngine {
     }
     const payload = await batch(() => view.instance.render(props));
     if (this.queuedEmbeds) {
-      payload.embeds = this.attachEnqueuedEmbeds(payload.embeds ?? []);
+      payload.embeds = this.resolveWithQueuedItems(
+        payload.embeds,
+        this.queuedEmbeds,
+      );
     }
     this.postRender();
     return payload;
@@ -293,12 +447,11 @@ export class RenderingEngine {
       if (!reactiveInstance || viewDefinition.id !== reactiveInstance.id) {
         // rendering must be synchronous; built-ins rely on the single-threaded
         // nature of JS
-        // using _resource = withReactiveContext(props.$);
-        const prevContext = getCurrentReactiveContext();
+        const prevContext = setReactiveContext(props.$);
         try {
-          setReactiveContext(props.$);
           reactiveInstance = instantiateReactiveView(viewDefinition, props);
           this.reactiveViewInstance = reactiveInstance;
+          this.instances.set(reactiveInstance.id, reactiveInstance);
         } catch (e) {
           logger.debug(
             'Encountered an error while rendering a reactive view:',
@@ -326,32 +479,62 @@ export class RenderingEngine {
       this.queuedNavigation,
       'Internal error: Tried to apply queuedNavigation before being assigned a value.',
     );
+    const prevReactiveInstance = this.reactiveViewInstance;
     this.viewDefinition = this.queuedNavigation.view;
-    this.reactiveViewInstance = this.queuedNavigation.reactiveInstance
-      ? {
-          ...this.queuedNavigation.reactiveInstance,
-          id: this.queuedNavigation.view.id,
-        }
-      : undefined;
+
+    const newReactiveInstance = this.queuedNavigation.reactiveInstance;
+    const newViewId = this.queuedNavigation.view.id;
     this.queuedNavigation = undefined;
+
+    if (prevReactiveInstance) {
+      prevReactiveInstance.owner?.suspend();
+    }
+
+    if (!newReactiveInstance) {
+      this.reactiveViewInstance = undefined;
+      return;
+    }
+
+    newReactiveInstance.owner?.resume();
+
+    if (isRenderedReactiveViewV2(newReactiveInstance)) {
+      const clone = Object.assign({}, newReactiveInstance, {
+        id: newViewId,
+      });
+      this.reactiveViewInstance = clone;
+    } else {
+      // legacy
+      const clone = {
+        ...newReactiveInstance,
+        id: newViewId,
+      };
+      this.reactiveViewInstance = clone;
+    }
   }
 
-  private attachEnqueuedEmbeds(embeds: EmbedBuilder[]): EmbedBuilder[] {
-    if (!this.queuedEmbeds) {
-      return embeds;
+  private resolveWithQueuedItems<T>(
+    dest: T[] = [],
+    queue: Partial<QueuedMessagePart<T>> | undefined,
+  ): T[] {
+    if (!queue) {
+      return dest;
     }
-    const enqueued = [
-      ...(this.queuedEmbeds.prepend ?? []),
-      ...(this.queuedEmbeds.append ?? []),
-    ].slice(0, 10);
-    embeds = [...embeds, ...enqueued];
-    if (embeds.length > 10) {
-      embeds = embeds.slice(-10, embeds.length);
+
+    const enqueued = [...(queue.prepend ?? []), ...(queue.append ?? [])].slice(
+      0,
+      10,
+    );
+    if (!enqueued.length) return dest;
+
+    let final = [...dest, ...enqueued];
+    if (final.length > 10) {
+      final = final.slice(-10, final.length);
     }
-    return embeds;
+
+    return final;
   }
 
-  private isQueuedForClear(target: PatchTargetBitField): boolean {
+  private isQueuedForClear(target: PatchTargetBitMask): boolean {
     return !!(target & this.queuedClears);
   }
 }

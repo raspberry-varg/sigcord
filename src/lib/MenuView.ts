@@ -1,35 +1,86 @@
 import {
-  ActionRowBuilder,
   EmbedBuilder,
-  MessageActionRowComponentBuilder,
   MessageComponentInteraction,
+  type ContainerComponentBuilder,
+  type MessageComponentBuilder,
+  type MessageFlags,
+  type TopLevelComponent,
+  type TopLevelComponentData,
 } from 'discord.js';
-import {
-  PatchTarget,
-  type WritableSignal,
-  type Synapse,
-  isWritableSignal,
-} from '../index.js';
-import type { IS_REACTIVE_SYMBOL } from './MenuView/ReactiveView.js';
-import { isSignal, type Signalish } from './Reactivity.js';
+import type { REACTIVE_VIEW_SYMBOL } from './views/reactive/reactiveViewSymbol.js';
+import { type WritableSignal, type Signalish } from './Reactivity.js';
+import type { ViewElementNode } from './dom/viewElementNode.js';
+import type { DisposeFn } from './render/dispose.js';
+import type { Owner } from './render/owner.js';
+import type { ViewNodeKind } from './dom/viewNodeKind.js';
+import type { Slot } from './Slot.js';
+import type { ViewNode } from './dom/viewNode.js';
+import type { Signal } from '@preact/signals-core';
 
-export type ViewComponent = ActionRowBuilder<MessageActionRowComponentBuilder>;
+export type EmbedComponent = EmbedBuilder;
 
-export type RenderedReactiveView = ReactiveViewPayload & {
-  readonly [IS_REACTIVE_SYMBOL]: true;
-};
+export type ViewComponent = ViewComponentKind;
 
-export interface ReactiveViewPayload {
-  ephemeral?: boolean;
-  content?: string | Signalish<string>;
-  embeds?: EmbedChildren;
-  components?: ComponentChildren;
+type ViewComponentKind =
+  | TopLevelComponent
+  | TopLevelComponentData
+  | MessageComponentBuilder
+  | ContainerComponentBuilder;
+
+export const IS_V2: unique symbol = Symbol('using v2 components');
+
+export type RenderedReactiveView =
+  | RenderedReactiveViewV1
+  | RenderedReactiveViewV2;
+
+interface RenderedReactiveViewBase {
+  readonly [REACTIVE_VIEW_SYMBOL]: true;
+  dispose?: DisposeFn;
+  owner?: Owner;
+  lastRender?: ReactiveViewPayload;
+  factory: () => ReactiveViewPayload;
 }
 
+interface RenderedReactiveViewV1 extends RenderedReactiveViewBase {
+  roots?: {
+    embeds?: ViewElementNode<EmbedComponent>;
+    components?: ViewElementNode<ViewComponent>;
+  };
+  lastRender?: ReactiveViewPayloadV1;
+  factory: () => ReactiveViewPayloadV1;
+}
+
+interface RenderedReactiveViewV2 extends RenderedReactiveViewBase {
+  [IS_V2]: true;
+  root?: ViewElementNode<ViewComponent>;
+  owner?: Owner<ViewComponent>;
+  lastRender?: ReactiveViewPayloadV2;
+  factory: () => ReactiveViewPayloadV2;
+}
+
+export function isRenderedReactiveViewV2(
+  view: RenderedReactiveView,
+): view is RenderedReactiveViewV2 {
+  return IS_V2 in view;
+}
+
+export type ReactiveViewPayload = ReactiveViewPayloadV1 | ReactiveViewPayloadV2;
+
+export interface ReactiveViewPayloadV1 {
+  ephemeral?: boolean;
+  content?: string | Signalish<string>;
+  embeds?: () => Children<EmbedComponent>;
+  components?: () => Children<ViewComponent>;
+}
+
+export type ReactiveViewPayloadV2 = Children<ViewComponent>;
+
 export interface ViewMessagePayload {
+  flags?: MessageFlags;
+  /** @deprecated Use flags instead. */
   ephemeral?: boolean;
   content?: string;
-  embeds?: EmbedBuilder[];
+  embeds?: EmbedComponent[];
   components?: ViewComponent[];
 }
 
@@ -40,64 +91,22 @@ export interface MessageComponentCallback<
 }
 
 export interface IntrinsicViewProps {
+  /**
+   * @deprecated Use {@link flags} instead
+   */
   ephemeral: boolean | false;
+  flags?: MessageFlags;
 }
 
-export type Children<T> =
+export type Children<T extends ViewNodeKind> =
   | Children<T>[]
   | (() => Children<T>)
   | WritableSignal<Children<T>>
+  | Signal<Children<T>>
+  | ViewNode<T>
+  | Slot<T>
+  | T[]
   | T
   | false
   | null
   | undefined;
-
-type EmbedChildren = Children<EmbedBuilder>;
-type ComponentChildren = Children<ViewComponent>;
-
-export function flattenChildren<T extends EmbedBuilder | ViewComponent>(
-  $: Synapse,
-  c: Children<T>,
-  patchTarget: PatchTarget,
-  out: T[] | undefined = undefined,
-): T[] | undefined {
-  if (c === null || c === undefined || c === false) {
-    return out;
-  }
-  out ??= [];
-
-  // resolve nested
-  if (Array.isArray(c)) {
-    for (const nested of c) {
-      flattenChildren($, nested, patchTarget, out);
-    }
-  }
-  // resolve writable signal
-  else if (isWritableSignal(c)) {
-    let initialVal;
-    $.createEffect(() => {
-      initialVal = c.get();
-    }, patchTarget);
-    flattenChildren($, initialVal, patchTarget, out);
-  }
-  // resolve a known signal
-  else if (isSignal(c)) {
-    let initialVal;
-    $.createEffect(() => {
-      initialVal = c();
-    }, patchTarget);
-    flattenChildren($, initialVal, patchTarget, out);
-  }
-  // resolve function call
-  else if (typeof c === 'function') {
-    const computed = $.createComputed(c);
-    let initialVal;
-    $.createEffect(() => {
-      initialVal ??= computed();
-    }, patchTarget);
-    flattenChildren($, initialVal, patchTarget, out);
-  } else if (c) {
-    out.push(c);
-  }
-  return out;
-}

@@ -18,13 +18,14 @@ export class InteractionPatcher {
   }
 
   async patch(payload: ViewMessagePayload, options: Partial<RenderOptions>) {
-    logger.debug(
+    logger.info(
       `Patching interaction.id=${this.interaction.id} with the following payload: `,
       payload,
     );
     this.message = await safeRender(
       this.interaction,
-      { ...this.props, ...payload },
+      payload,
+      this.props,
       options.forceReply,
     );
   }

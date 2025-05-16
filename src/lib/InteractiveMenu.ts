@@ -1,6 +1,6 @@
 import type { Message, RepliableInteraction } from 'discord.js';
 import type { IntrinsicViewProps } from './MenuView.js';
-import { View, type DefinedView } from './FunctionalMenuView.js';
+import { View, type DefinedView } from './views/view.js';
 import { MenuController, type MenuControllerAPI } from './MenuController.js';
 import type { PropsBase } from './MenuView/ViewBase.js';
 import type { ArrayUnionToIntersection } from '../util/TypesUtil.js';
@@ -23,6 +23,7 @@ export interface IntrinsicMenuProps extends IntrinsicViewProps {
   /**
    * Make this menu render its views as a private message.
    * @default false
+   * @deprecated Use {@link flags} instead
    */
   ephemeral: boolean | false;
   /**
