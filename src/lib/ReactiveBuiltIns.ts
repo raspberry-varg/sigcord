@@ -7,192 +7,142 @@
  * with non-reactive views.
  */
 
-import { Synapse } from './Synapse.js';
+import { Synapse } from './menu/synapse.js';
 import { PatchTarget } from './RenderingEngine.js';
 import { assert } from '../util/Assertions.js';
-import {
-  createUntracked,
-  type Resource,
-  type ResourceTuple,
-} from './Reactivity.js';
+import type { EffectFn } from './Reactivity.js';
+import type { DisposeFn } from './render/dispose.js';
+import { getOpenOwnerStrict } from './render/owner.js';
+import type { ReactiveViewPayloadV1 } from './MenuView.js';
+import type { MaybePromise } from '../util/TypesUtil.js';
+import type { MenuContext } from './menu/menuContext.js';
+import { STATIC_RENDER_SYNAPSE } from './render/staticRenderSynapse.js';
 
 let currentSynapse: Synapse | null = null;
 
 export function useSynapse(): Synapse {
-  assert(currentSynapse, 'Not currently in a reactive view.');
+  assert(
+    currentSynapse,
+    'Attempted to use a hook outside of a reactive context. Was this called ' +
+      'outside of a reactive view?\n\nClassic menu views should use the ' +
+      'Synapse parameter directly ($).\n\n' +
+      'Did you forget to use the returned resume() function from a previous ' +
+      'call to suspend()? If in an async boundary, nested awaits must also ' +
+      'be pulled into their own async boundary.',
+  );
   return currentSynapse;
 }
 
-export function withReactiveContext(synapse: Synapse) {
+/**
+ * Get info and state about the current menu.
+ */
+export function useMenuInfo(): Readonly<MenuContext> {
+  return useSynapse().getMenuInfo();
+}
+
+/**
+ * Replace the current active reactive context.
+ *
+ * @param synapse The new active context.
+ * @returns The previous context.
+ */
+export function setReactiveContext(synapse: Synapse | null): Synapse | null {
   const prev = currentSynapse;
   currentSynapse = synapse;
-  return {
-    [Symbol.dispose]: () => {
-      currentSynapse = prev;
-    },
-  };
-}
-
-export function getCurrentReactiveContext(): Synapse | null {
-  return currentSynapse;
-}
-
-export function setReactiveContext(synapse: Synapse | null) {
-  currentSynapse = synapse;
-}
-
-// - - - - - - -
-// Begin globals
-// - - - - - - -
-
-// Signals
-
-/**
- * Create a new signal.
- *
- * Signals are functions that allow for fine-grained reactivity in an app,
- * triggering reactions ("effects") **only if** their value changes.
- *
- * ```ts
- * const [clicks, setClicks] = signal(0);
- * const button = createDiscordButton();
- * componentEffect(() => {
- *   // subscribes to this signal and re-runs any time this signal changes
- *   button.label = `You have clicked me ${clicks()} times.`;
- * });
- *
- * return component({
- *   id: 'my-component',
- *   controller: (buttonInteraction) => {
- *     // updates clicks without reading the signal
- *     setClicks((prev) => prev + 1);
- *   }
- * });
- * ```
- *
- * In DIM, signals automatically bind to the render cycle. If you need to
- * completely re-run an entire function if any subscribed signal changes, or to
- * incrementally migrate a component to be fully reactive, wrap the embed or
- * component in a closure:
- *
- * ```ts
- * const [clicks, setClicks] = signal(0);
- * return {
- *   embeds: [
- *     () =>
- *       new EmbedBuilder()
- *         .setDescription(`You clicked the button below ${clicks()} times!`),
- *   ],
- *   components: [
- *     // ...
- *   ]
- * }
- * ```
- *
- * @param initialValue The initial value to set to the signal. Omit to assign
- *    later.
- * @returns Signal tuple with a signal getter and setter.
- */
-export const signal: Synapse['createSignal'] = <T>(
-  initialValue: T | undefined = undefined,
-) => useSynapse().createSignal(initialValue);
-
-/**
- * Create an object to modify and read from a single signal. Capable of being
- * split into a signal tuple or standalone signal.
- * @param initialValue The initial value to set to the signal. Omit to assign
- *    later.
- * @returns Object containing signal read and mutators.
- */
-export const writable: Synapse['createWritableSignal'] = <T>(
-  initialValue: T | undefined = undefined,
-) => useSynapse().createWritableSignal(initialValue);
-
-/**
- * Create a signal that only updates if any of its dependencies change.
- * @param derived Function with signal reads.
- * @returns Signal that has subscribed to any signals read during its initial
- *    call.
- */
-export const computed: Synapse['createComputed'] = <T>(derived: () => T) =>
-  useSynapse().createComputed(derived);
-
-/**
- * Read a signal without subscribing it to the current reactive context or
- * effect.
- * @param signal Signal to read from.
- * @returns
- */
-export function untracked<T>(signal: () => T): T {
-  return createUntracked(signal);
-}
-
-/**
- * Create a computed signal that auto-populates with the resolved value from the
- * provided asynchronous task.
- *
- * ```ts
- * const [user, mutateUser, refreshUser] = resource(() => fetchUserDb());
- * const embed = createEmbed().setTitle('User Info');
- * componentEffect(() => {
- *   if (user.isLoading()) {
- *     embed.setDescription('Loading...');
- *   }
- *   const u = user();
- *   embed.setDescription(`Viewing information for ${u.name}.`);
- *   // ...
- * });
- * return {
- *   embeds: [embed],
- * };
- * ```
- *
- * @param getResource Getter function that resolves to the wanted resource kind.
- * @returns Tuple with a resource, mutator for optimistic updates, and a refresh
- * function that reruns the provided task.
- */
-export function resource<T>(
-  getResource: () => Promise<T>,
-): ResourceTuple<T | undefined> {
-  const [resolvedResource, setResolvedResource] = signal<T>();
-  const [loading, setLoading] = signal(false);
-  const fetch = () => {
-    setLoading(true);
-    getResource().then((result) => {
-      setResolvedResource(result);
-      setLoading(false);
-    });
-  };
-  fetch();
-
-  return [
-    Object.assign(resolvedResource, {
-      isLoading: loading,
-    }) satisfies Resource<T | undefined>,
-    setResolvedResource,
-    fetch,
-  ];
+  return prev;
 }
 
 // Signal effects
 
 /**
- * Create an effect that runs when the value of signals in the function are
- * changed.
+ * Create an effect that runs when signals referenced in the effect function
+ * change.
  *
- * **Note:** This does **not** queue a patch to the message content, embeds,
- * or components. To have a patch queued on effect run, use
- * {@link embedEffect} or {@link componentEffect} instead. To
- * queue a patch for content, set content to a function that returns a string.
  * @param fn The effect to run.
- * @param params Extra configuration for debugging.
- * @param patchTarget Bitfield of {@link PatchTarget} to queue for rendering
- * when this effect runs.
+ * @param patchTarget {@link PatchTarget} bit mask to queue for rendering.
+ *   Useful when mutating content objects like component or embed builders to
+ *   have the change reflected to the user.
  */
 export const effect: Synapse['createEffect'] = (fn, patchTarget) =>
   useSynapse().createEffect(fn, patchTarget);
 
 /**
+ * Create an effect that runs when signals referenced in the effect function
+ * change. This effect will automatically request an update to the user's UI
+ * based on the current rendering context.
+ *
+ * Useful for mutating state of content objects like component or embed builders
+ * and having the change reflected to the user.
+ *
+ * Note: This is not required if you use a {@link computed} embed or component.
+ *
+ * @example
+ * ```ts
+ * function CountingButton() {
+ *   const [clicks, setClicks] = signal(0);
+ *    const button = new ButtonBuilder().setStyle(ButtonStyle.Primary);
+ *    patchEffect(() => {
+ *      // effect runs each time setClicks mutates the value
+ *      button.setLabel(`You have clicked me ${clicks()} times.`);
+ *    });
+ *    // register component handler; the `button` variable is returned directly
+ *    return component({
+ *      component: button,
+ *      handler: () => setClicks((prev) => prev + 1),
+ *    });
+ * }
+ *
+ * // components V2: anywhere within the top-level view call
+ * const viewV2 = defineViewV2('my-view', () => {
+ *   return [
+ *     new ActionRowBuilder<ButtonBuilder>().setComponents(
+ *       CountingButton(),
+ *     ),
+ *   ];
+ * });
+ *
+ * // components V1: within the function passed to ReactiveViewPayloadV1#components.
+ * const viewV1 = defineView('my-view', () => {
+ *   return {
+ *     components: () => [
+ *       new ActionRowBuilder<ButtonBuilder>().setComponents(
+ *         CountingButton(),
+ *       ),
+ *     ];
+ *   };
+ * });
+ * ```
+ *
+ * @param effectFn Effect function that mutates content in the current
+ *   {@link PatchTarget} context.
+ */
+export function patchEffect(effectFn: EffectFn): DisposeFn {
+  const owner = getOpenOwnerStrict();
+  const target = owner.patchTarget;
+  const isValidTarget = target !== PatchTarget.None;
+  assert(
+    target != null &&
+      (isValidTarget || currentSynapse === STATIC_RENDER_SYNAPSE),
+    'patchEffect() was called outside of the embed or component render ' +
+      'lifecycle. If effects that mutate content in the embed or component ' +
+      'must be set up in the body of the view, use patch() with the ' +
+      'appropriate PatchTarget bit mask instead.',
+  );
+  return effect(effectFn, target);
+}
+
+/**
+ * @deprecated
+ * Effect context is now dynamically-tracked as a component is rendered and
+ * re-rendered. Please use {@link patchEffect} instead to have updates to embed
+ * objects automatically reflected to the user.
+ *
+ * Components V1: If you must set up effects that mutate embed objects outside
+ * of the call to {@link ReactiveViewPayloadV1.embeds}, please pass
+ * {@link PatchTarget.Embeds} to the optional second parameter in
+ * {@link effect}.
+ *
+ * @summary
  * Create an effect that runs when the value of signals in the function are
  * changed.
  *
@@ -205,6 +155,17 @@ export const embedEffect: Synapse['createEmbedEffect'] = (fn) =>
   useSynapse().createEmbedEffect(fn);
 
 /**
+ * @deprecated
+ * Effect context is now dynamically-tracked as a component is rendered and
+ * re-rendered. Please use {@link patchEffect} instead to have updates to
+ * component objects automatically reflected to the user.
+ *
+ * Components V1: If you must set up effects that mutate embed objects outside
+ * of the call to {@link ReactiveViewPayloadV1.components}, please pass
+ * {@link PatchTarget.Components} to the optional second parameter in
+ * {@link effect}.
+ *
+ * @summary
  * Create an effect that runs when the value of signals in the function are
  * changed.
  *
@@ -219,6 +180,8 @@ export const componentEffect: Synapse['createComponentEffect'] = (fn) =>
 // Asynchronous escape-hatches
 
 /**
+ * @deprecated Use {@link asyncBoundary()} instead.
+ *
  * Perform an asynchronous action, resetting the reactive context back to the
  * current menu once the action's promise resolves.
  *
@@ -237,6 +200,63 @@ export const componentEffect: Synapse['createComponentEffect'] = (fn) =>
  */
 export const resumableAction: Synapse['resumableSuspend'] = (action) =>
   useSynapse().resumableSuspend(action);
+
+/**
+ * Resumes a reactive hook context to the value before an `await` expression.
+ */
+type ResumeCtxFn = () => void;
+
+/**
+ * Suspend the current reactive hook context. Returns a function to resume the
+ * context.
+ *
+ * @returns Function to resume the current reactive hook context, allowing hooks
+ *   to continue to be used after an `await`.
+ */
+export function suspend(): ResumeCtxFn {
+  const capturedContext = currentSynapse;
+  assert(
+    capturedContext,
+    'Attempted to suspend the current reactive context, but none was found. ' +
+      'Did you forget to use the returned resume() function from a previous ' +
+      'call to suspend()? If in an async boundary, nested awaits must also ' +
+      'be pulled into their own async boundary.',
+  );
+  return function resumeSuspendedContext() {
+    setReactiveContext(capturedContext);
+  };
+}
+
+/**
+ * Perform an asynchronous action within a component handler. The reactive hook
+ * context will be automatically suspended and resumed when {@link boundaryFn}
+ * resolves.
+ *
+ * @example
+ * ```ts
+ * function onClick(buttonInteraction) {
+ *   const user = await asyncBoundary(() => fetchUserFromDb());
+ *   // reactive hook context restored, allowing hooks to safely resume their work
+ *   goTo(UserInfoView, {user});
+ * }
+ * ```
+ *
+ * @param action The asynchronous action to perform immediately.
+ * @returns Promise which resets the current reactive context when the provided
+ *    action's promise resolves.
+ */
+export async function asyncBoundary<T>(
+  boundaryFn: () => MaybePromise<T>,
+): Promise<T> {
+  const resume = suspend();
+  let result;
+  try {
+    result = await boundaryFn();
+  } finally {
+    resume();
+  }
+  return result;
+}
 
 // Component
 
@@ -276,24 +296,56 @@ export const goBack: Synapse['goBack'] = () => useSynapse().goBack();
 export const canNavigateBack: Synapse['canGoBack'] = () =>
   useSynapse().canGoBack();
 
+/**
+ * Perform an action when this reactive view is navigated away from.
+ *
+ * @param action Action to perform when this view suspends.
+ */
+export const onSuspend: Synapse['onSuspend'] = (action) =>
+  useSynapse().onSuspend(action);
+
+/**
+ * Perform an action when this reactive view is navigated back to.
+ *
+ * @param action Action to perform when this menu is navigated back to.
+ */
+export const onResume: Synapse['onResume'] = (action) =>
+  useSynapse().onResume(action);
+
+/**
+ * Check if the current reactive view is suspended.
+ *
+ * @description
+ * Views are marked as suspended when they are navigated away from with
+ * {@link goTo()}.
+ */
+export function isSuspended(): boolean {
+  return getOpenOwnerStrict().suspended;
+}
+
 // Modals
 
 export const showModal: Synapse['showModal'] = (interaction, modalOrOptions) =>
-  useSynapse().showModal(
-    interaction,
-    modalOrOptions as Parameters<Synapse['showModal']>[1],
+  asyncBoundary(() =>
+    useSynapse().showModal(
+      interaction,
+      modalOrOptions as Parameters<Synapse['showModal']>[1],
+    ),
   );
 
 export const awaitModalSubmit: Synapse['awaitModalSubmit'] = (
   interaction,
   options,
-) => useSynapse().awaitModalSubmit(interaction, options);
+) => asyncBoundary(() => useSynapse().awaitModalSubmit(interaction, options));
 
 export const onModalSubmit: Synapse['onModalSubmit'] = (
   interaction,
   options,
   callback,
-) => useSynapse().onModalSubmit(interaction, options, callback);
+) =>
+  asyncBoundary(() =>
+    useSynapse().onModalSubmit(interaction, options, callback),
+  );
 
 // Embed manipulation
 
@@ -302,6 +354,13 @@ export const queueEmbeds: Synapse['appendEmbeds'] = (...embeds) =>
 
 export const queueEmbedsAtHead: Synapse['prependEmbeds'] = (...embeds) =>
   useSynapse().prependEmbeds(...embeds);
+
+export const queueComponents: Synapse['appendComponents'] = (...components) =>
+  useSynapse().appendComponents(...components);
+
+export const queueComponentsAtHead: Synapse['prependComponents'] = (
+  ...components
+) => useSynapse().prependComponents(...components);
 
 // Menu manipulation
 
