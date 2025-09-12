@@ -54,15 +54,6 @@ export interface MenuControllerAPI {
   awaitTimeout(): Promise<TimeoutEndReason | null>;
 }
 
-export interface ControllerContext {
-  appendedEmbeds: EmbedBuilder[];
-  prependedEmbeds: EmbedBuilder[];
-  appendedComponents: MessageComponentBuilder[];
-  prependedComponents: MessageComponentBuilder[];
-  smartComponents: Map<string, { component: any; callback: any }>;
-  queuedViewChange: string | null;
-}
-
 export interface MessageComponentCallback<
   T extends MessageComponentInteraction = MessageComponentInteraction,
 > {
