@@ -65,7 +65,6 @@ export class RenderingEngine {
   viewDefinition?: View;
   private queuedView?: QueuedView;
   private instances = new Map<string, ViewInstance>();
-  private wantRender = true;
   private queuedEmbeds?: Partial<QueuedEmbeds>;
   private queuedComponents?: Partial<QueuedComponents>;
   private queuedClears: PatchTargetBitMask = 0;
@@ -148,11 +147,6 @@ export class RenderingEngine {
     this.queuedComponents ??= {};
     this.queuedComponents.append ??= [];
     this.queuedComponents.append.push(...components);
-  }
-
-  queueRender(wantRender = true) {
-    this.wantRender = wantRender;
-    this.wantRender;
   }
 
   queueClear(patchTargets: PatchTargetBitMask): void {
@@ -431,7 +425,6 @@ export class RenderingEngine {
   }
 
   private postRender() {
-    this.wantRender = true;
     this.queuedEmbeds = undefined;
     this.queuedNavigation = undefined;
     this.queuedClears = 0;

@@ -668,7 +668,6 @@ export function MenuController<
         'Subviews must be swapped into.',
     );
     renderer.queueViewSwap(initialView as View, []);
-    renderer.queueRender();
     patcher.mountInteraction(getInteractionToPatch());
     beforeRender();
     try {
