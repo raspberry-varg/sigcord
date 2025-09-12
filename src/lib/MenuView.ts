@@ -15,7 +15,6 @@ import type { Owner } from './render/owner.js';
 import type { ViewNodeKind } from './dom/viewNodeKind.js';
 import type { Slot } from './Slot.js';
 import type { ViewNode } from './dom/viewNode.js';
-import type { Signal } from '@preact/signals-core';
 
 export type EmbedComponent = EmbedBuilder;
 
@@ -102,7 +101,6 @@ export type Children<T extends ViewNodeKind> =
   | Children<T>[]
   | (() => Children<T>)
   | WritableSignal<Children<T>>
-  | Signal<Children<T>>
   | ViewNode<T>
   | Slot<T>
   | T[]

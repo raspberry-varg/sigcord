@@ -1,6 +1,9 @@
 import { EmbedBuilder, MessageFlags } from 'discord.js';
 import { assert } from '../util/Assertions.js';
-import { isClassViewInstance } from './views/classic/classViewInstance.js';
+import {
+  instantiateClassView,
+  isClassViewInstance,
+} from './views/classic/classViewInstance.js';
 import { isReactiveViewInstance } from './views/reactive/reactiveViewInstance.js';
 import { type View, type ViewInstance } from './views/view.js';
 import type {
@@ -20,7 +23,6 @@ import {
 } from './MenuView/ReactiveView.js';
 import { isReactiveViewDefinition } from './views/reactive/reactiveViewDefinition.js';
 import { setReactiveContext } from './ReactiveBuiltIns.js';
-import { instantiateClassView } from './views/classic/classViewInstance.js';
 import { batch } from '@preact/signals-core';
 import type { Props } from '../index.js';
 import { render } from './render/render.js';
@@ -491,17 +493,15 @@ export class RenderingEngine {
     newReactiveInstance.owner?.resume();
 
     if (isRenderedReactiveViewV2(newReactiveInstance)) {
-      const clone = Object.assign({}, newReactiveInstance, {
+      this.reactiveViewInstance = Object.assign({}, newReactiveInstance, {
         id: newViewId,
       });
-      this.reactiveViewInstance = clone;
     } else {
       // legacy
-      const clone = {
+      this.reactiveViewInstance = {
         ...newReactiveInstance,
         id: newViewId,
       };
-      this.reactiveViewInstance = clone;
     }
   }
 
