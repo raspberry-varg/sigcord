@@ -90,7 +90,7 @@ export function trigger(): [track: Signal<void>, dirty: () => void] {
 }
 
 /**
- * Create a computed signal that auto-populates with the resolved value from the
+ * Create a computed signal that autopopulates with the resolved value from the
  * provided asynchronous task.
  *
  * ```ts
