@@ -4,7 +4,6 @@ import {
   type MessageComponentInteraction,
   type RepliableInteraction,
   ModalBuilder,
-  InteractionResponse,
   type MessageComponentBuilder,
 } from 'discord.js';
 import { Synapse } from './menu/synapse.js';
@@ -721,8 +720,6 @@ export function MenuController<
   async function start(options: Partial<RenderOptions> = {}) {
     options = { ...DefaultRenderOptions, ...options };
     await initialRender(options);
-    if (patcher.message instanceof InteractionResponse)
-      patcher.message = await patcher.message.fetch();
     initCollector();
   }
 
