@@ -37,7 +37,7 @@ export interface MenuControllerAPI {
   reply(
     options: Omit<Partial<RenderOptions<string>>, 'forceReply'>,
   ): Promise<void>;
-  /**@deprecated Please use `.start` instead. */
+  /** @deprecated Please use {@link start} instead. */
   render(
     options?: Omit<Partial<RenderOptions<string>>, 'forceReply'>,
   ): Promise<void>;

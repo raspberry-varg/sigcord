@@ -74,7 +74,7 @@ class SlotImpl<T extends ViewNodeKind> {
   }
 
   /**
-   * Preprends a list of elements to this slot.
+   * Prepends a list of elements to this slot.
    */
   unshift(...elements: readonly T[]) {
     if (elements.length === 0) return;
@@ -127,8 +127,6 @@ class SlotImpl<T extends ViewNodeKind> {
       }
     }
   }
-
-  registerEffect(): void {}
 }
 
 export interface Slot<T extends ViewNodeKind>
