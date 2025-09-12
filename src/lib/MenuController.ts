@@ -606,13 +606,15 @@ export function MenuController<
     collector.updateIdle(timeMilliseconds);
   }
 
-  function handlePrebuiltComponents(collected: CollectedMessageInteraction) {
+  async function handlePrebuiltComponents(
+    collected: CollectedMessageInteraction,
+  ) {
     const id = collected.customId;
     if (collected.isButton()) {
       switch (id as AutoComponentId) {
         case AutoComponentId.CloseMenuButton: {
           logger.debug('Closing Menu via official CloseMenuButton');
-          closeMenu();
+          await closeMenu();
           return true;
         }
       }
@@ -621,7 +623,7 @@ export function MenuController<
   }
 
   async function onCollect(collected: CollectedMessageInteraction) {
-    if (handlePrebuiltComponents(collected)) {
+    if (await handlePrebuiltComponents(collected)) {
       return;
     }
 
