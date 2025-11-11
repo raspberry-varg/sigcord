@@ -80,7 +80,7 @@ export {
   AutoComponentId,
   AutoComponents,
   configureAutoComponent,
-} from './lib/components/autoComponents.js';
+} from './lib/components/autocomponents.js';
 export { ViewNodeKind } from './lib/dom/viewNodeKind.js';
 export { ViewNode } from './lib/dom/viewNode.js';
 export { ViewContentNode } from './lib/dom/viewContentNode.js';
@@ -94,3 +94,5 @@ export { getViewNodeContent } from './lib/dom/getViewNodeContent.js';
 export { staticRender } from './lib/render/staticRender.js';
 export * from './lib/primitives.js';
 export { untracked } from './lib/reactivity/untracked.js';
+
+console.log('AGAINNNNN testing that this is using the latest version');

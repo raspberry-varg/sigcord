@@ -1,7 +1,9 @@
-import type {
+import {
   AwaitModalSubmitOptions,
+  ComponentType,
   ModalBuilder,
   ModalSubmitInteraction,
+  type TextInputModalData,
 } from 'discord.js';
 
 // eslint-disable-next-line @typescript-eslint/ban-types
@@ -25,7 +27,12 @@ function extractModalSubmitValues<Values extends {}>(
   modalSubmit: ModalSubmitInteraction,
 ): Values {
   const entries = Array.from(
-    modalSubmit.fields.fields.entries(),
+    modalSubmit.fields.fields
+      .entries()
+      .filter(
+        (e): e is [(typeof e)[0], TextInputModalData] =>
+          e[1].type === ComponentType.TextInput,
+      ),
     ([key, { value }]) => {
       return [key, value];
     },
