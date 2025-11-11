@@ -1,4 +1,4 @@
-import { AutoComponents } from './components/autoComponents.js';
+import { AutoComponents } from './components/autocomponents.js';
 
 /**
  * @deprecated Use {@link AutoComponents.CloseMenuButton} instead.

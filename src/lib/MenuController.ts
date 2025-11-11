@@ -29,7 +29,7 @@ import { batch } from '@preact/signals-core';
 import type { DisposeFn } from './render/dispose.js';
 import { getOpenOwner } from './render/owner.js';
 import { NamedIdGenerator } from './ids/namedIdGenerator.js';
-import { AutoComponentId } from './components/autoComponents.js';
+import { AutoComponentId } from './components/autocomponents.js';
 
 export interface MenuControllerAPI {
   // render API
