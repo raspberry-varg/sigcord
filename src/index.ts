@@ -94,5 +94,3 @@ export { getViewNodeContent } from './lib/dom/getViewNodeContent.js';
 export { staticRender } from './lib/render/staticRender.js';
 export * from './lib/primitives.js';
 export { untracked } from './lib/reactivity/untracked.js';
-
-console.log('AGAINNNNN testing that this is using the latest version');
