@@ -1,4 +1,3 @@
-import type { ClassViewProps } from '../../FunctionalMenuView.js';
 import type {
   ReactiveViewPayload,
   ReactiveViewPayloadV1,
@@ -12,7 +11,7 @@ export type ReactiveViewFactory<Props extends PropsBase> =
 type ReactiveViewFactoryFn<
   Props extends PropsBase,
   Payload extends ReactiveViewPayload,
-> = (props: ClassViewProps<Props>) => Payload;
+> = (props: Props) => Payload;
 
 export type ReactiveViewFactoryV1<Props extends PropsBase> =
   ReactiveViewFactoryFn<Props, ReactiveViewPayloadV1>;
