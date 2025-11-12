@@ -1,10 +1,20 @@
 import type { Synapse } from './menu/synapse.js';
-import { useSynapse } from './ReactiveBuiltIns.js';
+import {
+  effect,
+  suspend,
+  update,
+  useSynapse,
+  withDefer,
+} from './ReactiveBuiltIns.js';
 import {
   type ResourceTuple,
   type Resource,
   type Signal,
+  type ResourceOptions,
+  type ResourceFetcher,
+  read,
 } from './Reactivity.js';
+import { untracked } from './reactivity/untracked.js';
 
 /**
  * Create a new signal.
@@ -89,6 +99,13 @@ export function trigger(): [track: Signal<void>, dirty: () => void] {
   return [toggle, () => setToggle((prev) => !prev)];
 }
 
+export function resource<T>(
+  fetcher: ResourceFetcher<T, true>,
+): ResourceTuple<T | undefined>;
+export function resource<T, SOURCE>(
+  options: ResourceOptions<T, SOURCE>,
+  fetcher: ResourceFetcher<T, SOURCE>,
+): ResourceTuple<T>;
 /**
  * Create a computed signal that autopopulates with the resolved value from the
  * provided asynchronous task.
@@ -102,36 +119,118 @@ export function trigger(): [track: Signal<void>, dirty: () => void] {
  *   }
  *   const u = user();
  *   embed.setDescription(`Viewing information for ${u.name}.`);
- *   // ...
  * });
  * return {
  *   embeds: [embed],
  * };
  * ```
  *
- * @param getResource Getter function that resolves to the wanted resource kind.
  * @returns Tuple with a resource, mutator for optimistic updates, and a refresh
  * function that reruns the provided task.
  */
-export function resource<T>(
-  getResource: () => Promise<T>,
+export function resource<T, SOURCE>(
+  fetcherOrOptions: ResourceFetcher<T, SOURCE> | ResourceOptions<T, SOURCE>,
+  fetcherOrUndefined?: ResourceFetcher<T, SOURCE>,
 ): ResourceTuple<T | undefined> {
-  const [resolvedResource, setResolvedResource] = signal<T>();
+  let options: ResourceOptions<T, SOURCE>;
+  let fetcher: ResourceFetcher<T, SOURCE>;
+
+  if (fetcherOrUndefined !== undefined) {
+    options = typeof fetcherOrOptions === 'object' ? fetcherOrOptions : {};
+    fetcher = fetcherOrUndefined;
+  } else if (typeof fetcherOrOptions !== 'object') {
+    options = {};
+    fetcher = fetcherOrOptions;
+  } else {
+    throw new Error('Invalid override.');
+  }
+
+  const [data, setData] = signal<T | undefined>(options.initialValue);
+  const [error, setError] = signal<unknown | null>(null);
   const [loading, setLoading] = signal(false);
-  const fetch = () => {
-    setLoading(true);
-    getResource().then((result) => {
-      setResolvedResource(result);
+
+  const resumeContext = suspend();
+
+  const fetch = async (source: SOURCE) => {
+    resumeContext();
+    const cacheHit = options.tryCache?.(source);
+    if (cacheHit) {
+      setData(cacheHit);
+      setError(null);
       setLoading(false);
-    });
+      return;
+    }
+
+    resumeContext();
+    setLoading(true);
+    try {
+      const res = await withDefer(fetcher(source));
+      setData(res);
+      setError(null);
+      if (options.autoUpdate) {
+        resumeContext();
+        void update();
+      }
+    } catch (e: unknown) {
+      setError(e);
+      if (options.autoUpdate) {
+        resumeContext();
+        void update();
+      }
+    } finally {
+      setLoading(false);
+    }
   };
-  fetch();
+
+  if (options.source) {
+    let firstTime = true;
+    effect(() => {
+      const src = read(options.source);
+      if (src) {
+        if (firstTime) {
+          firstTime = false;
+          if (options.initialValue) {
+            return;
+          }
+        }
+        void fetch(src);
+      }
+    });
+  } else {
+    if (!options.initialValue) {
+      void fetch(true as SOURCE);
+    }
+  }
+
+  const r = data as Resource<T | undefined>;
+  r.loading = loading;
+  r.error = error;
+
+  let ready: Signal<boolean> | undefined;
+  let errored: Signal<boolean> | undefined;
+  Object.defineProperties(r, {
+    ready: {
+      get(): Signal<boolean> {
+        return (ready ??= computed(() => !r.loading() && !r.error()));
+      },
+    },
+    errored: {
+      get(): Signal<boolean> {
+        return (errored ??= computed(() => !!r.error()));
+      },
+    },
+  });
 
   return [
-    Object.assign(resolvedResource, {
-      isLoading: loading,
-    }) satisfies Resource<T | undefined>,
-    setResolvedResource,
-    fetch,
+    r,
+    setData,
+    () => {
+      if (options.source) {
+        const src = untracked(() => read(options.source));
+        if (src) return fetch(src);
+      } else {
+        return fetch(true as SOURCE);
+      }
+    },
   ];
 }
