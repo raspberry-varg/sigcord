@@ -22,10 +22,6 @@ export {
   Signal,
   Setter,
   Updater,
-  Resource,
-  ResourceOptions,
-  ResourceTuple,
-  ResourceFetcher,
   read,
   isSignal,
   isWritableSignal,
@@ -99,4 +95,5 @@ export {
 export { getViewNodeContent } from './lib/dom/getViewNodeContent.js';
 export { staticRender } from './lib/render/staticRender.js';
 export * from './lib/primitives.js';
+export * from './lib/primitives/resource.js';
 export { untracked } from './lib/reactivity/untracked.js';
