@@ -8,7 +8,10 @@ import {
   type TopLevelComponentData,
 } from 'discord.js';
 import type { REACTIVE_VIEW_SYMBOL } from './views/reactive/reactiveViewSymbol.js';
-import { type WritableSignal, type Signalish } from './Reactivity.js';
+import {
+  type WritableSignal,
+  type Signalish,
+} from './reactivity/core/signals.js';
 import type { ViewElementNode } from './dom/viewElementNode.js';
 import type { DisposeFn } from './render/dispose.js';
 import type { Owner } from './render/owner.js';

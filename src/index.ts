@@ -22,11 +22,10 @@ export {
   Signal,
   Setter,
   Updater,
-  read,
   isSignal,
   isWritableSignal,
   EffectFn,
-} from './lib/Reactivity.js';
+} from './lib/reactivity/core/signals.js';
 export {
   component,
   effect,
@@ -96,3 +95,4 @@ export { getViewNodeContent } from './lib/dom/getViewNodeContent.js';
 export { staticRender } from './lib/render/staticRender.js';
 export * from './lib/primitives/index.js';
 export { untracked } from './lib/reactivity/untracked.js';
+export { read } from './lib/reactivity/core/read.js';

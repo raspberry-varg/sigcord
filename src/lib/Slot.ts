@@ -5,13 +5,13 @@ import { patch } from './ReactiveBuiltIns.js';
 import { writable } from './primitives/writable.js';
 import {
   createEffect,
-  read,
   type Signal,
   type WritableSignal,
-} from './Reactivity.js';
+} from './reactivity/core/signals.js';
 import { flattenToContentNodes } from './render/flattenToContentNodes.js';
 import { getOpenOwner } from './render/owner.js';
 import { PatchTarget } from './RenderingEngine.js';
+import { read } from './reactivity/core/read.js';
 
 const SLOT_ENQUEUE_FLUSH_METHOD: unique symbol = Symbol('Flush accessor');
 

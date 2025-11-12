@@ -3,10 +3,11 @@ import { ViewElementNode } from '../dom/viewElementNode.js';
 import { ViewNode } from '../dom/viewNode.js';
 import type { ViewNodeKind } from '../dom/viewNodeKind.js';
 import { patchEffect } from '../ReactiveBuiltIns.js';
-import { isSignal, isWritableSignal, read } from '../Reactivity.js';
+import { isSignal, isWritableSignal } from '../reactivity/core/signals.js';
 import type { Recursive } from '../recursive.js';
 import { isSlot } from '../Slot.js';
 import { getOpenOwner } from './owner.js';
+import { read } from '../reactivity/core/read.js';
 
 export function flattenToContentNodes<T extends ViewNodeKind>(
   content: Recursive<T | ViewNode<T>>,

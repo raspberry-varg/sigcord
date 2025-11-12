@@ -14,7 +14,7 @@ import type {
 } from './MenuView.js';
 import { isRenderedReactiveViewV2 } from './MenuView.js';
 import { logger } from '../util/Logger.js';
-import { createUntracked, read } from './Reactivity.js';
+import { createUntracked } from './reactivity/core/signals.js';
 import { type PropsBase } from './MenuView/ViewBase.js';
 import type { NavigationPayload } from './Navigation.js';
 import {
@@ -29,6 +29,7 @@ import { render } from './render/render.js';
 import { ViewElementNode } from './dom/viewElementNode.js';
 import { owner } from './render/owner.js';
 import { flatten } from './render/flatten.js';
+import { read } from './reactivity/core/read.js';
 
 export type PatchTargetBitMask = number;
 
