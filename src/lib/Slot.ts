@@ -2,7 +2,7 @@ import { ViewElementNode } from './dom/viewElementNode.js';
 import type { ViewNodeKind } from './dom/viewNodeKind.js';
 import type { ViewComponent } from './MenuView.js';
 import { patch } from './ReactiveBuiltIns.js';
-import { writable } from './primitives.js';
+import { writable } from './primitives/writable.js';
 import {
   createEffect,
   read,
