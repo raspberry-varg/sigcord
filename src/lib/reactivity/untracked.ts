@@ -1,7 +1,8 @@
 import {
-  type Signalish,
   isWritableSignal,
   createUntracked,
+  type WritableSignal,
+  type Signal,
 } from '../Reactivity.js';
 
 /**
@@ -9,7 +10,9 @@ import {
  * reactive context or effect.
  * @param signalOrFn Signal to read from or a function reading signals.
  */
-export function untracked<T>(signalOrFn: Signalish<T> | (() => T)): T {
+export function untracked<T>(
+  signalOrFn: (() => T) | Signal<T> | WritableSignal<T>,
+): T {
   if (isWritableSignal(signalOrFn)) {
     signalOrFn = signalOrFn.readonly();
   }
