@@ -57,6 +57,9 @@ export {
   onSuspend,
   onResume,
   isSuspended,
+  withDefer,
+  injectCurrentInteraction,
+  update,
 } from './lib/ReactiveBuiltIns.js';
 export {
   defineView,

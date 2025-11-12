@@ -17,6 +17,7 @@ import type { ReactiveViewPayloadV1 } from './MenuView.js';
 import type { MaybePromise } from '../util/TypesUtil.js';
 import type { MenuContext } from './menu/menuContext.js';
 import { STATIC_RENDER_SYNAPSE } from './render/staticRenderSynapse.js';
+import type { RepliableInteraction } from 'discord.js';
 
 let currentSynapse: Synapse | null = null;
 
@@ -229,7 +230,7 @@ export function suspend(): ResumeCtxFn {
 
 /**
  * Perform an asynchronous action within a component handler. The reactive hook
- * context will be automatically suspended and resumed when {@link boundaryFn}
+ * context will be automatically suspended and resumed when {@link fnOrPromise}
  * resolves.
  *
  * @example
@@ -241,21 +242,46 @@ export function suspend(): ResumeCtxFn {
  * }
  * ```
  *
- * @param action The asynchronous action to perform immediately.
  * @returns Promise which resets the current reactive context when the provided
  *    action's promise resolves.
  */
 export async function asyncBoundary<T>(
-  boundaryFn: () => MaybePromise<T>,
+  fnOrPromise: MaybePromise<T> | (() => MaybePromise<T>),
 ): Promise<T> {
   const resume = suspend();
   let result;
   try {
-    result = await boundaryFn();
+    result = await (typeof fnOrPromise === 'function'
+      ? (fnOrPromise as CallableFunction)()
+      : fnOrPromise);
   } finally {
     resume();
   }
   return result;
+}
+
+/**
+ * Run an action in an {@link asyncBoundary}, deferring the current interaction
+ * if necessary. `T` is returned once deferral is complete.
+ *
+ * This is useful for cache misses when loading a resource, deferring an
+ * interaction to avoid going over Discord's interaction response time window.
+ */
+export async function withDefer<T>(fnOrPromise: MaybePromise<T>): Promise<T> {
+  const current = injectCurrentInteraction();
+  const shouldDefer =
+    current.isMessageComponent() && !current.deferred && !current.replied;
+  if (!shouldDefer) {
+    return asyncBoundary(fnOrPromise);
+  }
+  const [result] = await asyncBoundary(
+    Promise.all([fnOrPromise, current.deferUpdate()]),
+  );
+  return result;
+}
+
+export function injectCurrentInteraction(): RepliableInteraction {
+  return useMenuInfo().interaction;
 }
 
 // Component
@@ -381,3 +407,18 @@ export const stopMenu: Synapse['stop'] = (reason) => useSynapse().stop(reason);
  */
 export const patch: Synapse['patch'] = (...targets) =>
   useSynapse().patch(...targets);
+
+/**
+ * Manually schedule an update to the current view.
+ *
+ * Note: Updates are automatically scheduled after initial render and after interaction
+ * handlers resolve.
+ */
+export const update: Synapse['doUpdate'] = (
+  ...additionalPatchTargets: PatchTarget[]
+) => {
+  if (additionalPatchTargets.length) {
+    patch(...additionalPatchTargets);
+  }
+  return useSynapse().doUpdate();
+};
