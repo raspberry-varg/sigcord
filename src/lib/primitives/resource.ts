@@ -6,6 +6,10 @@ import { signal } from './signal.js';
 import { computed } from './computed.js';
 import { read } from '../reactivity/core/read.js';
 
+const OPTIONS_DEFAULTS: Readonly<ResourceOptions<unknown, unknown>> = {
+  autoUpdate: true,
+};
+
 /**
  * Thin wrapper over {@link Signal} that allows for asynchronous data fetching.
  */
@@ -77,7 +81,7 @@ export function resource<T>(
   fetcher: ResourceFetcher<T, true>,
 ): ResourceTuple<T | undefined>;
 export function resource<T, SOURCE>(
-  options: ResourceOptions<T, SOURCE>,
+  options: Readonly<ResourceOptions<T, SOURCE>>,
   fetcher: ResourceFetcher<T, SOURCE>,
 ): ResourceTuple<T>;
 /**
@@ -103,10 +107,12 @@ export function resource<T, SOURCE>(
  * function that reruns the provided task.
  */
 export function resource<T, SOURCE>(
-  fetcherOrOptions: ResourceFetcher<T, SOURCE> | ResourceOptions<T, SOURCE>,
+  fetcherOrOptions:
+    | ResourceFetcher<T, SOURCE>
+    | Readonly<ResourceOptions<T, SOURCE>>,
   fetcherOrUndefined?: ResourceFetcher<T, SOURCE>,
 ): ResourceTuple<T | undefined> {
-  let options: ResourceOptions<T, SOURCE>;
+  let options: Readonly<ResourceOptions<T, SOURCE>>;
   let fetcher: ResourceFetcher<T, SOURCE>;
 
   if (fetcherOrUndefined !== undefined) {
@@ -141,13 +147,13 @@ export function resource<T, SOURCE>(
       const res = await withDefer(fetcher(source));
       setData(res);
       setError(null);
-      if (options.autoUpdate) {
+      if (options.autoUpdate ?? OPTIONS_DEFAULTS.autoUpdate) {
         resumeContext();
         void update();
       }
     } catch (e: unknown) {
       setError(e);
-      if (options.autoUpdate) {
+      if (options.autoUpdate ?? OPTIONS_DEFAULTS.autoUpdate) {
         resumeContext();
         void update();
       }
