@@ -22,7 +22,7 @@ import {
   type ReactiveViewInstance,
 } from './menu/instance/instantiateReactiveView.js';
 import { isReactiveViewDefinition } from './views/reactive/reactiveViewDefinition.js';
-import { setReactiveContext } from './ReactiveBuiltIns.js';
+import { setReactiveContext } from './builtins/builtins.js';
 import { batch } from '@preact/signals-core';
 import type { Props } from '../index.js';
 import { render } from './render/render.js';

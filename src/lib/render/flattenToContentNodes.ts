@@ -2,7 +2,7 @@ import { ViewContentNode } from '../dom/viewContentNode.js';
 import { ViewElementNode } from '../dom/viewElementNode.js';
 import { ViewNode } from '../dom/viewNode.js';
 import type { ViewNodeKind } from '../dom/viewNodeKind.js';
-import { patchEffect } from '../ReactiveBuiltIns.js';
+import { patchEffect } from '../builtins/builtins.js';
 import { isSignal, isWritableSignal } from '../reactivity/core/signals.js';
 import type { Recursive } from '../recursive.js';
 import { isSlot } from '../Slot.js';

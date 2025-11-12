@@ -31,7 +31,7 @@ import {
 import { PatchTarget, PatchTargetBitMask } from '../../RenderingEngine.js';
 import type { PropsBase } from '../../views/viewDefinitionBase.js';
 import { Navigation } from '../../Navigation.js';
-import { asyncBoundary, setReactiveContext } from '../../ReactiveBuiltIns.js';
+import { asyncBoundary, setReactiveContext } from '../../builtins/builtins.js';
 import type { TimeoutEndReason } from '../../../util/CollectorUtil.js';
 import { batch } from '@preact/signals-core';
 import type { DisposeFn } from '../../render/dispose.js';

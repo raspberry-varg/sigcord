@@ -7,16 +7,15 @@
  * with non-reactive views.
  */
 
-import { Synapse } from './menu/instance/synapse.js';
-import { PatchTarget } from './RenderingEngine.js';
-import { assert } from '../util/Assertions.js';
-import type { EffectFn } from './reactivity/core/signals.js';
-import type { DisposeFn } from './render/dispose.js';
-import { getOpenOwnerStrict } from './render/owner.js';
-import type { ReactiveViewPayloadV1 } from './views/viewFlavors.js';
-import type { MaybePromise } from '../util/TypesUtil.js';
-import type { MenuContext } from './menu/instance/menuContext.js';
-import { STATIC_RENDER_SYNAPSE } from './render/staticRenderSynapse.js';
+import { Synapse } from '../menu/instance/synapse.js';
+import { PatchTarget } from '../RenderingEngine.js';
+import { assert } from '../../util/Assertions.js';
+import type { EffectFn } from '../reactivity/core/signals.js';
+import type { DisposeFn } from '../render/dispose.js';
+import { getOpenOwnerStrict } from '../render/owner.js';
+import type { MaybePromise } from '../../util/TypesUtil.js';
+import type { MenuContext } from '../menu/instance/menuContext.js';
+import { STATIC_RENDER_SYNAPSE } from '../render/staticRenderSynapse.js';
 import type { RepliableInteraction } from 'discord.js';
 
 let currentSynapse: Synapse | null = null;

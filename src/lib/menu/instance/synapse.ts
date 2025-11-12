@@ -24,7 +24,7 @@ import type {
   ModalOnSubmitHandler,
 } from '../../interactivity/modalHandling.js';
 import type { ComponentDefinition } from '../../components/componentDefinition.js';
-import type { effect, patchEffect } from '../../ReactiveBuiltIns.js';
+import type { effect, patchEffect } from '../../builtins/builtins.js';
 import type { ReactiveViewPayloadV1 } from '../../views/viewFlavors.js';
 
 /**

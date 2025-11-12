@@ -1,5 +1,5 @@
 import type { MaybePromise } from '../../util/TypesUtil.js';
-import { effect, suspend, update, withDefer } from '../ReactiveBuiltIns.js';
+import { effect, suspend, update, withDefer } from '../builtins/builtins.js';
 import { type Setter, type Signal } from '../reactivity/core/signals.js';
 import { untracked } from '../reactivity/untracked.js';
 import { signal } from './signal.js';
