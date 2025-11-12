@@ -2,7 +2,7 @@ import type { BaseViewNodeKind, ViewNodeKind } from '../dom/viewNodeKind.js';
 import { PatchTarget } from '../RenderingEngine.js';
 import { render } from './render.js';
 import { flatten } from './flatten.js';
-import { setReactiveContext } from '../ReactiveBuiltIns.js';
+import { setReactiveContext } from '../builtins/builtins.js';
 import { STATIC_RENDER_SYNAPSE } from './staticRenderSynapse.js';
 
 type StaticRenderFn<T extends BaseViewNodeKind> = () => ViewNodeKind<T>;

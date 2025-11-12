@@ -1,7 +1,7 @@
 import { ViewElementNode } from './dom/viewElementNode.js';
 import type { ViewNodeKind } from './dom/viewNodeKind.js';
 import type { ViewComponent } from './views/viewFlavors.js';
-import { patch } from './ReactiveBuiltIns.js';
+import { patch } from './builtins/builtins.js';
 import { writable } from './primitives/writable.js';
 import {
   createEffect,

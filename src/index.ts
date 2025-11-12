@@ -61,7 +61,7 @@ export {
   withDefer,
   injectCurrentInteraction,
   update,
-} from './lib/ReactiveBuiltIns.js';
+} from './lib/builtins/builtins.js';
 export {
   defineView,
   defineViewV2,
