@@ -10,7 +10,7 @@
 import { Synapse } from './menu/synapse.js';
 import { PatchTarget } from './RenderingEngine.js';
 import { assert } from '../util/Assertions.js';
-import type { EffectFn } from './Reactivity.js';
+import type { EffectFn } from './reactivity/core/signals.js';
 import type { DisposeFn } from './render/dispose.js';
 import { getOpenOwnerStrict } from './render/owner.js';
 import type { ReactiveViewPayloadV1 } from './MenuView.js';

@@ -1,9 +1,10 @@
 import type { MaybePromise } from '../../util/TypesUtil.js';
 import { effect, suspend, update, withDefer } from '../ReactiveBuiltIns.js';
-import { read, type Setter, type Signal } from '../Reactivity.js';
+import { type Setter, type Signal } from '../reactivity/core/signals.js';
 import { untracked } from '../reactivity/untracked.js';
 import { signal } from './signal.js';
 import { computed } from './computed.js';
+import { read } from '../reactivity/core/read.js';
 
 /**
  * Thin wrapper over {@link Signal} that allows for asynchronous data fetching.

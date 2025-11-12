@@ -1,4 +1,4 @@
-import type { Signal } from '../Reactivity.js';
+import type { Signal } from '../reactivity/core/signals.js';
 import { signal } from './signal.js';
 
 /**

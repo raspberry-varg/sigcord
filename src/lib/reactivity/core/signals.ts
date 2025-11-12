@@ -1,7 +1,7 @@
-import { logger } from '../util/Logger.js';
-import type { DisposeFn } from './render/dispose.js';
-import { getOpenOwner, setCurrentOwner } from './render/owner.js';
-import type { PatchTarget } from './RenderingEngine.js';
+import { logger } from '../../../util/Logger.js';
+import type { DisposeFn } from '../../render/dispose.js';
+import { getOpenOwner, setCurrentOwner } from '../../render/owner.js';
+import type { PatchTarget } from '../../RenderingEngine.js';
 import * as core from '@preact/signals-core';
 
 const WRITABLE_STAMP = Symbol('writable');
@@ -146,17 +146,6 @@ export function createEffect(action: EffectFn): DisposeFn {
       dispose?.();
     };
   });
-}
-
-/**
- * Resolves a possible signal to its held value.
- */
-export function read<T>(maybeSignal: T | Signal<T> | WritableSignal<T>): T {
-  return isWritableSignal(maybeSignal)
-    ? maybeSignal.get()
-    : isSignal(maybeSignal) || typeof maybeSignal === 'function'
-      ? (maybeSignal as () => T)()
-      : maybeSignal;
 }
 
 export function getWritable<T>(signal: Getter<T>): WritableSignal<T> {

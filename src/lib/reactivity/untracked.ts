@@ -3,7 +3,7 @@ import {
   createUntracked,
   type WritableSignal,
   type Signal,
-} from '../Reactivity.js';
+} from './core/signals.js';
 
 /**
  * Read a signal or callback of signals without subscribing it to the current

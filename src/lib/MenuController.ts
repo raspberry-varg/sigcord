@@ -19,7 +19,11 @@ import { RenderingEngine } from './RenderingEngine.js';
 import { InteractionPatcher } from './InteractionPatcher.js';
 import { CollectorService } from './CollectorService.js';
 import { TimeoutComponent, TimeoutEmbed } from './PrebuiltEmbeds.js';
-import { createComputed, createEffect, createSignal } from './Reactivity.js';
+import {
+  createComputed,
+  createEffect,
+  createSignal,
+} from './reactivity/core/signals.js';
 import { PatchTarget, PatchTargetBitMask } from './RenderingEngine.js';
 import type { PropsBase } from './MenuView/ViewBase.js';
 import { Navigation } from './Navigation.js';

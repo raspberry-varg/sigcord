@@ -1,5 +1,5 @@
 import { logger } from '../util/Logger.js';
-import { createUntracked, type Signal } from './Reactivity.js';
+import { createUntracked, type Signal } from './reactivity/core/signals.js';
 import { Synapse } from './menu/synapse.js';
 
 const QueuedUpdates = new Set<Synapse>();
