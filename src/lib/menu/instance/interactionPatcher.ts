@@ -1,9 +1,9 @@
 import type { Message, RepliableInteraction } from 'discord.js';
-import type { ViewMessagePayload } from './MenuView.js';
-import { safeRender } from '../util/RenderingUtil.js';
-import type { RenderOptions } from './MenuController.js';
-import type { IntrinsicMenuProps } from './InteractiveMenu.js';
-import { logger } from '../util/Logger.js';
+import type { ViewMessagePayload } from '../../views/viewFlavors.js';
+import { safeRender } from '../../../util/RenderingUtil.js';
+import type { RenderOptions } from './menuInstance.js';
+import type { IntrinsicMenuProps } from '../defineMenu.js';
+import { logger } from '../../../util/Logger.js';
 
 export class InteractionPatcher {
   message?: Message;

@@ -1,18 +1,14 @@
 import type { Message, RepliableInteraction } from 'discord.js';
-import type { IntrinsicViewProps } from './MenuView.js';
-import { View, type DefinedView } from './views/view.js';
-import { MenuController, type MenuControllerAPI } from './MenuController.js';
-import type { PropsBase } from './MenuView/ViewBase.js';
-import type { ArrayUnionToIntersection } from '../util/TypesUtil.js';
+import type { IntrinsicViewProps } from '../views/viewFlavors.js';
+import { type DefinedView, View } from '../views/view.js';
+import {
+  instantiateMenu,
+  type MenuControllerAPI,
+} from './instance/menuInstance.js';
+import type { PropsBase } from '../views/viewDefinitionBase.js';
+import type { ArrayUnionToIntersection } from '../../util/TypesUtil.js';
 
 type ViewDefinitions = DefinedView<any>[];
-
-export interface Menu<Views extends ViewDefinitions = []> {
-  id: string;
-  initialView: string;
-  views: Views;
-  intrinsic?: Partial<IntrinsicMenuProps>;
-}
 
 export interface IntrinsicMenuProps extends IntrinsicViewProps {
   /**
@@ -77,18 +73,14 @@ export function defineMenu<
   }
 
   // factory callback
-  const factory = (interaction: RepliableInteraction, props: Props) => {
-    // construct controller
-    const menu = MenuController<Props, typeof initialView>(
+  return (interaction: RepliableInteraction, props: Props) =>
+    instantiateMenu<Props, typeof initialView>(
       id,
       initialView,
       [...idToClass.values()],
       interaction,
       { ...intrinsic, ...props },
     );
-    return menu;
-  };
-  return factory;
 }
 
 export type MenuFactory<Props extends PropsBase> = (

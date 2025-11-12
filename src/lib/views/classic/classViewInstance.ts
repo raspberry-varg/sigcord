@@ -2,8 +2,8 @@ import type {
   ClassViewDefinition,
   ClassViewProps,
 } from '../../FunctionalMenuView.js';
-import type { ViewClass } from '../../MenuView/DefineClassicView.js';
-import type { PropsBase } from '../../MenuView/ViewBase.js';
+import type { ViewClass } from './defineClassicView.js';
+import type { PropsBase } from '../viewDefinitionBase.js';
 import type { ViewInstance } from '../view.js';
 
 /** @internal */

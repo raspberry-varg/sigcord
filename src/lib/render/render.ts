@@ -1,6 +1,6 @@
 import type { ViewElementNode } from '../dom/viewElementNode.js';
 import type { ViewNodeKind } from '../dom/viewNodeKind.js';
-import type { Children } from '../MenuView.js';
+import type { Children } from '../views/viewFlavors.js';
 import type { PatchTarget } from '../RenderingEngine.js';
 import type { DisposeFn } from './dispose.js';
 import { owner, type Owner } from './owner.js';

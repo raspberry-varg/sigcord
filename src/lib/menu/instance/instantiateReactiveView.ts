@@ -1,21 +1,15 @@
-import { ClassViewProps } from '../FunctionalMenuView.js';
-import { type View } from '../views/view.js';
-
-import { IS_V2, type RenderedReactiveView } from '../MenuView.js';
+import { ClassViewProps } from '../../FunctionalMenuView.js';
+import { IS_V2, type RenderedReactiveView } from '../../views/viewFlavors.js';
 import {
   isReactiveViewDefinitionV2,
   type ReactiveViewDefinition,
-} from '../views/reactive/reactiveViewDefinition.js';
-import { REACTIVE_VIEW_SYMBOL } from '../views/reactive/reactiveViewSymbol.js';
-import type { PropsBase } from './ViewBase.js';
+} from '../../views/reactive/reactiveViewDefinition.js';
+import { REACTIVE_VIEW_SYMBOL } from '../../views/reactive/reactiveViewSymbol.js';
+import type { PropsBase } from '../../views/viewDefinitionBase.js';
 
 export type ReactiveViewInstance = {
   readonly id: string;
 } & RenderedReactiveView;
-
-export function isReactiveView(view: View): view is ReactiveViewDefinition {
-  return REACTIVE_VIEW_SYMBOL in view;
-}
 
 /** @internal */
 export function instantiateReactiveView<Props extends PropsBase = PropsBase>(
@@ -35,12 +29,12 @@ export function instantiateReactiveView<Props extends PropsBase = PropsBase>(
     };
     return instance;
   }
-  const instance: ReactiveViewInstance = {
+
+  return {
     [REACTIVE_VIEW_SYMBOL]: true,
     id,
     roots: undefined,
     lastRender: undefined,
     factory: () => view.factory(props) as any,
   };
-  return instance;
 }

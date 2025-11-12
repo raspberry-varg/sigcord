@@ -2,8 +2,11 @@
  * Functional implementation of Menu Views.
  */
 
-import type { Synapse } from './menu/synapse.js';
-import { PropsBase, type ViewDefinitionBase } from './MenuView/ViewBase.js';
+import type { Synapse } from './menu/instance/synapse.js';
+import {
+  PropsBase,
+  type ViewDefinitionBase,
+} from './views/viewDefinitionBase.js';
 import { ClassViewDefinitionBody } from './views/classic/classViewDefinition.js';
 
 export type ClassViewDefinition<Props extends PropsBase = PropsBase> =

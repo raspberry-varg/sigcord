@@ -1,5 +1,5 @@
-import type { ViewClassImplementation } from '../../MenuView/DefineClassicView.js';
-import type { PropsBase } from '../../MenuView/ViewBase.js';
+import type { ViewClassImplementation } from './defineClassicView.js';
+import type { PropsBase } from '../viewDefinitionBase.js';
 
 export interface ClassViewDefinitionBody<Props extends PropsBase = PropsBase> {
   class: ViewClassImplementation<Props>;

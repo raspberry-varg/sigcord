@@ -1,4 +1,4 @@
-import type { ViewComponent } from '../MenuView.js';
+import type { ViewComponent } from '../views/viewFlavors.js';
 import { ViewElementNode } from '../dom/viewElementNode.js';
 import type { ReadonlyRecursive } from '../recursive.js';
 import { ViewNode } from '../dom/viewNode.js';

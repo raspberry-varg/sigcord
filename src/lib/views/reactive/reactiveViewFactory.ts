@@ -2,8 +2,8 @@ import type {
   ReactiveViewPayload,
   ReactiveViewPayloadV1,
   ReactiveViewPayloadV2,
-} from '../../MenuView.js';
-import type { PropsBase } from '../../MenuView/ViewBase.js';
+} from '../viewFlavors.js';
+import type { PropsBase } from '../viewDefinitionBase.js';
 
 export type ReactiveViewFactory<Props extends PropsBase> =
   | ReactiveViewFactoryV1<Props>

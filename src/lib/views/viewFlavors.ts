@@ -7,17 +7,17 @@ import {
   type TopLevelComponent,
   type TopLevelComponentData,
 } from 'discord.js';
-import type { REACTIVE_VIEW_SYMBOL } from './views/reactive/reactiveViewSymbol.js';
+import type { REACTIVE_VIEW_SYMBOL } from './reactive/reactiveViewSymbol.js';
 import {
   type WritableSignal,
   type Signalish,
-} from './reactivity/core/signals.js';
-import type { ViewElementNode } from './dom/viewElementNode.js';
-import type { DisposeFn } from './render/dispose.js';
-import type { Owner } from './render/owner.js';
-import type { ViewNodeKind } from './dom/viewNodeKind.js';
-import type { Slot } from './Slot.js';
-import type { ViewNode } from './dom/viewNode.js';
+} from '../reactivity/core/signals.js';
+import type { ViewElementNode } from '../dom/viewElementNode.js';
+import type { DisposeFn } from '../render/dispose.js';
+import type { Owner } from '../render/owner.js';
+import type { ViewNodeKind } from '../dom/viewNodeKind.js';
+import type { Slot } from '../Slot.js';
+import type { ViewNode } from '../dom/viewNode.js';
 
 export type EmbedComponent = EmbedBuilder;
 
