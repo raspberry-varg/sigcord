@@ -3,8 +3,6 @@ import type { DisposeFn } from './render/dispose.js';
 import { getOpenOwner, setCurrentOwner } from './render/owner.js';
 import type { PatchTarget } from './RenderingEngine.js';
 import * as core from '@preact/signals-core';
-import type { MaybePromise } from '../util/TypesUtil.js';
-import type { update } from './ReactiveBuiltIns.js';
 
 const WRITABLE_STAMP = Symbol('writable');
 const GETTER_STAMP = Symbol('getter');
@@ -61,73 +59,6 @@ export type SignalTuple<T> = [
   setter: Setter<T>,
   WritableSignal<T>,
 ];
-
-/**
- * Thin wrapper over {@link Signal} that allows for asynchronous data fetching.
- */
-export type Resource<T> = Signal<T> & {
-  /**
-   * `true` while executing {@link ResourceFetcher}.
-   */
-  loading: Signal<boolean>;
-  /**
-   * Holds an error encountered when executing {@link ResourceFetcher}.
-   */
-  error: Signal<unknown | null>;
-  /**
-   * `true` if not {@link loading} and not {@link errored}.
-   */
-  ready: Signal<boolean>;
-  /**
-   * `true` if {@link error} is falsy.
-   */
-  errored: Signal<boolean>;
-};
-
-export type ResourceTuple<T> = [
-  data: Resource<T | undefined>,
-  mutate: Setter<T | undefined>,
-  refetch: () => void,
-];
-
-/**
- * Options to configure a new {@link Resource}.
- */
-export interface ResourceOptions<T, SOURCE> {
-  /**
-   * Link this resource to a signal.
-   *
-   * When the source updates:
-   * *   {@link tryCache} is called.
-   * *   If {@link tryCache} fails, call the provided {@link ResourceFetcher}.
-   */
-  source?: SOURCE | Signal<SOURCE>;
-  /**
-   * Skip the initial call to {@link ResourceFetcher} if an initial value is
-   * already available.
-   */
-  initialValue?: T;
-  /**
-   * Attempt to provide `T` from a synchronously-available data store.
-   *
-   * If `T` is returned:
-   * *   {@link ResourceFetcher} is not called.
-   * *   The resource resolves synchronously.
-   * *   It attempts to update the view as an edit or update to the latest
-   *     interaction, bypassing {@link ResourceFetcher}'s `deferUpdate()`.
-   *
-   * @param source
-   */
-  tryCache?: (source: SOURCE) => T | false | null | undefined;
-  /**
-   * Call {@link update} when the fetcher resolves or an error is captured.
-   *
-   * @default true
-   */
-  autoUpdate?: boolean;
-}
-
-export type ResourceFetcher<T, SOURCE> = (source: SOURCE) => MaybePromise<T>;
 
 export function createSignal<T>(
   initialVal: T,
