@@ -94,6 +94,5 @@ export {
 } from './lib/dom/viewComputedElementNode.js';
 export { getViewNodeContent } from './lib/dom/getViewNodeContent.js';
 export { staticRender } from './lib/render/staticRender.js';
-export * from './lib/primitives.js';
-export * from './lib/primitives/resource.js';
+export * from './lib/primitives/index.js';
 export { untracked } from './lib/reactivity/untracked.js';
