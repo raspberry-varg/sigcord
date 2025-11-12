@@ -1,7 +1,7 @@
 import { ViewElementNode } from './viewElementNode.js';
 import type { BaseViewNodeKind, ViewNodeKind } from './viewNodeKind.js';
 import type { EmbedBuilder } from 'discord.js';
-import type { ViewComponent } from '../MenuView.js';
+import type { ViewComponent } from '../views/viewFlavors.js';
 import { owner } from '../render/owner.js';
 
 export type NodeContentComputer<

@@ -11,16 +11,16 @@ import type {
   RenderedReactiveView,
   ViewComponent,
   ViewMessagePayload,
-} from './MenuView.js';
-import { isRenderedReactiveViewV2 } from './MenuView.js';
+} from './views/viewFlavors.js';
+import { isRenderedReactiveViewV2 } from './views/viewFlavors.js';
 import { logger } from '../util/Logger.js';
 import { createUntracked } from './reactivity/core/signals.js';
-import { type PropsBase } from './MenuView/ViewBase.js';
+import { type PropsBase } from './views/viewDefinitionBase.js';
 import type { NavigationPayload } from './Navigation.js';
 import {
   instantiateReactiveView,
   type ReactiveViewInstance,
-} from './MenuView/ReactiveView.js';
+} from './menu/instance/instantiateReactiveView.js';
 import { isReactiveViewDefinition } from './views/reactive/reactiveViewDefinition.js';
 import { setReactiveContext } from './ReactiveBuiltIns.js';
 import { batch } from '@preact/signals-core';

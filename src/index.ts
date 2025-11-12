@@ -1,12 +1,15 @@
-export { IntrinsicMenuProps, defineMenu } from './lib/InteractiveMenu.js';
-export * from './lib/MenuView.js';
+export { IntrinsicMenuProps, defineMenu } from './lib/menu/defineMenu.js';
+export * from './lib/views/viewFlavors.js';
 export { View } from './lib/views/view.js';
 export {
   ClassViewProps as ViewProps,
   ClassViewProps as Props,
 } from './lib/FunctionalMenuView.js';
 export { ViewRender } from './lib/views/classic/classViewRender.js';
-export { Synapse, Synapse as ViewSynapse } from './lib/menu/synapse.js';
+export {
+  Synapse,
+  Synapse as ViewSynapse,
+} from './lib/menu/instance/synapse.js';
 export * from './lib/SmartComponents.js';
 export * from './lib/PrebuiltEmbeds.js';
 export * from './lib/Renderable.js';
@@ -66,7 +69,7 @@ export {
 export {
   ViewClass,
   defineClassView,
-} from './lib/MenuView/DefineClassicView.js';
+} from './lib/views/classic/defineClassicView.js';
 export { SlotOptions, Slot, slot, isSlot } from './lib/Slot.js';
 export { onCleanup } from './lib/hooks/onCleanup.js';
 export { batch } from '@preact/signals-core';

@@ -7,25 +7,25 @@ import type {
   MessageComponentBuilder,
 } from 'discord.js';
 import type { MenuContext } from './menuContext.js';
-import type { DefinedView, View } from '../views/view.js';
+import type { DefinedView, View } from '../../views/view.js';
 import type {
   EffectFn,
   Signal,
   SignalTuple,
-} from '../reactivity/core/signals.js';
-import type { PatchTarget } from '../RenderingEngine.js';
-import type { WritableSignal } from '../reactivity/core/signals.js';
-import type { PropsBase } from '../MenuView/ViewBase.js';
-import type { UnionToIntersection } from '../../util/TypesUtil.js';
-import type { DisposeFn, ResumeFn, SuspendFn } from '../render/dispose.js';
+} from '../../reactivity/core/signals.js';
+import type { PatchTarget } from '../../RenderingEngine.js';
+import type { WritableSignal } from '../../reactivity/core/signals.js';
+import type { PropsBase } from '../../views/viewDefinitionBase.js';
+import type { UnionToIntersection } from '../../../util/TypesUtil.js';
+import type { DisposeFn, ResumeFn, SuspendFn } from '../../render/dispose.js';
 import type {
   ModalRepliableInteraction,
   ModalHandlingOptions,
   ModalOnSubmitHandler,
-} from '../interactivity/modalHandling.js';
-import type { ComponentDefinition } from '../components/componentDefinition.js';
-import type { effect, patchEffect } from '../ReactiveBuiltIns.js';
-import type { ReactiveViewPayloadV1 } from '../MenuView.js';
+} from '../../interactivity/modalHandling.js';
+import type { ComponentDefinition } from '../../components/componentDefinition.js';
+import type { effect, patchEffect } from '../../ReactiveBuiltIns.js';
+import type { ReactiveViewPayloadV1 } from '../../views/viewFlavors.js';
 
 /**
  * Closure functions to manage and interact with a bound menu instance.

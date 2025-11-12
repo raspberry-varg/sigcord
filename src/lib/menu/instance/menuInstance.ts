@@ -6,34 +6,38 @@ import {
   ModalBuilder,
   type MessageComponentBuilder,
 } from 'discord.js';
-import { Synapse } from './menu/synapse.js';
-import { type ModalHandlingOptions } from './interactivity/modalHandling.js';
-import { ClassViewProps } from './FunctionalMenuView.js';
-import { MenuContext } from './menu/menuContext.js';
-import { View } from './views/view.js';
-import { IntrinsicMenuProps } from './InteractiveMenu.js';
-import { assert, assertAndReturn, assertNotNull } from '../util/Assertions.js';
-import { Listener } from './Listener.js';
-import { logger, LogLevel, shouldLog } from '../util/Logger.js';
-import { RenderingEngine } from './RenderingEngine.js';
-import { InteractionPatcher } from './InteractionPatcher.js';
-import { CollectorService } from './CollectorService.js';
-import { TimeoutComponent, TimeoutEmbed } from './PrebuiltEmbeds.js';
+import { Synapse } from './synapse.js';
+import { type ModalHandlingOptions } from '../../interactivity/modalHandling.js';
+import { ClassViewProps } from '../../FunctionalMenuView.js';
+import { MenuContext } from './menuContext.js';
+import { View } from '../../views/view.js';
+import { IntrinsicMenuProps } from '../defineMenu.js';
+import {
+  assert,
+  assertAndReturn,
+  assertNotNull,
+} from '../../../util/Assertions.js';
+import { Listener } from '../../../util/Listener.js';
+import { logger, LogLevel, shouldLog } from '../../../util/Logger.js';
+import { RenderingEngine } from '../../RenderingEngine.js';
+import { InteractionPatcher } from './interactionPatcher.js';
+import { CollectorService } from './collectorService.js';
+import { TimeoutComponent, TimeoutEmbed } from '../../PrebuiltEmbeds.js';
 import {
   createComputed,
   createEffect,
   createSignal,
-} from './reactivity/core/signals.js';
-import { PatchTarget, PatchTargetBitMask } from './RenderingEngine.js';
-import type { PropsBase } from './MenuView/ViewBase.js';
-import { Navigation } from './Navigation.js';
-import { asyncBoundary, setReactiveContext } from './ReactiveBuiltIns.js';
-import type { TimeoutEndReason } from '../util/CollectorUtil.js';
+} from '../../reactivity/core/signals.js';
+import { PatchTarget, PatchTargetBitMask } from '../../RenderingEngine.js';
+import type { PropsBase } from '../../views/viewDefinitionBase.js';
+import { Navigation } from '../../Navigation.js';
+import { asyncBoundary, setReactiveContext } from '../../ReactiveBuiltIns.js';
+import type { TimeoutEndReason } from '../../../util/CollectorUtil.js';
 import { batch } from '@preact/signals-core';
-import type { DisposeFn } from './render/dispose.js';
-import { getOpenOwner } from './render/owner.js';
-import { NamedIdGenerator } from './ids/namedIdGenerator.js';
-import { AutoComponentId } from './components/autocomponents.js';
+import type { DisposeFn } from '../../render/dispose.js';
+import { getOpenOwner } from '../../render/owner.js';
+import { NamedIdGenerator } from '../../ids/namedIdGenerator.js';
+import { AutoComponentId } from '../../components/autocomponents.js';
 
 export interface MenuControllerAPI {
   // render API
@@ -94,7 +98,7 @@ interface MenuControllerListeners {
   onTimeout: Listener<TimeoutEndReason>;
 }
 
-export function MenuController<
+export function instantiateMenu<
   MenuProps extends NonNullable<unknown> = NonNullable<unknown>,
   ViewId extends string = string,
   AllProps extends PropsBase = PropsBase,

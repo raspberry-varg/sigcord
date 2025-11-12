@@ -2,7 +2,7 @@ import { logger } from '../../util/Logger.js';
 import { ViewElementNode } from '../dom/viewElementNode.js';
 import { ViewNode } from '../dom/viewNode.js';
 import type { ViewNodeKind } from '../dom/viewNodeKind.js';
-import type { Children } from '../MenuView.js';
+import type { Children } from '../views/viewFlavors.js';
 import type { Recursive } from '../recursive.js';
 import { PatchTarget } from '../RenderingEngine.js';
 import type { DisposeFn, ResumeFn, SuspendFn } from './dispose.js';

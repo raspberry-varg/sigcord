@@ -1,10 +1,10 @@
-import type { MaybePromise } from '../../util/TypesUtil.js';
-import type { ClassViewDefinition } from '../FunctionalMenuView.js';
-import type { IntrinsicMenuProps, MenuFactory } from '../InteractiveMenu.js';
-import { MenuController } from '../MenuController.js';
-import type { ViewMessagePayload } from '../MenuView.js';
-import type { Synapse } from '../menu/synapse.js';
-import type { PropsBase } from './ViewBase.js';
+import type { MaybePromise } from '../../../util/TypesUtil.js';
+import type { ClassViewDefinition } from '../../FunctionalMenuView.js';
+import type { IntrinsicMenuProps, MenuFactory } from '../../menu/defineMenu.js';
+import { instantiateMenu } from '../../menu/instance/menuInstance.js';
+import type { ViewMessagePayload } from '../viewFlavors.js';
+import type { Synapse } from '../../menu/instance/synapse.js';
+import type { PropsBase } from '../viewDefinitionBase.js';
 
 export interface ViewClassImplementation<Props extends PropsBase> {
   new (props: Props & { $: Synapse }): ViewClass<Props>;
@@ -35,7 +35,7 @@ export function defineClassView<Props extends PropsBase>(
     class: implementation,
   };
   const menuFactory: MenuFactory<Props> = (interaction, props) => {
-    return MenuController(id, id, [definition], interaction, props);
+    return instantiateMenu(id, id, [definition], interaction, props);
   };
   return Object.assign(menuFactory, definition);
 }

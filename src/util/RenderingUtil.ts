@@ -1,8 +1,8 @@
-import type { IntrinsicMenuProps } from '../lib/InteractiveMenu.js';
+import type { IntrinsicMenuProps } from '../lib/menu/defineMenu.js';
 import {
   ViewMessagePayload,
   type IntrinsicViewProps,
-} from '../lib/MenuView.js';
+} from '../lib/views/viewFlavors.js';
 import { TimeoutEmbed } from '../lib/PrebuiltEmbeds.js';
 import {
   MessageFlags,

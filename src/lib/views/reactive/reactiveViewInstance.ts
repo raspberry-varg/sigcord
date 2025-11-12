@@ -1,4 +1,4 @@
-import type { ReactiveViewInstance } from '../../MenuView/ReactiveView.js';
+import type { ReactiveViewInstance } from '../../menu/instance/instantiateReactiveView.js';
 import type { ViewInstance } from '../view.js';
 import { REACTIVE_VIEW_SYMBOL } from './reactiveViewSymbol.js';
 

@@ -1,7 +1,7 @@
-import type { IntrinsicMenuProps, MenuFactory } from '../../InteractiveMenu.js';
-import { MenuController } from '../../MenuController.js';
-import { IS_V2 } from '../../MenuView.js';
-import type { PropsBase } from '../../MenuView/ViewBase.js';
+import type { IntrinsicMenuProps, MenuFactory } from '../../menu/defineMenu.js';
+import { instantiateMenu } from '../../menu/instance/menuInstance.js';
+import { IS_V2 } from '../viewFlavors.js';
+import type { PropsBase } from '../viewDefinitionBase.js';
 import type {
   ReactiveViewDefinitionV1,
   ReactiveViewDefinitionV2,
@@ -30,7 +30,7 @@ export function defineView<Props extends PropsBase = PropsBase>(
     [REACTIVE_VIEW_SYMBOL]: true,
   };
   const menuFactory: MenuFactory<Props> = (interaction, props) => {
-    return MenuController(id, id, [definition], interaction, props);
+    return instantiateMenu(id, id, [definition], interaction, props);
   };
   return Object.assign(menuFactory, definition);
 }
@@ -48,7 +48,7 @@ export function defineViewV2<Props extends PropsBase = PropsBase>(
     [IS_V2]: true,
   };
   const menuFactory: MenuFactory<Props> = (interaction, props) => {
-    return MenuController(id, id, [definition], interaction, props);
+    return instantiateMenu(id, id, [definition], interaction, props);
   };
   return Object.assign(menuFactory, definition);
 }

@@ -1,4 +1,4 @@
-import type { Synapse } from '../menu/synapse.js';
+import type { Synapse } from '../menu/instance/synapse.js';
 import { setReactiveContext } from '../ReactiveBuiltIns.js';
 import { createComputed, createSignal } from '../reactivity/core/signals.js';
 import { PatchTarget } from '../RenderingEngine.js';

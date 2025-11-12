@@ -1,6 +1,6 @@
 import { assert } from '../util/Assertions.js';
 import type { View } from './views/view.js';
-import type { RenderedReactiveView } from './MenuView.js';
+import type { RenderedReactiveView } from './views/viewFlavors.js';
 
 export interface NavigationPayload {
   view: View;

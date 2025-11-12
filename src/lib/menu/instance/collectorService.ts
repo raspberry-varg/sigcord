@@ -4,13 +4,13 @@ import {
   type Interaction,
   type Message,
 } from 'discord.js';
-import type { Listener } from './Listener.js';
-import { logger } from '../util/Logger.js';
-import type { MessageComponentCallback } from './MenuView.js';
+import type { Listener } from '../../../util/Listener.js';
+import { logger } from '../../../util/Logger.js';
+import type { MessageComponentCallback } from '../../views/viewFlavors.js';
 import {
   endReasonIsTimeout,
   type TimeoutEndReason,
-} from '../util/CollectorUtil.js';
+} from '../../../util/CollectorUtil.js';
 
 type ComponentId = string;
 type ComponentCallbackMap = Map<ComponentId, MessageComponentCallback<any>>;

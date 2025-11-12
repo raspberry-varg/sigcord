@@ -1,4 +1,4 @@
-import type { Synapse } from '../menu/synapse.js';
+import type { Synapse } from '../menu/instance/synapse.js';
 import { useSynapse } from '../ReactiveBuiltIns.js';
 
 /**

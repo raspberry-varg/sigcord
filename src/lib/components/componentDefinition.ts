@@ -2,8 +2,8 @@ import type {
   MessageActionRowComponentBuilder,
   MappedInteractionTypes,
 } from 'discord.js';
-import type { MessageComponentCallback } from '../MenuController.js';
-import type { Synapse } from '../menu/synapse.js';
+import type { MessageComponentCallback } from '../menu/instance/menuInstance.js';
+import type { Synapse } from '../menu/instance/synapse.js';
 import type { asyncBoundary } from '../ReactiveBuiltIns.js';
 
 type InteractionFromBuilder<
