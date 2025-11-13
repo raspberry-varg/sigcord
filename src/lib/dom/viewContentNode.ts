@@ -21,7 +21,7 @@ export class ViewContentNode<T extends ViewNodeKind> extends ViewNode<T> {
   override dispose(): void {
     if (this.disposed) return;
 
-    logger.debug('Disposing ViewContentNode', { content: this.content });
+    logger.verbose('DisposingViewContentNode', { content: this.content });
     this.content = undefined;
   }
 }

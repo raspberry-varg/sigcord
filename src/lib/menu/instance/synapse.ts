@@ -5,6 +5,7 @@ import type {
   AwaitModalSubmitOptions,
   ModalSubmitInteraction,
   MessageComponentBuilder,
+  RepliableInteraction,
 } from 'discord.js';
 import type { MenuContext } from './menuContext.js';
 import type { DefinedView, View } from '../../views/view.js';
@@ -87,8 +88,9 @@ export interface Synapse {
    * In reactive views, manually queue patches for specific pieces the message
    * instead of relying on reactivity.
    */
-  patch: (...targets: PatchTarget[]) => void;
-  doUpdate: () => Promise<void>;
+  addPatchTargets: (...targets: PatchTarget[]) => void;
+  scheduleUpdate: (...additionalTargets: PatchTarget[]) => void;
+  deferUpdate: (interaction: RepliableInteraction) => void;
 
   createSignal<T>(): SignalTuple<T | undefined>;
   createSignal<T>(initialValue: undefined): SignalTuple<T | undefined>;

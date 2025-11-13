@@ -16,7 +16,7 @@ import { getOpenOwnerStrict } from '../render/owner.js';
 import type { MaybePromise } from '../../util/TypesUtil.js';
 import type { MenuContext } from '../menu/instance/menuContext.js';
 import { STATIC_RENDER_SYNAPSE } from '../render/staticRenderSynapse.js';
-import type { RepliableInteraction } from 'discord.js';
+import { type RepliableInteraction, type MessageComponent } from 'discord.js';
 
 let currentSynapse: Synapse | null = null;
 
@@ -207,6 +207,8 @@ export const resumableAction: Synapse['resumableSuspend'] = (action) =>
 type ResumeCtxFn = () => void;
 
 /**
+ * __Here be dragons__ _(see {@link asyncBoundary})_.
+ *
  * Suspend the current reactive hook context. Returns a function to resume the
  * context.
  *
@@ -228,6 +230,16 @@ export function suspend(): ResumeCtxFn {
 }
 
 /**
+ * @deprecated
+ * Please use synchronous alternatives to handle typically-async tasks.
+ * *   {@link deferUpdate} Asynchronously calls `deferUpdate` if necessary. When
+ *     it comes time to update the menu, the interaction patcher waits until the
+ *     tracked `deferUpdate` is resolved.
+ * *   {@link resource} Signal with asynchronous fetching of data. All automatic
+ *     updates (and manual {@link update} calls) are queued into a single
+ *     microtask.
+ *
+ * @summary
  * Perform an asynchronous action within a component handler. The reactive hook
  * context will be automatically suspended and resumed when {@link fnOrPromise}
  * resolves.
@@ -260,23 +272,27 @@ export async function asyncBoundary<T>(
 }
 
 /**
- * Run an action in an {@link asyncBoundary}, deferring the current interaction
- * if necessary. `T` is returned once deferral is complete.
+ * Defer an update if the provided interaction is a {@link MessageComponent}.
  *
- * This is useful for cache misses when loading a resource, deferring an
- * interaction to avoid going over Discord's interaction response time window.
+ * If update deferral is possible, no scheduled updates to the interaction will
+ * occur until the deferral is complete.
+ *
+ * Has no effect if already deferring with another call to this function.
+ *
+ * @param interaction
  */
-export async function withDefer<T>(fnOrPromise: MaybePromise<T>): Promise<T> {
-  const current = injectCurrentInteraction();
-  const shouldDefer =
-    current.isMessageComponent() && !current.deferred && !current.replied;
-  if (!shouldDefer) {
-    return asyncBoundary(fnOrPromise);
-  }
-  const [result] = await asyncBoundary(
-    Promise.all([fnOrPromise, current.deferUpdate()]),
-  );
-  return result;
+export function deferUpdate(interaction: RepliableInteraction): void {
+  useSynapse().deferUpdate(interaction);
+}
+
+export function injectActiveInteraction(): RepliableInteraction {
+  return useMenuInfo().activeInteraction;
+}
+
+export function injectLastCollectedInteraction():
+  | RepliableInteraction
+  | undefined {
+  return useMenuInfo().lastCollectedInteraction;
 }
 
 export function injectCurrentInteraction(): RepliableInteraction {
@@ -404,20 +420,20 @@ export const stopMenu: Synapse['stop'] = (reason) => useSynapse().stop(reason);
 /**
  * Manually queue patches for specific message parts.
  */
-export const patch: Synapse['patch'] = (...targets) =>
-  useSynapse().patch(...targets);
+export const patch: Synapse['addPatchTargets'] = (...targets) =>
+  useSynapse().addPatchTargets(...targets);
 
 /**
- * Manually schedule an update to the current view.
+ * Manually schedule an update to the current view in a microtask.
  *
  * Note: Updates are automatically scheduled after initial render and after interaction
  * handlers resolve.
  */
-export const update: Synapse['doUpdate'] = (
+export const update: Synapse['scheduleUpdate'] = (
   ...additionalPatchTargets: PatchTarget[]
 ) => {
   if (additionalPatchTargets.length) {
     patch(...additionalPatchTargets);
   }
-  return useSynapse().doUpdate();
+  return useSynapse().scheduleUpdate();
 };
