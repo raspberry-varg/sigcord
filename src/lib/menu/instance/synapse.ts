@@ -1,10 +1,10 @@
 import type {
-  MessageActionRowComponentBuilder,
-  EmbedBuilder,
-  ModalBuilder,
   AwaitModalSubmitOptions,
-  ModalSubmitInteraction,
+  EmbedBuilder,
+  MessageActionRowComponentBuilder,
   MessageComponentBuilder,
+  ModalBuilder,
+  ModalSubmitInteraction,
   RepliableInteraction,
 } from 'discord.js';
 import type { MenuContext } from './menuContext.js';
@@ -13,16 +13,16 @@ import type {
   EffectFn,
   Signal,
   SignalTuple,
+  WritableSignal,
 } from '../../reactivity/core/signals.js';
 import type { PatchTarget } from '../../RenderingEngine.js';
-import type { WritableSignal } from '../../reactivity/core/signals.js';
 import type { PropsBase } from '../../views/viewDefinitionBase.js';
 import type { UnionToIntersection } from '../../../util/TypesUtil.js';
 import type { DisposeFn, ResumeFn, SuspendFn } from '../../render/dispose.js';
 import type {
-  ModalRepliableInteraction,
   ModalHandlingOptions,
   ModalOnSubmitHandler,
+  ModalRepliableInteraction,
 } from '../../interactivity/modalHandling.js';
 import type { ComponentDefinition } from '../../components/componentDefinition.js';
 import type { effect, patchEffect } from '../../builtins/builtins.js';
@@ -89,7 +89,7 @@ export interface Synapse {
    * instead of relying on reactivity.
    */
   addPatchTargets: (...targets: PatchTarget[]) => void;
-  scheduleUpdate: (...additionalTargets: PatchTarget[]) => void;
+  scheduleUpdate: () => void;
   deferUpdate: (interaction: RepliableInteraction) => void;
 
   createSignal<T>(): SignalTuple<T | undefined>;

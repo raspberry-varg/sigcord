@@ -16,7 +16,7 @@ import { getOpenOwnerStrict } from '../render/owner.js';
 import type { MaybePromise } from '../../util/TypesUtil.js';
 import type { MenuContext } from '../menu/instance/menuContext.js';
 import { STATIC_RENDER_SYNAPSE } from '../render/staticRenderSynapse.js';
-import { type RepliableInteraction, type MessageComponent } from 'discord.js';
+import { type MessageComponent, type RepliableInteraction } from 'discord.js';
 
 let currentSynapse: Synapse | null = null;
 
@@ -429,11 +429,6 @@ export const patch: Synapse['addPatchTargets'] = (...targets) =>
  * Note: Updates are automatically scheduled after initial render and after interaction
  * handlers resolve.
  */
-export const update: Synapse['scheduleUpdate'] = (
-  ...additionalPatchTargets: PatchTarget[]
-) => {
-  if (additionalPatchTargets.length) {
-    patch(...additionalPatchTargets);
-  }
+export const update: Synapse['scheduleUpdate'] = () => {
   return useSynapse().scheduleUpdate();
 };
