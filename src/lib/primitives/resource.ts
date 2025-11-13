@@ -11,7 +11,6 @@ import { untracked } from '../reactivity/untracked.js';
 import { signal } from './signal.js';
 import { computed } from './computed.js';
 import { read } from '../reactivity/core/read.js';
-import { PatchTarget } from '../RenderingEngine.js';
 import { batch } from '@preact/signals-core';
 
 const OPTIONS_DEFAULTS: Readonly<ResourceOptions<unknown, unknown>> = {
@@ -161,7 +160,9 @@ export function resource<T, SOURCE>(
     setLoading(true);
     try {
       const lastCollected = injectLastCollectedInteraction();
-      if (lastCollected) {
+      if (options.autoUpdate ?? OPTIONS_DEFAULTS.autoUpdate) {
+        update();
+      } else if (lastCollected) {
         deferUpdate(lastCollected);
       }
 
@@ -178,7 +179,7 @@ export function resource<T, SOURCE>(
     } finally {
       if (options.autoUpdate ?? OPTIONS_DEFAULTS.autoUpdate) {
         resumeContext();
-        void update(PatchTarget.All);
+        update();
       }
     }
   };

@@ -1,6 +1,6 @@
 import {
-  ComponentType,
   type CollectedMessageInteraction,
+  ComponentType,
   type Interaction,
   type Message,
 } from 'discord.js';
@@ -76,7 +76,11 @@ export class CollectorService {
   }
 
   hasEnded(): boolean {
-    return !this.collector || this.collector.ended;
+    return this.collector?.ended === true;
+  }
+
+  isInitialized(): boolean {
+    return !!this.collector;
   }
 
   init({

@@ -436,13 +436,16 @@ export function instantiateMenu<
 
         let payload: ViewMessagePayload | null = null;
         try {
-          payload = await render(PatchTarget.All);
-          logger.debug('targets after render ->', getPatchTargets());
+          const targets = getPatchTargets();
+          logger.debug('targets in render microtask ->', targets);
+          payload = await render(targets);
         } catch (error: unknown) {
           logger.error('Error during update microtask', error);
         }
         if (payload) {
           await update(payload);
+        } else if (collector.lastCollected) {
+          builtins.deferUpdate(collector.lastCollected);
         }
       });
     }
@@ -540,6 +543,7 @@ export function instantiateMenu<
     logger.debug({
       skipRender,
       collectorEnded: collector.hasEnded(),
+      collectorInitialized: collector.isInitialized(),
       isCurrentViewReactive: renderer.isCurrentViewReactive(),
       rendererHasQueuedView: renderer.hasQueuedView(),
       manualPatchQueued,
@@ -831,16 +835,7 @@ export function instantiateMenu<
    */
   async function start(options: Partial<RenderOptions> = {}) {
     options = { ...DefaultRenderOptions, ...options };
-    await new Promise<void>((resolve, reject) => {
-      queueMicrotask(async () => {
-        try {
-          await initialRender(options);
-          resolve();
-        } catch (e) {
-          reject(e);
-        }
-      });
-    });
+    await initialRender(options);
     initCollector();
   }
 
