@@ -73,6 +73,14 @@ export interface ResourceOptions<T, SOURCE> {
    * @default true
    */
   autoUpdate?: boolean;
+  /**
+   * Handle any errors encountered while running {@link ResourceFetcher}.
+   *
+   * Errors will still be set to {@link Resource#error}. This is just a
+   * convenient spot to avoid making an effect specifically for error handling.
+   * @param error
+   */
+  onError?: (error: unknown) => void;
 }
 
 export type ResourceFetcher<T, SOURCE> = (source: SOURCE) => MaybePromise<T>;
@@ -129,10 +137,7 @@ export function resource<T, SOURCE>(
   const [error, setError] = signal<unknown | null>(null);
   const [loading, setLoading] = signal(false);
 
-  const resumeContext = suspend();
-
   const fetch = async (source: SOURCE) => {
-    resumeContext();
     const cacheHit = options.tryCache?.(source);
     if (cacheHit) {
       setData(cacheHit);
@@ -141,21 +146,25 @@ export function resource<T, SOURCE>(
       return;
     }
 
-    resumeContext();
     setLoading(true);
     try {
       const res = await withDefer(fetcher(source));
       setData(res);
       setError(null);
       if (options.autoUpdate ?? OPTIONS_DEFAULTS.autoUpdate) {
-        resumeContext();
         void update();
       }
     } catch (e: unknown) {
       setError(e);
-      if (options.autoUpdate ?? OPTIONS_DEFAULTS.autoUpdate) {
-        resumeContext();
-        void update();
+      if (options.onError) {
+        try {
+          // Error can potentially re-throw.
+          options.onError(e);
+        } finally {
+          if (options.autoUpdate ?? OPTIONS_DEFAULTS.autoUpdate) {
+            void update();
+          }
+        }
       }
     } finally {
       setLoading(false);
@@ -201,14 +210,19 @@ export function resource<T, SOURCE>(
     },
   });
 
+  const resumeContext = suspend();
   return [
     r,
     setData,
     () => {
       if (options.source) {
         const src = untracked(() => read(options.source));
-        if (src) return fetch(src);
+        if (src) {
+          resumeContext();
+          return fetch(src);
+        }
       } else {
+        resumeContext();
         return fetch(true as SOURCE);
       }
     },

@@ -257,6 +257,10 @@ export function instantiateMenu<
        * Handy for asynchronous operations such as handling a modal submit.
        */
       doUpdate: async () => {
+        if (disposed) {
+          return;
+        }
+
         const patchTargets = getPatchTargets();
         if (patchTargets !== PatchTarget.None) {
           await update(patchTargets);
@@ -408,7 +412,10 @@ export function instantiateMenu<
     collector.stop(reason);
     dispose();
   }
+
+  let disposed = false;
   function dispose() {
+    disposed = true;
     logger.debug('Disposing MenuController');
     logger.debug(
       `Disposing ${hangingDisposals.length} hanging effect disposal(s)`,
