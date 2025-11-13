@@ -58,9 +58,9 @@ export {
   onSuspend,
   onResume,
   isSuspended,
-  withDefer,
   injectCurrentInteraction,
   update,
+  deferUpdate,
 } from './lib/builtins/builtins.js';
 export {
   defineView,

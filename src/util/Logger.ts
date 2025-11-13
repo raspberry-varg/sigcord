@@ -16,30 +16,40 @@ export function shouldLog(level: LogLevel): boolean {
   return logLevel >= level;
 }
 
-export const logger = {
+export class Logger {
+  constructor(private readonly ns: string = '') {
+    this.ns = ns;
+  }
+
+  static namespaced(ns: string): Logger {
+    return new Logger(ns);
+  }
+
   verbose(msg: unknown, ...args: unknown[]) {
     if (shouldLog(LogLevel.Verbose)) {
-      console.debug(msg, ...args);
+      console.debug(this.ns ? `[${this.ns}]` : '', msg, ...args);
     }
-  },
+  }
   debug(msg: unknown, ...args: unknown[]) {
     if (shouldLog(LogLevel.Debug)) {
-      console.debug(msg, ...args);
+      console.debug(this.ns ? `[${this.ns}]` : '', msg, ...args);
     }
-  },
+  }
   info(msg: unknown, ...args: unknown[]) {
     if (shouldLog(LogLevel.Info)) {
-      console.log(msg, ...args);
+      console.log(this.ns ? `[${this.ns}]` : '', msg, ...args);
     }
-  },
+  }
   warn(msg: unknown, ...args: unknown[]) {
     if (shouldLog(LogLevel.Warn)) {
-      console.warn(msg, ...args);
+      console.warn(this.ns ? `[${this.ns}]` : '', msg, ...args);
     }
-  },
+  }
   error(msg: unknown, ...args: unknown[]) {
     if (shouldLog(LogLevel.Error)) {
-      console.error(msg, ...args);
+      console.error(this.ns ? `[${this.ns}]` : '', msg, ...args);
     }
-  },
-};
+  }
+}
+
+export const logger = new Logger();

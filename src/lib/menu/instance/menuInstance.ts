@@ -1,15 +1,15 @@
 import {
-  type EmbedBuilder,
   type CollectedMessageInteraction,
-  type MessageComponentInteraction,
-  type RepliableInteraction,
-  ModalBuilder,
+  type EmbedBuilder,
   type MessageComponentBuilder,
+  type MessageComponentInteraction,
+  ModalBuilder,
+  type RepliableInteraction,
 } from 'discord.js';
 import { Synapse } from './synapse.js';
 import { type ModalHandlingOptions } from '../../interactivity/modalHandling.js';
 import { ClassViewProps } from '../../FunctionalMenuView.js';
-import { MenuContext } from './menuContext.js';
+import { type MenuContextWithInternal } from './menuContext.js';
 import { View } from '../../views/view.js';
 import { IntrinsicMenuProps } from '../defineMenu.js';
 import {
@@ -18,9 +18,16 @@ import {
   assertNotNull,
 } from '../../../util/Assertions.js';
 import { Listener } from '../../../util/Listener.js';
-import { logger, LogLevel, shouldLog } from '../../../util/Logger.js';
-import { RenderingEngine } from '../../RenderingEngine.js';
-import { InteractionPatcher } from './interactionPatcher.js';
+import { Logger, LogLevel, shouldLog } from '../../../util/Logger.js';
+import {
+  PatchTarget,
+  PatchTargetBitMask,
+  RenderingEngine,
+} from '../../RenderingEngine.js';
+import {
+  BufferedPatchStatus,
+  InteractionPatcher,
+} from './interactionPatcher.js';
 import { CollectorService } from './collectorService.js';
 import { TimeoutComponent, TimeoutEmbed } from '../../PrebuiltEmbeds.js';
 import {
@@ -28,7 +35,6 @@ import {
   createEffect,
   createSignal,
 } from '../../reactivity/core/signals.js';
-import { PatchTarget, PatchTargetBitMask } from '../../RenderingEngine.js';
 import type { PropsBase } from '../../views/viewDefinitionBase.js';
 import { Navigation } from '../../Navigation.js';
 import { asyncBoundary, setReactiveContext } from '../../builtins/builtins.js';
@@ -38,6 +44,8 @@ import type { DisposeFn } from '../../render/dispose.js';
 import { getOpenOwner } from '../../render/owner.js';
 import { NamedIdGenerator } from '../../ids/namedIdGenerator.js';
 import { AutoComponentId } from '../../components/autocomponents.js';
+import type { ViewMessagePayload } from '../../views/viewFlavors.js';
+import { INTERNAL_CONTEXT_SYMBOL } from './internalMenuContext.js';
 
 export interface MenuControllerAPI {
   // render API
@@ -109,6 +117,8 @@ export function instantiateMenu<
   interaction: RepliableInteraction,
   initProps: MenuProps,
 ): MenuControllerAPI {
+  const logger = Logger.namespaced('MenuInstance');
+
   function routeComponentDisposalFn(id: string, disposal: DisposeFn): void {
     const openOwner = getOpenOwner();
     if (openOwner) {
@@ -222,7 +232,7 @@ export function instantiateMenu<
 
         const patchTargets = getPatchTargets();
         if (patchTargets !== PatchTarget.None) {
-          await update(patchTargets);
+          maybeQueueUpdate();
         }
       },
       setIdleMs: (idleMilliseconds: number) => {
@@ -252,27 +262,22 @@ export function instantiateMenu<
         }
       },
       /**
-       * Do not wait for a component collection loop, update immediately.
-
-       * Handy for asynchronous operations such as handling a modal submit.
+       * Manually schedule an update to the current view in a microtask.
+       *
+       * Note: Updates are automatically scheduled after initial render and after interaction
+       * handlers resolve.
        */
-      doUpdate: async () => {
+      scheduleUpdate: () => {
         if (disposed) {
+          logger.debug('Scheduled on a disposed object, ignoring');
           return;
         }
-
-        const patchTargets = getPatchTargets();
-        if (patchTargets !== PatchTarget.None) {
-          await update(patchTargets);
-        }
+        maybeQueueUpdate();
       },
-      patch: (...targets) => {
-        manualPatchQueued |= targets.reduce<PatchTargetBitMask>(
-          (bitMask, target) => {
-            return bitMask | target;
-          },
-          PatchTarget.None,
-        );
+      addPatchTargets: (...targets) => {
+        for (const target of targets) {
+          manualPatchQueued |= target;
+        }
       },
       createSignal<T>(
         fnOrValue: T | undefined = undefined,
@@ -371,6 +376,9 @@ export function instantiateMenu<
           return r;
         }),
       getMenuInfo: () => ctx,
+      deferUpdate(interaction) {
+        patcher.deferUpdate(interaction);
+      },
     };
     return $;
   }
@@ -387,7 +395,7 @@ export function instantiateMenu<
         setReactiveContext(prevContext);
       }
 
-      builtins.patch(patchTarget);
+      builtins.addPatchTargets(patchTarget);
       return dispose;
     }
 
@@ -413,10 +421,37 @@ export function instantiateMenu<
     dispose();
   }
 
+  let updateMicrotaskQueued = false;
+  function maybeQueueUpdate() {
+    if (!updateMicrotaskQueued) {
+      updateMicrotaskQueued = true;
+      logger.info('Queueing update microtask');
+      queueMicrotask(async () => {
+        updateMicrotaskQueued = false;
+        logger.info('Update microtask has run');
+        if (disposed) {
+          logger.info('...but the menu was disposed');
+          return;
+        }
+
+        let payload: ViewMessagePayload | null = null;
+        try {
+          payload = await render(PatchTarget.All);
+          logger.debug('targets after render ->', getPatchTargets());
+        } catch (error: unknown) {
+          logger.error('Error during update microtask', error);
+        }
+        if (payload) {
+          await update(payload);
+        }
+      });
+    }
+  }
+
   let disposed = false;
   function dispose() {
     disposed = true;
-    logger.debug('Disposing MenuController');
+    logger.verbose('DisposingMenuController');
     logger.debug(
       `Disposing ${hangingDisposals.length} hanging effect disposal(s)`,
     );
@@ -432,9 +467,18 @@ export function instantiateMenu<
   }
   const hangingDisposals: DisposeFn[] = [];
   const hangingComponentDisposals = new Map<string, DisposeFn>();
-  const ctx: MenuContext = {
+  const ctx: MenuContextWithInternal = {
     get interaction(): RepliableInteraction {
       return getInteractionToPatch();
+    },
+    get lastCollectedInteraction(): RepliableInteraction | undefined {
+      return collector.lastCollected;
+    },
+    get activeInteraction(): RepliableInteraction {
+      return patcher.interaction;
+    },
+    get isActivelyPatching(): boolean {
+      return patcher.isPatching();
     },
     initialInteraction: interaction,
     get idleTimeMs(): number {
@@ -442,7 +486,9 @@ export function instantiateMenu<
     },
     menuId,
     initialViewId,
+    [INTERNAL_CONTEXT_SYMBOL]: {},
   };
+
   const builtins = createSynapse();
   const views = new Map<string, View<AllProps>>(
     registeredViews.map((v) => [v.id, v]),
@@ -501,7 +547,7 @@ export function instantiateMenu<
     if (collector.hasEnded()) {
       return PatchTarget.None;
     }
-    // do not wait for reactivity to render a queued view
+    // do not wait for a dirty signal graph to render a queued view
     if (renderer.hasQueuedView()) {
       return PatchTarget.All;
     }
@@ -663,7 +709,10 @@ export function instantiateMenu<
 
     const patchTargets = getPatchTargets();
     if (patchTargets !== PatchTarget.None) {
-      await update(patchTargets);
+      const patchedPayload = await render(patchTargets);
+      if (patchedPayload) {
+        await update(patchedPayload);
+      }
     }
   }
 
@@ -676,26 +725,81 @@ export function instantiateMenu<
     );
     renderer.queueViewSwap(initialView as View, []);
     patcher.mountInteraction(getInteractionToPatch());
-    beforeRender();
-    try {
-      const payload = await batch(async () => await renderer.render(props));
-      await patcher.patch(payload, options);
-    } finally {
-      afterRender();
+
+    const payload = await render(null);
+    if (payload) {
+      try {
+        const result = await patcher.patch(payload, {});
+        switch (result) {
+          case BufferedPatchStatus.Cancelled:
+            logger.debug('Initial render cancelled');
+            break;
+          case BufferedPatchStatus.Completed:
+            logger.debug('Initial render complete');
+            break;
+        }
+      } catch (error: unknown) {
+        logger.error('Error while patching initial render.', error);
+      }
     }
   }
 
   /** Handles subsequent rerenders. */
-  async function update(patchTargets: PatchTargetBitMask): Promise<void> {
-    beforeRender();
+  async function update(payload: ViewMessagePayload): Promise<void> {
     try {
-      const payload = await batch(
-        async () => await renderer.patch(props, patchTargets),
+      const result = await patcher.patch(payload, {});
+      switch (result) {
+        case BufferedPatchStatus.Cancelled:
+          logger.debug('Update cancelled');
+          break;
+        case BufferedPatchStatus.Completed:
+          logger.debug('Update complete');
+          break;
+      }
+    } catch (error: unknown) {
+      logger.error('Error while patching update.', error);
+    }
+  }
+
+  async function render(
+    patchTargets: PatchTargetBitMask | null,
+  ): Promise<ViewMessagePayload | null> {
+    if (patchTargets === 0) {
+      return null;
+    }
+
+    beforeRender();
+    let payload: ViewMessagePayload | Promise<ViewMessagePayload> | null = null;
+    try {
+      payload = batch(() =>
+        patchTargets === null
+          ? renderer.render(props)
+          : renderer.patch(props, patchTargets),
       );
-      await patcher.patch(payload, {});
+    } catch (error: unknown) {
+      logger.error(
+        `Error while creating a ${patchTargets === undefined ? 'payload' : 'patched payload'}`,
+        error,
+      );
+      throw error;
     } finally {
       afterRender();
     }
+
+    if (payload instanceof Promise) {
+      try {
+        payload = await payload;
+      } catch (error: unknown) {
+        logger.error(
+          'Error while resolving a promise returned from renderer',
+          error,
+        );
+        payload = null;
+        throw error;
+      }
+    }
+
+    return payload;
   }
 
   /**
@@ -727,7 +831,16 @@ export function instantiateMenu<
    */
   async function start(options: Partial<RenderOptions> = {}) {
     options = { ...DefaultRenderOptions, ...options };
-    await initialRender(options);
+    await new Promise<void>((resolve, reject) => {
+      queueMicrotask(async () => {
+        try {
+          await initialRender(options);
+          resolve();
+        } catch (e) {
+          reject(e);
+        }
+      });
+    });
     initCollector();
   }
 

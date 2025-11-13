@@ -1,10 +1,18 @@
 import type { MaybePromise } from '../../util/TypesUtil.js';
-import { effect, suspend, update, withDefer } from '../builtins/builtins.js';
+import {
+  deferUpdate,
+  effect,
+  injectLastCollectedInteraction,
+  suspend,
+  update,
+} from '../builtins/builtins.js';
 import { type Setter, type Signal } from '../reactivity/core/signals.js';
 import { untracked } from '../reactivity/untracked.js';
 import { signal } from './signal.js';
 import { computed } from './computed.js';
 import { read } from '../reactivity/core/read.js';
+import { PatchTarget } from '../RenderingEngine.js';
+import { batch } from '@preact/signals-core';
 
 const OPTIONS_DEFAULTS: Readonly<ResourceOptions<unknown, unknown>> = {
   autoUpdate: true,
@@ -66,7 +74,7 @@ export interface ResourceOptions<T, SOURCE> {
    *
    * @param source
    */
-  tryCache?: (source: SOURCE) => T | false | null | undefined;
+  tryCache?: (source: NonNullable<SOURCE>) => T | false | null | undefined;
   /**
    * Call {@link update} when the fetcher resolves or an error is captured.
    *
@@ -83,7 +91,9 @@ export interface ResourceOptions<T, SOURCE> {
   onError?: (error: unknown) => void;
 }
 
-export type ResourceFetcher<T, SOURCE> = (source: SOURCE) => MaybePromise<T>;
+export type ResourceFetcher<T, SOURCE> = (
+  source: NonNullable<SOURCE>,
+) => MaybePromise<T>;
 
 export function resource<T>(
   fetcher: ResourceFetcher<T, true>,
@@ -137,37 +147,39 @@ export function resource<T, SOURCE>(
   const [error, setError] = signal<unknown | null>(null);
   const [loading, setLoading] = signal(false);
 
-  const fetch = async (source: SOURCE) => {
+  const fetch = async (source: NonNullable<SOURCE>) => {
     const cacheHit = options.tryCache?.(source);
     if (cacheHit) {
-      setData(cacheHit);
-      setError(null);
-      setLoading(false);
+      batch(() => {
+        setData(cacheHit);
+        setError(null);
+        setLoading(false);
+      });
       return;
     }
 
     setLoading(true);
     try {
-      const res = await withDefer(fetcher(source));
-      setData(res);
-      setError(null);
-      if (options.autoUpdate ?? OPTIONS_DEFAULTS.autoUpdate) {
-        void update();
+      const lastCollected = injectLastCollectedInteraction();
+      if (lastCollected) {
+        deferUpdate(lastCollected);
       }
+
+      const res = await fetcher(source);
+      batch(() => {
+        setData(res);
+        setError(null);
+        setLoading(false);
+      });
     } catch (e: unknown) {
       setError(e);
-      if (options.onError) {
-        try {
-          // Error can potentially re-throw.
-          options.onError(e);
-        } finally {
-          if (options.autoUpdate ?? OPTIONS_DEFAULTS.autoUpdate) {
-            void update();
-          }
-        }
-      }
-    } finally {
+      options.onError?.(e);
       setLoading(false);
+    } finally {
+      if (options.autoUpdate ?? OPTIONS_DEFAULTS.autoUpdate) {
+        resumeContext();
+        void update(PatchTarget.All);
+      }
     }
   };
 
@@ -187,7 +199,7 @@ export function resource<T, SOURCE>(
     });
   } else {
     if (!options.initialValue) {
-      void fetch(true as SOURCE);
+      void fetch(true as NonNullable<SOURCE>);
     }
   }
 
@@ -223,7 +235,7 @@ export function resource<T, SOURCE>(
         }
       } else {
         resumeContext();
-        return fetch(true as SOURCE);
+        return fetch(true as NonNullable<SOURCE>);
       }
     },
   ];

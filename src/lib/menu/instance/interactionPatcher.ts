@@ -1,12 +1,29 @@
-import type { Message, RepliableInteraction } from 'discord.js';
+import { type Message, type RepliableInteraction } from 'discord.js';
 import type { ViewMessagePayload } from '../../views/viewFlavors.js';
 import { safeRender } from '../../../util/RenderingUtil.js';
 import type { RenderOptions } from './menuInstance.js';
 import type { IntrinsicMenuProps } from '../defineMenu.js';
-import { logger } from '../../../util/Logger.js';
+import { Logger } from '../../../util/Logger.js';
+
+export enum BufferedPatchStatus {
+  Completed,
+  Cancelled,
+}
+
+export interface BufferedPatch {
+  promiseResolve: (result: BufferedPatchStatus) => void;
+  payload: ViewMessagePayload;
+  options: Partial<RenderOptions>;
+}
+
+type TrackedDeferUpdate = Promise<unknown>;
 
 export class InteractionPatcher {
+  private logger = Logger.namespaced('InteractionPatcher');
+  private patching = false;
+  private deferredUpdates = new Map<string, TrackedDeferUpdate>();
   message?: Message;
+  bufferedPatch: BufferedPatch | null = null;
 
   constructor(
     public interaction: RepliableInteraction,
@@ -17,17 +34,103 @@ export class InteractionPatcher {
     this.interaction = interaction;
   }
 
-  async patch(payload: ViewMessagePayload, options: Partial<RenderOptions>) {
-    logger.info(
-      `Patching interaction.id=${this.interaction.id} with the following payload: `,
-      payload,
-    );
-    this.message = await safeRender(
-      this.interaction,
-      payload,
-      this.props,
-      options.forceReply,
-    );
+  isPatching(): boolean {
+    return this.patching;
+  }
+
+  deferUpdate(interaction: RepliableInteraction): void {
+    this.logger.debug('InteractionPatcher.deferUpdate', interaction.id);
+    if (
+      interaction.isMessageComponent() &&
+      !interaction.deferred &&
+      !interaction.replied
+    ) {
+      this.logger.debug('Should defer', interaction.id);
+      const id = interaction.id;
+      if (this.deferredUpdates.has(id)) {
+        // Already deferring.
+        this.logger.debug('Already deferring', interaction.id);
+        return;
+      }
+
+      const tracked: TrackedDeferUpdate = new Promise<unknown>(
+        (resolve, reject) => {
+          interaction
+            .deferUpdate()
+            .then((res) => {
+              this.logger.verbose('Tracked deferUpdate complete', id);
+              resolve(res);
+            })
+            .catch((e) => {
+              this.logger.error('Error in tracked deferUpdate', e);
+              reject(e);
+            })
+            .finally(() => {
+              this.deferredUpdates.delete(id);
+            });
+        },
+      );
+      this.deferredUpdates.set(id, tracked);
+    }
+  }
+
+  async patch(
+    payload: ViewMessagePayload,
+    options: Partial<RenderOptions>,
+  ): Promise<BufferedPatchStatus> {
+    this.logger.info(`Patch called with interaction.id=${this.interaction.id}`);
+    if (this.patching) {
+      if (this.bufferedPatch) {
+        this.logger.info(
+          'Patch has been received, but must be buffered. ' +
+            'There is an existing buffered patch, which will be cancelled.',
+        );
+        this.bufferedPatch.promiseResolve(BufferedPatchStatus.Cancelled);
+      } else {
+        this.logger.info('Patch has been received, but must be buffered.');
+      }
+      let promiseResolve!: (result: BufferedPatchStatus) => void;
+      const promise = new Promise<BufferedPatchStatus>((resolve) => {
+        promiseResolve = resolve;
+      });
+      this.bufferedPatch = {
+        payload,
+        options,
+        promiseResolve,
+      };
+      return promise;
+    }
+
+    this.logger.info('No patch was buffered, begin patch.');
+    this.patching = true;
+    try {
+      const activeDeferUpdate = this.deferredUpdates.get(this.interaction.id);
+      if (activeDeferUpdate) {
+        this.logger.debug('There is an active defer. Waiting...');
+        await activeDeferUpdate;
+        this.logger.debug('Resolved active defer.');
+      }
+      this.message = await safeRender(
+        this.interaction,
+        payload,
+        this.props,
+        options.forceReply,
+      );
+    } catch (error: unknown) {
+      this.logger.error('Error during patch', error);
+    } finally {
+      this.patching = false;
+    }
+
+    if (this.bufferedPatch) {
+      this.logger.debug('Patch complete, but another was buffered...');
+      const { payload, options } = this.bufferedPatch;
+      this.bufferedPatch = null;
+      return await this.patch(payload, options);
+    } else {
+      this.logger.debug('Patch complete.');
+      return BufferedPatchStatus.Completed;
+    }
   }
 
   async delete() {

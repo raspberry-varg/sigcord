@@ -101,7 +101,7 @@ export class Owner<T extends ViewNodeKind = ViewNodeKind>
     this.childOwners.forEach((owner) => owner.dispose());
     this.childOwners.clear();
 
-    logger.debug('Disposing Owner.', {
+    logger.verbose('DisposingOwner.', {
       debugName: this.debugName ?? '',
       toDispose: {
         disposalFns: this.disposals,

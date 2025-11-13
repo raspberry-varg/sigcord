@@ -18,8 +18,8 @@ export abstract class ViewClass<Props extends PropsBase = PropsBase> {
   ): MaybePromise<ViewMessagePayload>;
 
   /** @deprecated It is recommended to use $.goTo instead. */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars,@typescript-eslint/no-empty-function
-  onSwap(..._args: unknown[]): MaybePromise<void> {}
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onSwap(..._args: unknown[]): void {}
 }
 
 export function defineClassView<Props extends PropsBase>(

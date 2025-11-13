@@ -47,9 +47,9 @@ export const STATIC_RENDER_SYNAPSE: Synapse = {
       return r;
     }),
   getMenuInfo: unsupported('getMenuInfo'),
-  doUpdate: unsupported('doUpdate'),
+  scheduleUpdate: unsupported('doUpdate'),
   onModalSubmit: unsupported('onModalSubmit'),
-  patch: noop,
+  addPatchTargets: noop,
   queueRender: noop,
   setIdleMs: noop,
   setIdleSec: noop,
@@ -61,6 +61,7 @@ export const STATIC_RENDER_SYNAPSE: Synapse = {
     unsupported('ctx')();
     return undefined;
   },
+  deferUpdate: noop,
 };
 
 function unsupported(feature: string, reason?: string) {

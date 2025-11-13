@@ -1,4 +1,8 @@
 import type { RepliableInteraction } from 'discord.js';
+import {
+  INTERNAL_CONTEXT_SYMBOL,
+  type InternalMenuContext,
+} from './internalMenuContext.js';
 
 export interface MenuContext {
   /**
@@ -8,6 +12,12 @@ export interface MenuContext {
    *       this is the latest collected interaction (i.e. a component interaction).
    */
   interaction: RepliableInteraction;
+  /** @internal */
+  lastCollectedInteraction?: RepliableInteraction;
+  /** @internal */
+  activeInteraction: RepliableInteraction;
+  /** @internal */
+  isActivelyPatching: boolean;
   /**
    * The reaction provided when initializing this menu.
    *
@@ -26,4 +36,8 @@ export interface MenuContext {
    * The id of the initial view.
    */
   initialViewId: string;
+}
+
+export interface MenuContextWithInternal extends MenuContext {
+  [INTERNAL_CONTEXT_SYMBOL]: InternalMenuContext;
 }

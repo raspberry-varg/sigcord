@@ -24,7 +24,7 @@ export async function safeRender(
   props: (IntrinsicMenuProps & IntrinsicViewProps) | undefined,
   preferReplyForComponent = false,
 ): Promise<Message> {
-  let message: Message | null = null;
+  let message: Message | null | undefined = undefined;
 
   let flags: MessageFlags | undefined = props?.flags;
   if (viewPayload.flags) {
@@ -50,13 +50,13 @@ export async function safeRender(
         ...viewPayload,
         withResponse: true,
       } as InteractionReplyOptions & { withResponse: true });
-      message = response.resource?.message!;
+      message = response.resource?.message;
     } else {
       const response = await renderTarget.update({
         ...viewPayload,
         withResponse: true,
       } as InteractionUpdateOptions & { withResponse: true });
-      message = response.resource?.message!;
+      message = response.resource?.message;
     }
   }
 
@@ -66,8 +66,8 @@ export async function safeRender(
       ...viewPayload,
       withResponse: true,
     } as InteractionReplyOptions & { withResponse: true });
-    message = response.resource?.message!;
+    message = response.resource?.message;
   }
 
-  return message;
+  return message!;
 }

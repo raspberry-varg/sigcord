@@ -6,11 +6,12 @@ import {
 } from './views/classic/classViewInstance.js';
 import { isReactiveViewInstance } from './views/reactive/reactiveViewInstance.js';
 import { type View, type ViewInstance } from './views/view.js';
-import type {
-  EmbedComponent,
-  RenderedReactiveView,
-  ViewComponent,
-  ViewMessagePayload,
+import {
+  type EmbedComponent,
+  IS_V2,
+  type RenderedReactiveView,
+  type ViewComponent,
+  type ViewMessagePayload,
 } from './views/viewFlavors.js';
 import { isRenderedReactiveViewV2 } from './views/viewFlavors.js';
 import { logger } from '../util/Logger.js';
@@ -180,7 +181,7 @@ export class RenderingEngine {
   }
 
   dispose(): void {
-    logger.debug('Disposing RenderingEngine');
+    logger.verbose('DisposingRenderingEngine');
     for (const instance of this.instances.values()) {
       const isReactive = isReactiveViewInstance(instance);
       const isV2 = isReactive && isRenderedReactiveViewV2(instance);
@@ -199,14 +200,15 @@ export class RenderingEngine {
     }
   }
 
-  async patch(
+  patch(
     props: Props,
     targets: PatchTargetBitMask,
-  ): Promise<ViewMessagePayload> {
+  ): ViewMessagePayload | Promise<ViewMessagePayload> {
     assert(this.viewDefinition, 'Internal error: View was not set.');
     logger.debug('Patch requested', {
       targets,
-      reactiveViewInstance: this.reactiveViewInstance,
+      reactiveViewInstance: this.reactiveViewInstance?.id ?? '<none>',
+      isV2: this.reactiveViewInstance && IS_V2 in this.reactiveViewInstance,
     });
     const queuedNav = this.queuedNavigation;
     if (
@@ -215,7 +217,7 @@ export class RenderingEngine {
       !this.isCurrentViewReactive()
     ) {
       // do a full render instead
-      return await this.render(props);
+      return this.render(props);
     }
 
     if (queuedNav && queuedNav.reactiveInstance) {
@@ -239,7 +241,11 @@ export class RenderingEngine {
     const $ = props.$;
     targets |= this.queuedClears;
     const payload: ViewMessagePayload = {};
-    logger.debug('Patching reactive view', { targets, viewInstance: instance });
+    logger.debug('Patching reactive view', {
+      targets,
+      viewInstance: instance.id,
+      isV2: IS_V2 in instance,
+    });
     const prevContext = setReactiveContext($);
     try {
       batch(() => {
@@ -258,7 +264,7 @@ export class RenderingEngine {
           }
         }
 
-        if (isRenderedReactiveViewV2(instance)) {
+        if (isV2) {
           payload.flags = (payload.flags ?? 0) | MessageFlags.IsComponentsV2;
           const patchTarget = (this.patchContext = PatchTarget.Components);
           if (this.isQueuedForClear(patchTarget)) {
@@ -384,7 +390,7 @@ export class RenderingEngine {
     return payload;
   }
 
-  async render(props: Props): Promise<ViewMessagePayload> {
+  render(props: Props): ViewMessagePayload | Promise<ViewMessagePayload> {
     if (this.queuedView) {
       this.viewDefinition = this.queuedView.view;
     }
@@ -407,7 +413,7 @@ export class RenderingEngine {
     );
     if (this.queuedView) {
       if ('args' in this.queuedView && isClassViewInstance(view)) {
-        await view.instance.onSwap(...this.queuedView.args);
+        view.instance.onSwap(...this.queuedView.args);
       }
       this.queuedView = undefined;
       this.reactiveViewInstance = undefined;
@@ -416,7 +422,16 @@ export class RenderingEngine {
       this.reactiveViewInstance = view;
       return this.patchReactive(view, props, PatchTarget.All);
     }
-    const payload = await batch(() => view.instance.render(props));
+    const payload = batch(() => view.instance.render(props));
+    if (payload instanceof Promise) {
+      return payload.then((p) => {
+        if (this.queuedEmbeds) {
+          p.embeds = this.resolveWithQueuedItems(p.embeds, this.queuedEmbeds);
+        }
+        this.postRender();
+        return p;
+      });
+    }
     if (this.queuedEmbeds) {
       payload.embeds = this.resolveWithQueuedItems(
         payload.embeds,
