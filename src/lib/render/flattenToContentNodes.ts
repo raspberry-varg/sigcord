@@ -10,7 +10,7 @@ import { getOpenOwner } from './owner.js';
 import { read } from '../reactivity/core/read.js';
 
 export function flattenToContentNodes<T extends ViewNodeKind>(
-  content: Recursive<T | ViewNode<T>>,
+  content: T,
 ): ViewNode<T>[] {
   if (Array.isArray(content)) {
     return content.flatMap(flattenToContentNodes);
