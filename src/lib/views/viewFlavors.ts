@@ -1,17 +1,14 @@
 import {
-  EmbedBuilder,
-  MessageComponentInteraction,
   type ContainerComponentBuilder,
+  EmbedBuilder,
   type MessageComponentBuilder,
+  MessageComponentInteraction,
   type MessageFlags,
   type TopLevelComponent,
   type TopLevelComponentData,
 } from 'discord.js';
 import type { REACTIVE_VIEW_SYMBOL } from './reactive/reactiveViewSymbol.js';
-import {
-  type WritableSignal,
-  type Signalish,
-} from '../reactivity/core/signals.js';
+import type { Signalish, WritableSignal } from '../reactivity/core/signals.js';
 import type { ViewElementNode } from '../dom/viewElementNode.js';
 import type { DisposeFn } from '../render/dispose.js';
 import type { Owner } from '../render/owner.js';
