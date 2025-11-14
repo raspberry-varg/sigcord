@@ -22,6 +22,12 @@ export type MaybeWritableSignal<T> = T | Signalish<T>;
 export function isWritableSignal<T>(
   value?: T | Signalish<T>,
 ): value is WritableSignal<T> {
+  return HasWritableSignalStamp(value);
+}
+
+export function HasWritableSignalStamp<T>(
+  value?: T,
+): value is T & { [WRITABLE_STAMP]: true } {
   return value != null && typeof value === 'object' && WRITABLE_STAMP in value;
 }
 

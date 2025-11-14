@@ -27,6 +27,7 @@ export {
   Updater,
   isSignal,
   isWritableSignal,
+  HasWritableSignalStamp,
   EffectFn,
 } from './lib/reactivity/core/signals.js';
 export {
@@ -85,6 +86,7 @@ export {
   AutoComponents,
   configureAutoComponent,
 } from './lib/components/autocomponents.js';
+export { flattenToContentNodes } from './lib/render/flattenToContentNodes.js';
 export { ViewNodeKind } from './lib/dom/viewNodeKind.js';
 export { ViewNode } from './lib/dom/viewNode.js';
 export { ViewContentNode } from './lib/dom/viewContentNode.js';
