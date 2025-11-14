@@ -85,9 +85,11 @@ export interface ResourceOptions<T, SOURCE> {
    *
    * Errors will still be set to {@link Resource#error}. This is just a
    * convenient spot to avoid making an effect specifically for error handling.
-   * @param error
+   *
+   * @param error The error thrown.
+   * @param source The source value used in the {@link ResourceFetcher} that threw.
    */
-  onError?: (error: unknown) => void;
+  onError?: (error: unknown, source: NonNullable<SOURCE>) => void;
 }
 
 export type ResourceFetcher<T, SOURCE> = (
@@ -174,7 +176,7 @@ export function resource<T, SOURCE>(
       });
     } catch (e: unknown) {
       setError(e);
-      options.onError?.(e);
+      options.onError?.(e, source);
       setLoading(false);
     } finally {
       if (options.autoUpdate ?? OPTIONS_DEFAULTS.autoUpdate) {
