@@ -420,6 +420,7 @@ export function instantiateMenu<
       : interaction;
   }
   function stopMenu(reason?: string) {
+    builtins.deferUpdate();
     collector.stop(reason);
     dispose();
   }
