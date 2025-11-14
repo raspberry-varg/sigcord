@@ -22,6 +22,7 @@ export class InteractionPatcher {
   private logger = Logger.namespaced('InteractionPatcher');
   private patching = false;
   private deferredUpdates = new Map<string, TrackedDeferUpdate>();
+  private activePatchPromise: Promise<Message> | undefined;
   message?: Message;
   bufferedPatch: BufferedPatch | null = null;
 
@@ -80,15 +81,7 @@ export class InteractionPatcher {
   ): Promise<BufferedPatchStatus> {
     this.logger.info(`Patch called with interaction.id=${this.interaction.id}`);
     if (this.patching) {
-      if (this.bufferedPatch) {
-        this.logger.info(
-          'Patch has been received, but must be buffered. ' +
-            'There is an existing buffered patch, which will be cancelled.',
-        );
-        this.bufferedPatch.promiseResolve(BufferedPatchStatus.Cancelled);
-      } else {
-        this.logger.info('Patch has been received, but must be buffered.');
-      }
+      this.cancelBufferedPatch();
       let promiseResolve!: (result: BufferedPatchStatus) => void;
       const promise = new Promise<BufferedPatchStatus>((resolve) => {
         promiseResolve = resolve;
@@ -110,16 +103,17 @@ export class InteractionPatcher {
         await activeDeferUpdate;
         this.logger.debug('Resolved active defer.');
       }
-      this.message = await safeRender(
+      this.message = await (this.activePatchPromise = safeRender(
         this.interaction,
         payload,
         this.props,
         options.forceReply,
-      );
+      ));
     } catch (error: unknown) {
       this.logger.error('Error during patch', error);
     } finally {
       this.patching = false;
+      this.activePatchPromise = undefined;
     }
 
     if (this.bufferedPatch) {
@@ -134,6 +128,40 @@ export class InteractionPatcher {
   }
 
   async delete() {
-    return await this.interaction.deleteReply();
+    this.cancelBufferedPatch();
+
+    const activeDeferUpdate = this.deferredUpdates.get(this.interaction.id);
+    if (activeDeferUpdate) {
+      this.logger.debug('Delete encountered active defer.');
+      try {
+        await activeDeferUpdate;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (_: unknown) {
+        this.logger.verbose(
+          'Error while delete was waiting for active defer update.',
+        );
+      }
+      this.logger.debug('Delete resolved active defer.');
+    }
+
+    if (this.patching) {
+      await this.activePatchPromise;
+    }
+
+    this.patching = true;
+    try {
+      await this.interaction.deleteReply();
+    } catch (error: unknown) {
+      this.logger.error('Error when deleting reply', error);
+    } finally {
+      this.patching = false;
+    }
+  }
+
+  private cancelBufferedPatch() {
+    if (this.bufferedPatch) {
+      this.logger.info('Cancelling buffered patch.');
+      this.bufferedPatch.promiseResolve(BufferedPatchStatus.Cancelled);
+    }
   }
 }
