@@ -377,7 +377,10 @@ export function instantiateMenu<
         }),
       getMenuInfo: () => ctx,
       deferUpdate(interaction) {
-        patcher.deferUpdate(interaction);
+        const toDefer = interaction ?? collector.lastCollected;
+        if (toDefer) {
+          patcher.deferUpdate(toDefer);
+        }
       },
     };
     return $;

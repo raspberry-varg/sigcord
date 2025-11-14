@@ -90,7 +90,7 @@ export interface Synapse {
    */
   addPatchTargets: (...targets: PatchTarget[]) => void;
   scheduleUpdate: () => void;
-  deferUpdate: (interaction: RepliableInteraction) => void;
+  deferUpdate: (interaction?: RepliableInteraction) => void;
 
   createSignal<T>(): SignalTuple<T | undefined>;
   createSignal<T>(initialValue: undefined): SignalTuple<T | undefined>;
