@@ -272,16 +272,36 @@ export async function asyncBoundary<T>(
 }
 
 /**
- * Defer an update if the provided interaction is a {@link MessageComponent}.
+ * Defer an update if the provided interaction is a {@link MessageComponent}. If
+ * no interaction is provided, it will attempt to defer update of the latest
+ * interaction collected.
  *
  * If update deferral is possible, no scheduled updates to the interaction will
  * occur until the deferral is complete.
  *
  * Has no effect if already deferring with another call to this function.
  *
+ * @example
+ * ```ts
+ * component({
+ *   id: 'foo',
+ *   handler: () => {
+ *     // Implicitly defers this interaction as it was the last collected.
+ *     deferUpdate();
+ *   }
+ * });
+ *
+ * component({
+ *   id: 'foo',
+ *   handler: (interaction) => {
+ *     deferUpdate(interaction);
+ *   }
+ * });
+ * ```
+ *
  * @param interaction
  */
-export function deferUpdate(interaction: RepliableInteraction): void {
+export function deferUpdate(interaction?: RepliableInteraction): void {
   useSynapse().deferUpdate(interaction);
 }
 
