@@ -142,7 +142,7 @@ export function resource<T, SOURCE>(
     throw new Error('Invalid override.');
   }
 
-  const [data, setData] = signal<T | undefined>(options.initialValue);
+  const [backingSignal, setData] = signal<T | undefined>(options.initialValue);
   const [error, setError] = signal<unknown | null>(null);
   const [loading, setLoading] = signal(false);
 
@@ -206,28 +206,28 @@ export function resource<T, SOURCE>(
     }
   }
 
-  const r = data as Resource<T | undefined>;
-  r.loading = loading;
-  r.error = error;
+  const data = backingSignal as Resource<T | undefined>;
+  data.loading = loading;
+  data.error = error;
 
   let ready: Signal<boolean> | undefined;
   let errored: Signal<boolean> | undefined;
-  Object.defineProperties(r, {
+  Object.defineProperties(data, {
     ready: {
       get(): Signal<boolean> {
-        return (ready ??= computed(() => !r.loading() && !r.error()));
+        return (ready ??= computed(() => !data.loading() && !data.error()));
       },
     },
     errored: {
       get(): Signal<boolean> {
-        return (errored ??= computed(() => !!r.error()));
+        return (errored ??= computed(() => !!data.error()));
       },
     },
   });
 
   const resumeContext = suspend();
   return [
-    r,
+    data,
     {
       mutate: setData,
       refetch() {
