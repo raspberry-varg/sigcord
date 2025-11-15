@@ -37,8 +37,10 @@ export type Resource<T> = Signal<T> & {
 
 export type ResourceTuple<T> = [
   data: Resource<T | undefined>,
-  mutate: Setter<T | undefined>,
-  refetch: () => void,
+  {
+    mutate: Setter<T | undefined>;
+    refetch: () => void;
+  },
 ];
 
 /**
@@ -226,23 +228,25 @@ export function resource<T, SOURCE>(
   const resumeContext = suspend();
   return [
     r,
-    setData,
-    function refetch() {
-      resumeContext();
-      if (getOpenOwner()?.disposed) {
-        logger.debug('Refetch resource ignored as owner is disposed.');
-        return;
-      }
-
-      if (options.source) {
-        const src = untracked(() => read(options.source));
-        if (src) {
-          return fetch(src, true);
-        }
-      } else {
+    {
+      mutate: setData,
+      refetch() {
         resumeContext();
-        return fetch(true as NonNullable<SOURCE>, true);
-      }
+        if (getOpenOwner()?.disposed) {
+          logger.debug('Refetch resource ignored as owner is disposed.');
+          return;
+        }
+
+        if (options.source) {
+          const src = untracked(() => read(options.source));
+          if (src) {
+            return fetch(src, true);
+          }
+        } else {
+          resumeContext();
+          return fetch(true as NonNullable<SOURCE>, true);
+        }
+      },
     },
   ];
 }
