@@ -62,6 +62,7 @@ export {
   injectCurrentInteraction,
   update,
   deferUpdate,
+  withResume,
 } from './lib/builtins/builtins.js';
 export {
   defineView,

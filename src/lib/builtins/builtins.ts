@@ -17,6 +17,7 @@ import type { MaybePromise } from '../../util/TypesUtil.js';
 import type { MenuContext } from '../menu/instance/menuContext.js';
 import { STATIC_RENDER_SYNAPSE } from '../render/staticRenderSynapse.js';
 import { type MessageComponent, type RepliableInteraction } from 'discord.js';
+import { untracked } from '../reactivity/untracked.js';
 
 let currentSynapse: Synapse | null = null;
 
@@ -269,6 +270,39 @@ export async function asyncBoundary<T>(
     resume();
   }
   return result;
+}
+
+/**
+ * Restore the current reactive context when the provided promise resolves.
+ *
+ * @example
+ * ```ts
+ * const onClick: (buttonInteraction: ButtonInteraction) => {
+ *   const user = await withResume(fetchUserFromDb());
+ *   // reactive hook context restored, allowing hooks to safely resume their work
+ *   goTo(UserInfoView, {user});
+ * }
+ * ```
+ *
+ * @param promiseOrFn The promise to await or function to await in an {@link untracked}.
+ * @param autoUpdate Automatically schedule an update when the promise resolves.
+ *   Enabled by default.
+ */
+export async function withResume<T>(
+  promiseOrFn: MaybePromise<T> | (() => MaybePromise<T>),
+  autoUpdate = true,
+): Promise<T> {
+  const resume = suspend();
+  try {
+    return await (typeof promiseOrFn === 'function'
+      ? untracked(promiseOrFn as () => MaybePromise<T>)
+      : promiseOrFn);
+  } finally {
+    resume();
+    if (autoUpdate) {
+      update();
+    }
+  }
 }
 
 /**
