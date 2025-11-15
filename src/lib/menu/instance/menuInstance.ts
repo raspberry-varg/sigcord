@@ -229,11 +229,7 @@ export function instantiateMenu<
 
         flushModal();
         await batch(() => asyncBoundary(() => callback(response)));
-
-        const patchTargets = getPatchTargets();
-        if (patchTargets !== PatchTarget.None) {
-          maybeQueueUpdate();
-        }
+        builtins.scheduleUpdate();
       },
       setIdleMs: (idleMilliseconds: number) => {
         assert(
@@ -253,7 +249,9 @@ export function instantiateMenu<
       skipRender: (shouldSkip = true) => {
         skipRender = shouldSkip;
       },
-      stop: (reason?: string) => stopMenu(reason),
+      stop: (reason?: string) => {
+        void stopMenu(reason);
+      },
       queueRender: (queueRender = true) => {
         if (queueRender) {
           manualPatchQueued |= PatchTarget.All;
@@ -419,11 +417,6 @@ export function instantiateMenu<
       ? collector.lastCollected
       : interaction;
   }
-  function stopMenu(reason?: string) {
-    builtins.deferUpdate();
-    collector.stop(reason);
-    dispose();
-  }
 
   let updateMicrotaskQueued = false;
   function maybeQueueUpdate() {
@@ -446,10 +439,15 @@ export function instantiateMenu<
         } catch (error: unknown) {
           logger.error('Error during update microtask', error);
         }
+
+        if (disposed) {
+          return;
+        }
+
         if (payload) {
           await update(payload);
-        } else if (collector.lastCollected) {
-          builtins.deferUpdate(collector.lastCollected);
+        } else {
+          builtins.deferUpdate();
         }
       });
     }
@@ -458,7 +456,7 @@ export function instantiateMenu<
   let disposed = false;
   function dispose() {
     disposed = true;
-    logger.verbose('DisposingMenuController');
+    logger.verbose('Disposing menu instance', { menuId });
     logger.debug(
       `Disposing ${hangingDisposals.length} hanging effect disposal(s)`,
     );
@@ -626,9 +624,21 @@ export function instantiateMenu<
    * - This will also delete ephemeral replies.
    */
   async function closeMenu() {
-    stopMenu('close');
+    tearDownMenu();
     patcher.mountInteraction(interaction);
-    return await patcher.delete();
+    await patcher.delete();
+    collector.stop('close');
+  }
+
+  async function stopMenu(reason?: string) {
+    builtins.deferUpdate();
+    tearDownMenu();
+    await patcher.stop();
+    collector.stop(reason);
+  }
+
+  function tearDownMenu() {
+    dispose();
   }
 
   function getComponentId(rawCustomId: string) {
@@ -704,23 +714,33 @@ export function instantiateMenu<
     }
 
     const prevContext = setReactiveContext(builtins);
+    let callbackResult;
     try {
-      await batch(async () => await interactionCallback(collected));
+      callbackResult = batch(() => interactionCallback(collected));
     } catch (e) {
-      logger.error(
-        `Error occurred while handling a collected component interaction: ${collected.customId}`,
-      );
+      logger.error('Error during component interaction handle', {
+        customId: collected.customId,
+      });
       throw e;
     } finally {
       setReactiveContext(prevContext);
+      builtins.scheduleUpdate();
     }
 
-    const patchTargets = getPatchTargets();
-    if (patchTargets !== PatchTarget.None) {
-      const patchedPayload = await render(patchTargets);
-      if (patchedPayload) {
-        await update(patchedPayload);
-      }
+    if (!(callbackResult instanceof Promise)) {
+      return;
+    }
+
+    try {
+      await callbackResult;
+    } catch (error: unknown) {
+      logger.error(
+        `Error during component interaction async callback resolve.`,
+        { customId: collected.customId },
+      );
+      throw error;
+    } finally {
+      builtins.scheduleUpdate();
     }
   }
 
