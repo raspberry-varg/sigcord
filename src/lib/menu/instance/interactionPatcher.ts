@@ -41,6 +41,14 @@ export class InteractionPatcher {
 
   deferUpdate(interaction: RepliableInteraction): void {
     this.logger.debug('InteractionPatcher.deferUpdate', interaction.id);
+    if (this.patching && this.interaction.id === interaction.id) {
+      this.logger.debug(
+        'Not deferring update since this interaction is already being patched.',
+        interaction.id,
+      );
+      return;
+    }
+
     if (
       interaction.isMessageComponent() &&
       !interaction.deferred &&
@@ -124,6 +132,29 @@ export class InteractionPatcher {
     } else {
       this.logger.debug('Patch complete.');
       return BufferedPatchStatus.Completed;
+    }
+  }
+
+  async stop(): Promise<void> {
+    this.cancelBufferedPatch();
+
+    try {
+      const activeDeferUpdate = this.deferredUpdates.get(this.interaction.id);
+      if (activeDeferUpdate) {
+        this.logger.debug('Stop encountered active defer.');
+        await activeDeferUpdate;
+      }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_: unknown) {
+      this.logger.verbose(
+        'Error while stop was waiting for active defer update.',
+      );
+    }
+    this.logger.debug('Stop resolved active defer.');
+    this.deferredUpdates.clear();
+
+    if (this.patching) {
+      await this.activePatchPromise;
     }
   }
 
