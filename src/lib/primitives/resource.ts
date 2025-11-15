@@ -1,17 +1,13 @@
 import type { MaybePromise } from '../../util/TypesUtil.js';
-import {
-  deferUpdate,
-  effect,
-  injectLastCollectedInteraction,
-  suspend,
-  update,
-} from '../builtins/builtins.js';
+import { effect, suspend, update } from '../builtins/builtins.js';
 import { type Setter, type Signal } from '../reactivity/core/signals.js';
 import { untracked } from '../reactivity/untracked.js';
 import { signal } from './signal.js';
 import { computed } from './computed.js';
 import { read } from '../reactivity/core/read.js';
 import { batch } from '@preact/signals-core';
+import { getOpenOwner } from '../render/owner.js';
+import { logger } from '../../util/Logger.js';
 
 const OPTIONS_DEFAULTS: Readonly<ResourceOptions<unknown, unknown>> = {
   autoUpdate: true,
@@ -148,25 +144,22 @@ export function resource<T, SOURCE>(
   const [error, setError] = signal<unknown | null>(null);
   const [loading, setLoading] = signal(false);
 
-  const fetch = async (source: NonNullable<SOURCE>) => {
-    const cacheHit = options.tryCache?.(source);
-    if (cacheHit) {
-      batch(() => {
-        setData(cacheHit);
-        setError(null);
-        setLoading(false);
-      });
-      return;
+  const fetch = async (source: NonNullable<SOURCE>, skipCache: boolean) => {
+    if (!skipCache) {
+      const cacheHit = options.tryCache?.(source);
+      if (cacheHit) {
+        batch(() => {
+          setData(cacheHit);
+          setError(null);
+          setLoading(false);
+        });
+        return;
+      }
     }
 
     setLoading(true);
     try {
-      const lastCollected = injectLastCollectedInteraction();
-      if (options.autoUpdate ?? OPTIONS_DEFAULTS.autoUpdate) {
-        update();
-      } else if (lastCollected) {
-        deferUpdate(lastCollected);
-      }
+      update();
 
       const res = await fetcher(source);
       batch(() => {
@@ -175,9 +168,14 @@ export function resource<T, SOURCE>(
         setLoading(false);
       });
     } catch (e: unknown) {
-      setError(e);
-      options.onError?.(e, source);
-      setLoading(false);
+      if (options.onError) {
+        resumeContext();
+        options.onError?.(e, source);
+      }
+      batch(() => {
+        setError(e);
+        setLoading(false);
+      });
     } finally {
       if (options.autoUpdate ?? OPTIONS_DEFAULTS.autoUpdate) {
         resumeContext();
@@ -197,12 +195,12 @@ export function resource<T, SOURCE>(
             return;
           }
         }
-        void fetch(src);
+        void fetch(src, false);
       }
     });
   } else {
     if (!options.initialValue) {
-      void fetch(true as NonNullable<SOURCE>);
+      void fetch(true as NonNullable<SOURCE>, false);
     }
   }
 
@@ -229,16 +227,21 @@ export function resource<T, SOURCE>(
   return [
     r,
     setData,
-    () => {
+    function refetch() {
+      resumeContext();
+      if (getOpenOwner()?.disposed) {
+        logger.debug('Refetch resource ignored as owner is disposed.');
+        return;
+      }
+
       if (options.source) {
         const src = untracked(() => read(options.source));
         if (src) {
-          resumeContext();
-          return fetch(src);
+          return fetch(src, true);
         }
       } else {
         resumeContext();
-        return fetch(true as NonNullable<SOURCE>);
+        return fetch(true as NonNullable<SOURCE>, true);
       }
     },
   ];
