@@ -1,4 +1,7 @@
-import type { RepliableInteraction } from 'discord.js';
+import type {
+  CollectedMessageInteraction,
+  RepliableInteraction,
+} from 'discord.js';
 import {
   INTERNAL_CONTEXT_SYMBOL,
   type InternalMenuContext,
@@ -13,7 +16,7 @@ export interface MenuContext {
    */
   interaction: RepliableInteraction;
   /** @internal */
-  lastCollectedInteraction?: RepliableInteraction;
+  lastCollectedInteraction?: CollectedMessageInteraction;
   /** @internal */
   activeInteraction: RepliableInteraction;
   /** @internal */

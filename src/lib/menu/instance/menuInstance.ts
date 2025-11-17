@@ -37,7 +37,7 @@ import {
 } from '../../reactivity/core/signals.js';
 import type { PropsBase } from '../../views/viewDefinitionBase.js';
 import { Navigation } from '../../Navigation.js';
-import { asyncBoundary, setReactiveContext } from '../../builtins/builtins.js';
+import { setReactiveContext, withResume } from '../../builtins/builtins.js';
 import type { TimeoutEndReason } from '../../../util/CollectorUtil.js';
 import { batch } from '@preact/signals-core';
 import type { DisposeFn } from '../../render/dispose.js';
@@ -173,7 +173,7 @@ export function instantiateMenu<
 
         return definition.component;
       },
-      async showModal(interaction, modalOrOptions) {
+      showModal: async (interaction, modalOrOptions) => {
         let modal: ModalBuilder;
         let options: ModalHandlingOptions | undefined;
         if (modalOrOptions instanceof ModalBuilder) {
@@ -184,35 +184,14 @@ export function instantiateMenu<
         }
 
         latestModal.customId = modal.data.custom_id ?? '';
-        await interaction.showModal(modal);
+        patcher.showModal(interaction, modal);
         if (options) {
-          await this.onModalSubmit(interaction, options, options.onSubmit);
+          await $.onModalSubmit(interaction, options, options.onSubmit);
         }
       },
       awaitModalSubmit: async (interaction, options) => {
         latestModal.interactionId = interaction.id;
-        const response = await asyncBoundary(() =>
-          interaction.awaitModalSubmit(options).catch(() => {
-            logger.info('Modal ended without receiving a response.');
-            flushModal();
-            return null;
-          }),
-        );
-        if (
-          !response ||
-          (latestModal.interactionId.length &&
-            latestModal.interactionId !== interaction.id) ||
-          (latestModal.customId.length &&
-            latestModal.customId !== response.customId)
-        ) {
-          return null;
-        }
-        flushModal();
-        return response;
-      },
-      onModalSubmit: async (interaction, options, callback) => {
-        latestModal.interactionId = interaction.id;
-        const response = await asyncBoundary(() =>
+        const response = await withResume(() =>
           interaction.awaitModalSubmit(options).catch(() => {
             logger.info('Modal ended without receiving a response.');
             flushModal();
@@ -224,12 +203,47 @@ export function instantiateMenu<
           latestModal.interactionId !== interaction.id ||
           latestModal.customId !== response.customId
         ) {
-          return;
+          return null;
         }
 
         flushModal();
-        await batch(() => asyncBoundary(() => callback(response)));
-        builtins.scheduleUpdate();
+        response.deferUpdate();
+        return response;
+      },
+      onModalSubmit: async (interaction, options, callback) => {
+        const response = await $.awaitModalSubmit(interaction, options);
+        if (!response) {
+          return;
+        }
+
+        const prevContext = setReactiveContext(builtins);
+        let callbackResult;
+        try {
+          callbackResult = batch(() => callback(response));
+        } catch (e) {
+          logger.error('Error during onModalSubmit', {
+            customId: response.customId,
+          });
+          throw e;
+        } finally {
+          setReactiveContext(prevContext);
+          builtins.scheduleUpdate();
+        }
+
+        if (!(callbackResult instanceof Promise)) {
+          return;
+        }
+
+        try {
+          await callbackResult;
+        } catch (error: unknown) {
+          logger.error(`Error during onModalSubmit async callback resolve.`, {
+            customId: response.customId,
+          });
+          throw error;
+        } finally {
+          builtins.scheduleUpdate();
+        }
       },
       setIdleMs: (idleMilliseconds: number) => {
         assert(
@@ -476,7 +490,7 @@ export function instantiateMenu<
     get interaction(): RepliableInteraction {
       return getInteractionToPatch();
     },
-    get lastCollectedInteraction(): RepliableInteraction | undefined {
+    get lastCollectedInteraction() {
       return collector.lastCollected;
     },
     get activeInteraction(): RepliableInteraction {
@@ -626,7 +640,7 @@ export function instantiateMenu<
   async function closeMenu() {
     tearDownMenu();
     patcher.mountInteraction(interaction);
-    await patcher.delete();
+    await patcher.delete(props.initialMessage);
     collector.stop('close');
   }
 

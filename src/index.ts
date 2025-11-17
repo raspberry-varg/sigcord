@@ -60,6 +60,7 @@ export {
   onResume,
   isSuspended,
   injectCurrentInteraction,
+  injectLastCollectedInteraction,
   update,
   deferUpdate,
   withResume,

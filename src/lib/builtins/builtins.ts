@@ -16,7 +16,11 @@ import { getOpenOwnerStrict } from '../render/owner.js';
 import type { MaybePromise } from '../../util/TypesUtil.js';
 import type { MenuContext } from '../menu/instance/menuContext.js';
 import { STATIC_RENDER_SYNAPSE } from '../render/staticRenderSynapse.js';
-import { type MessageComponent, type RepliableInteraction } from 'discord.js';
+import {
+  type CollectedMessageInteraction,
+  type MessageComponent,
+  type RepliableInteraction,
+} from 'discord.js';
 import { untracked } from '../reactivity/untracked.js';
 
 let currentSynapse: Synapse | null = null;
@@ -344,7 +348,7 @@ export function injectActiveInteraction(): RepliableInteraction {
 }
 
 export function injectLastCollectedInteraction():
-  | RepliableInteraction
+  | CollectedMessageInteraction
   | undefined {
   return useMenuInfo().lastCollectedInteraction;
 }
@@ -421,7 +425,7 @@ export function isSuspended(): boolean {
 // Modals
 
 export const showModal: Synapse['showModal'] = (interaction, modalOrOptions) =>
-  asyncBoundary(() =>
+  withResume(() =>
     useSynapse().showModal(
       interaction,
       modalOrOptions as Parameters<Synapse['showModal']>[1],
@@ -431,16 +435,14 @@ export const showModal: Synapse['showModal'] = (interaction, modalOrOptions) =>
 export const awaitModalSubmit: Synapse['awaitModalSubmit'] = (
   interaction,
   options,
-) => asyncBoundary(() => useSynapse().awaitModalSubmit(interaction, options));
+) => withResume(() => useSynapse().awaitModalSubmit(interaction, options));
 
 export const onModalSubmit: Synapse['onModalSubmit'] = (
   interaction,
   options,
   callback,
 ) =>
-  asyncBoundary(() =>
-    useSynapse().onModalSubmit(interaction, options, callback),
-  );
+  withResume(() => useSynapse().onModalSubmit(interaction, options, callback));
 
 // Embed manipulation
 
