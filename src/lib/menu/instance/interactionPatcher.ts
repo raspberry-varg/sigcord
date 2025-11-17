@@ -1,9 +1,15 @@
-import { type Message, type RepliableInteraction } from 'discord.js';
+import {
+  type Message,
+  type ModalBuilder,
+  type ModalComponentData,
+  type RepliableInteraction,
+} from 'discord.js';
 import type { ViewMessagePayload } from '../../views/viewFlavors.js';
 import { safeRender } from '../../../util/RenderingUtil.js';
 import type { RenderOptions } from './menuInstance.js';
 import type { IntrinsicMenuProps } from '../defineMenu.js';
 import { Logger } from '../../../util/Logger.js';
+import type { ModalRepliableInteraction } from '../../interactivity/modalHandling.js';
 
 export enum BufferedPatchStatus {
   Completed,
@@ -16,12 +22,12 @@ export interface BufferedPatch {
   options: Partial<RenderOptions>;
 }
 
-type TrackedDeferUpdate = Promise<unknown>;
+type TrackedAction = Promise<unknown>;
 
 export class InteractionPatcher {
   private logger = Logger.namespaced('InteractionPatcher');
   private patching = false;
-  private deferredUpdates = new Map<string, TrackedDeferUpdate>();
+  private trackedActions = new Map<string, TrackedAction>();
   private activePatchPromise: Promise<Message> | undefined;
   message?: Message;
   bufferedPatch: BufferedPatch | null = null;
@@ -56,31 +62,73 @@ export class InteractionPatcher {
     ) {
       this.logger.debug('Should defer', interaction.id);
       const id = interaction.id;
-      if (this.deferredUpdates.has(id)) {
+      if (this.trackedActions.has(id)) {
         // Already deferring.
-        this.logger.debug('Already deferring', interaction.id);
+        this.logger.debug(
+          '(deferUpdate) -> Already performing an action',
+          interaction.id,
+        );
         return;
       }
 
-      const tracked: TrackedDeferUpdate = new Promise<unknown>(
-        (resolve, reject) => {
-          interaction
-            .deferUpdate()
-            .then((res) => {
-              this.logger.verbose('Tracked deferUpdate complete', id);
-              resolve(res);
-            })
-            .catch((e) => {
-              this.logger.error('Error in tracked deferUpdate', e);
-              reject(e);
-            })
-            .finally(() => {
-              this.deferredUpdates.delete(id);
-            });
-        },
-      );
-      this.deferredUpdates.set(id, tracked);
+      const tracked: TrackedAction = new Promise<unknown>((resolve, reject) => {
+        interaction
+          .deferUpdate()
+          .then((res) => {
+            this.logger.verbose('Tracked deferUpdate complete', id);
+            resolve(res);
+          })
+          .catch((e) => {
+            this.logger.error('Error in tracked deferUpdate', e);
+            reject(e);
+          })
+          .finally(() => {
+            this.trackedActions.delete(id);
+          });
+      });
+      this.trackedActions.set(id, tracked);
     }
+  }
+
+  showModal(
+    interaction: ModalRepliableInteraction,
+    modal: ModalComponentData | ModalBuilder,
+  ): void {
+    this.logger.debug('InteractionPatcher.showModal', interaction.id);
+    if (this.patching && this.interaction.id === interaction.id) {
+      this.logger.debug(
+        'Not showing a modal since this interaction is already being patched.',
+        interaction.id,
+      );
+      return;
+    }
+
+    const id = interaction.id;
+    if (this.trackedActions.has(id)) {
+      // Already deferring.
+      this.logger.debug(
+        '(showModal) -> Already performing an action',
+        interaction.id,
+      );
+      return;
+    }
+
+    const tracked: TrackedAction = new Promise<void>((resolve, reject) => {
+      interaction
+        .showModal(modal)
+        .then((res) => {
+          this.logger.verbose('Tracked showModal complete', id);
+          resolve(res);
+        })
+        .catch((e) => {
+          this.logger.error('Error in tracked showModal', e);
+          reject(e);
+        })
+        .finally(() => {
+          this.trackedActions.delete(id);
+        });
+    });
+    this.trackedActions.set(id, tracked);
   }
 
   async patch(
@@ -105,7 +153,7 @@ export class InteractionPatcher {
     this.logger.info('No patch was buffered, begin patch.');
     this.patching = true;
     try {
-      const activeDeferUpdate = this.deferredUpdates.get(this.interaction.id);
+      const activeDeferUpdate = this.trackedActions.get(this.interaction.id);
       if (activeDeferUpdate) {
         this.logger.debug('There is an active defer. Waiting...');
         await activeDeferUpdate;
@@ -139,7 +187,7 @@ export class InteractionPatcher {
     this.cancelBufferedPatch();
 
     try {
-      const activeDeferUpdate = this.deferredUpdates.get(this.interaction.id);
+      const activeDeferUpdate = this.trackedActions.get(this.interaction.id);
       if (activeDeferUpdate) {
         this.logger.debug('Stop encountered active defer.');
         await activeDeferUpdate;
@@ -151,17 +199,17 @@ export class InteractionPatcher {
       );
     }
     this.logger.debug('Stop resolved active defer.');
-    this.deferredUpdates.clear();
+    this.trackedActions.clear();
 
     if (this.patching) {
       await this.activePatchPromise;
     }
   }
 
-  async delete() {
+  async delete(message?: Message) {
     this.cancelBufferedPatch();
 
-    const activeDeferUpdate = this.deferredUpdates.get(this.interaction.id);
+    const activeDeferUpdate = this.trackedActions.get(this.interaction.id);
     if (activeDeferUpdate) {
       this.logger.debug('Delete encountered active defer.');
       try {
@@ -181,7 +229,7 @@ export class InteractionPatcher {
 
     this.patching = true;
     try {
-      await this.interaction.deleteReply();
+      await this.interaction.deleteReply(message);
     } catch (error: unknown) {
       this.logger.error('Error when deleting reply', error);
     } finally {

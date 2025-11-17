@@ -1,16 +1,16 @@
 import type { IntrinsicMenuProps } from '../lib/menu/defineMenu.js';
 import {
-  ViewMessagePayload,
   type IntrinsicViewProps,
+  ViewMessagePayload,
 } from '../lib/views/viewFlavors.js';
 import { TimeoutEmbed } from '../lib/PrebuiltEmbeds.js';
 import {
-  MessageFlags,
-  RepliableInteraction,
   type InteractionEditReplyOptions,
   type InteractionReplyOptions,
   type InteractionUpdateOptions,
   type Message,
+  MessageFlags,
+  RepliableInteraction,
 } from 'discord.js';
 
 export function appendTimeoutEmbed(payload: ViewMessagePayload) {
@@ -25,6 +25,11 @@ export async function safeRender(
   preferReplyForComponent = false,
 ): Promise<Message> {
   let message: Message | null | undefined = undefined;
+
+  if (props?.initialMessage) {
+    (viewPayload as InteractionEditReplyOptions).message = props.initialMessage;
+    message = props.initialMessage;
+  }
 
   let flags: MessageFlags | undefined = props?.flags;
   if (viewPayload.flags) {
@@ -41,9 +46,15 @@ export async function safeRender(
   }
 
   if (renderTarget.replied || renderTarget.deferred) {
-    message = await renderTarget.editReply(
-      viewPayload as InteractionEditReplyOptions,
-    );
+    if (preferReplyForComponent) {
+      message = await renderTarget.followUp(
+        viewPayload as InteractionReplyOptions,
+      );
+    } else {
+      message = await renderTarget.editReply(
+        viewPayload as InteractionEditReplyOptions,
+      );
+    }
   } else if (renderTarget.isMessageComponent()) {
     if (preferReplyForComponent) {
       const response = await renderTarget.reply({
