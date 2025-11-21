@@ -1,11 +1,11 @@
 import { ViewElementNode } from './viewElementNode.js';
 import type { BaseViewNodeKind, ViewNodeKind } from './viewNodeKind.js';
 import type { EmbedBuilder } from 'discord.js';
-import type { ViewComponent } from '../views/viewFlavors.js';
+import type { Primitive, ViewComponent } from '../views/viewFlavors.js';
 import { owner } from '../render/owner.js';
 
 export type NodeContentComputer<
-  T extends BaseViewNodeKind,
+  T extends BaseViewNodeKind | Primitive | string,
   U extends BaseViewNodeKind,
 > = (content: T[]) => U | U[] | false | null | undefined;
 
@@ -29,7 +29,7 @@ export class ViewComputedElementNode<
 }
 
 export function elementComputed<
-  T extends BaseViewNodeKind,
+  T extends BaseViewNodeKind | Primitive | string,
   U extends BaseViewNodeKind,
 >(
   computer: NodeContentComputer<T, U>,
