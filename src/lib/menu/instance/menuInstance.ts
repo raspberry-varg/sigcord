@@ -446,6 +446,7 @@ export function instantiateMenu<
           payload = await render(targets);
         } catch (error: unknown) {
           logger.error('Error during update microtask', error);
+          throw error;
         }
 
         if (disposed) {
@@ -776,6 +777,7 @@ export function instantiateMenu<
         }
       } catch (error: unknown) {
         logger.error('Error while patching initial render.', error);
+        throw error;
       }
     }
   }
@@ -794,6 +796,7 @@ export function instantiateMenu<
       }
     } catch (error: unknown) {
       logger.error('Error while patching update.', error);
+      throw error;
     }
   }
 

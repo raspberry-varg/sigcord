@@ -13,9 +13,14 @@ export type Signalish<T> = Signal<T> | WritableSignal<T>;
 export type MaybeSignalish<T> = T | Signalish<T>;
 export type UnwrapSignalish<T> = T extends Signalish<infer S> ? S : T;
 
-export type MaybeSignal<T> = T | Signalish<T>;
+export type MaybeSignal<T> = T | Signal<T>;
 export function isSignal<T>(value?: T | Signalish<T>): value is Signal<T> {
-  return typeof value === 'function' && GETTER_STAMP in value;
+  return typeof value === 'function';
+}
+export function isStampedSignal<T>(
+  value?: T | Signalish<T>,
+): value is Signal<T> {
+  return isSignal(value) && GETTER_STAMP in value;
 }
 
 export type MaybeWritableSignal<T> = T | Signalish<T>;
