@@ -18,7 +18,6 @@ import type { MenuContext } from '../menu/instance/menuContext.js';
 import { STATIC_RENDER_SYNAPSE } from '../render/staticRenderSynapse.js';
 import {
   type CollectedMessageInteraction,
-  type MessageComponent,
   type RepliableInteraction,
 } from 'discord.js';
 import { untracked } from '../reactivity/untracked.js';
