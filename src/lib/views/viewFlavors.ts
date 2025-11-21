@@ -97,7 +97,7 @@ export interface IntrinsicViewProps {
   flags?: MessageFlags;
 }
 
-export type Primitive = number | boolean | null | undefined;
+export type Primitive = string | number | boolean | null | undefined;
 
 export type Children<T extends ViewNodeKind | Primitive> =
   | Children<T>[]
