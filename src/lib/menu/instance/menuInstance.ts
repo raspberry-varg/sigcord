@@ -2,7 +2,6 @@ import {
   type CollectedMessageInteraction,
   type EmbedBuilder,
   type MessageComponentBuilder,
-  type MessageComponentInteraction,
   ModalBuilder,
   type RepliableInteraction,
 } from 'discord.js';
@@ -46,6 +45,7 @@ import { NamedIdGenerator } from '../../ids/namedIdGenerator.js';
 import { AutoComponentId } from '../../components/autocomponents.js';
 import type { ViewMessagePayload } from '../../views/viewFlavors.js';
 import { INTERNAL_CONTEXT_SYMBOL } from './internalMenuContext.js';
+import type { MessageComponentCallback } from '../../components/messageComponentCallback.js';
 
 export interface MenuControllerAPI {
   // render API
@@ -68,12 +68,6 @@ export interface MenuControllerAPI {
   awaitStop(): Promise<string | null>;
   onTimeout(callback: (timeoutReason: TimeoutEndReason) => unknown): void;
   awaitTimeout(): Promise<TimeoutEndReason | null>;
-}
-
-export interface MessageComponentCallback<
-  T extends MessageComponentInteraction = MessageComponentInteraction,
-> {
-  (callback: T): Promise<unknown> | unknown;
 }
 
 export interface RenderOptions<ViewIds extends string = string> {

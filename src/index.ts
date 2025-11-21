@@ -89,10 +89,14 @@ export {
   configureAutoComponent,
 } from './lib/components/autocomponents.js';
 export { flattenToContentNodes } from './lib/render/flattenToContentNodes.js';
-export { ViewNodeKind } from './lib/dom/viewNodeKind.js';
+export { ViewNodeKind, BaseViewNodeKind } from './lib/dom/viewNodeKind.js';
 export { ViewNode } from './lib/dom/viewNode.js';
 export { ViewContentNode } from './lib/dom/viewContentNode.js';
 export { ViewElementNode } from './lib/dom/viewElementNode.js';
+export {
+  MessageComponentCallback,
+  MessageComponentCallbackFor,
+} from './lib/components/messageComponentCallback.js';
 export {
   ViewComputedElementNode,
   elementComputed,

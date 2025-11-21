@@ -2,9 +2,9 @@ import type {
   MappedInteractionTypes,
   MessageActionRowComponentBuilder,
 } from 'discord.js';
-import type { MessageComponentCallback } from '../menu/instance/menuInstance.js';
 import type { Synapse } from '../menu/instance/synapse.js';
 import type { asyncBoundary } from '../builtins/builtins.js';
+import type { MessageComponentCallback } from './messageComponentCallback.js';
 
 type InteractionFromBuilder<
   Builder extends MessageActionRowComponentBuilder,
