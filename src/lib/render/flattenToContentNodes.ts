@@ -3,7 +3,10 @@ import { ViewElementNode } from '../dom/viewElementNode.js';
 import { ViewNode } from '../dom/viewNode.js';
 import type { ViewNodeKind } from '../dom/viewNodeKind.js';
 import { patchEffect } from '../builtins/builtins.js';
-import { isSignal, isWritableSignal } from '../reactivity/core/signals.js';
+import {
+  isStampedSignal,
+  isWritableSignal,
+} from '../reactivity/core/signals.js';
 import type { Recursive } from '../recursive.js';
 import { isSlot } from '../Slot.js';
 import { getOpenOwner } from './owner.js';
@@ -20,7 +23,7 @@ export function flattenToContentNodes<T extends ViewNodeKind>(
     return [content];
   }
 
-  if (isSignal(content) || isWritableSignal(content)) {
+  if (isStampedSignal(content) || isWritableSignal(content)) {
     const fragment = new ViewElementNode<T>();
     const dispose = patchEffect(() => {
       // TODO: @raspberry-varg - Reuse nodes.

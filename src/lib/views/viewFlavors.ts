@@ -97,7 +97,9 @@ export interface IntrinsicViewProps {
   flags?: MessageFlags;
 }
 
-export type Children<T extends ViewNodeKind> =
+export type Primitive = number | boolean | null | undefined;
+
+export type Children<T extends ViewNodeKind | Primitive> =
   | Children<T>[]
   | (() => Children<T>)
   | WritableSignal<Children<T>>
@@ -105,7 +107,4 @@ export type Children<T extends ViewNodeKind> =
   | Slot<T>
   | T[]
   | T
-  | number
-  | boolean
-  | null
-  | undefined;
+  | Primitive;

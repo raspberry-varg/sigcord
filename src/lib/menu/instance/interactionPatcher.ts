@@ -167,6 +167,9 @@ export class InteractionPatcher {
       ));
     } catch (error: unknown) {
       this.logger.error('Error during patch', error);
+      queueMicrotask(() => {
+        throw error;
+      });
     } finally {
       this.patching = false;
       this.activePatchPromise = undefined;
@@ -232,6 +235,7 @@ export class InteractionPatcher {
       await this.interaction.deleteReply(message);
     } catch (error: unknown) {
       this.logger.error('Error when deleting reply', error);
+      throw error;
     } finally {
       this.patching = false;
     }

@@ -43,7 +43,6 @@ export class ViewElementNode<T extends ViewNodeKind> extends ViewNode<T> {
       const child = children[i];
       if (newChildren.has(child)) {
         this.spliceChild(i, child);
-      } else {
       }
     }
 
@@ -60,14 +59,15 @@ export class ViewElementNode<T extends ViewNodeKind> extends ViewNode<T> {
     }
   }
 
-  removeChild(child: ViewNode<T>): void {
+  removeChild(child: ViewNode<T>): ViewNode<T> | null {
     if (!this.childrenSet.has(child)) {
-      return;
+      return null;
     }
 
     this.childrenSet.delete(child);
     this.children_.splice(this.children_.indexOf(child));
     child.remove();
+    return child;
   }
 
   spliceChild(index: number, child: ViewNode<T>): void {
