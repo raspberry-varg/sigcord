@@ -105,6 +105,7 @@ export type Children<T extends ViewNodeKind> =
   | Slot<T>
   | T[]
   | T
-  | false
+  | number
+  | boolean
   | null
   | undefined;

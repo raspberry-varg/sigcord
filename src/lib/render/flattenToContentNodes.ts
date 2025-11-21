@@ -24,7 +24,7 @@ export function flattenToContentNodes<T extends ViewNodeKind>(
     const fragment = new ViewElementNode<T>();
     const dispose = patchEffect(() => {
       // TODO: @raspberry-varg - Reuse nodes.
-      let value = read<T>(content);
+      const value = read<T>(content);
       fragment.addChild(...flattenToContentNodes<T>(value));
       return () => {
         fragment.clear();
