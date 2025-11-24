@@ -1,20 +1,22 @@
 import { logger } from '../../util/Logger.js';
 import { ViewElementNode } from '../dom/viewElementNode.js';
 import { ViewNode } from '../dom/viewNode.js';
-import type { ViewNodeKind } from '../dom/viewNodeKind.js';
-import type { Children } from '../views/viewFlavors.js';
+import type { BaseViewNodeKind } from '../dom/viewNodeKind.js';
+import type { Children, Primitive } from '../views/viewFlavors.js';
 import type { Recursive } from '../recursive.js';
 import { PatchTarget } from '../RenderingEngine.js';
 import type { DisposeFn, ResumeFn, SuspendFn } from './dispose.js';
 import { flattenToContentNodes } from './flattenToContentNodes.js';
+import { flatten } from './flatten.js';
 
-export class Owner<T extends ViewNodeKind = ViewNodeKind>
-  implements Disposable
+export class Owner<
+  T extends BaseViewNodeKind | Primitive = BaseViewNodeKind | Primitive,
+> implements Disposable
 {
   readonly root = new ViewElementNode<T>();
   patchTarget?: PatchTarget;
-  parent: Owner<T> | null = null;
-  childOwners = new Set<Owner<T>>();
+  parent: Owner | null = null;
+  childOwners = new Set<Owner>();
   debugName?: string;
 
   private disposals: DisposeFn[] = [];
@@ -95,6 +97,10 @@ export class Owner<T extends ViewNodeKind = ViewNodeKind>
     }
   }
 
+  flatten() {
+    return flatten<T>(this.root, this);
+  }
+
   dispose() {
     if (this.disposed) return;
 
@@ -150,7 +156,7 @@ export function setCurrentOwner(newOwner: Owner | null): Owner | null {
   return prev;
 }
 
-export function owner<T extends ViewNodeKind>(
+export function owner<T extends BaseViewNodeKind | Primitive>(
   ownerFn: () => Children<T> | void,
   patchTarget?: PatchTarget,
 ): Owner<T> {
