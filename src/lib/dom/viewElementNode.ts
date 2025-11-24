@@ -105,6 +105,11 @@ export class ViewElementNode<T extends ViewNodeKind> extends ViewNode<T> {
     // TODO: @raspberry-varg - Implement disposal
     if (this.disposed) return;
 
+    this.reset();
+    this.disposed_ = true;
+  }
+
+  reset(): void {
     logger.verbose('DisposingViewElementNode', { childCount: this.childCount });
     this.children_.forEach((child) => child.dispose());
     this.children_.length = 0;

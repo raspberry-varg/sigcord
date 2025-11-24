@@ -1,4 +1,4 @@
-import type { ViewComponent } from '../views/viewFlavors.js';
+import type { Primitive, ViewComponent } from '../views/viewFlavors.js';
 import { ViewElementNode } from '../dom/viewElementNode.js';
 import type { ReadonlyRecursive } from '../recursive.js';
 import { ViewNode } from '../dom/viewNode.js';
@@ -6,8 +6,9 @@ import { setCurrentOwner, type Owner } from './owner.js';
 import { ViewContentNode } from '../dom/viewContentNode.js';
 import { ViewComputedElementNode } from '../dom/viewComputedElementNode.js';
 import type { BaseViewNodeKind } from '../dom/viewNodeKind.js';
+import { ViewManualComputedElementNode } from '../dom/viewManualComputedElementNode.js';
 
-export function flatten<T extends BaseViewNodeKind>(
+export function flatten<T extends BaseViewNodeKind | Primitive>(
   root: ViewNode<T> | ReadonlyArray<ViewNode<T>>,
   owner: Owner | null | undefined,
 ): T[] {
@@ -28,6 +29,17 @@ export function flatten<T extends BaseViewNodeKind>(
         const content = item.getContent();
         if (content) {
           flattened.push(content);
+        }
+        continue;
+      }
+      if (item instanceof ViewManualComputedElementNode) {
+        const content = item.getComputed();
+        if (content) {
+          if (Array.isArray(content)) {
+            flattened.push(...content);
+          } else {
+            flattened.push(content);
+          }
         }
         continue;
       }

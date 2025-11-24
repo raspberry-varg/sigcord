@@ -1,42 +1,30 @@
 import { ViewElementNode } from './viewElementNode.js';
 import type { BaseViewNodeKind, ViewNodeKind } from './viewNodeKind.js';
-import type { EmbedBuilder } from 'discord.js';
-import type { Primitive, ViewComponent } from '../views/viewFlavors.js';
 import { owner } from '../render/owner.js';
+import type { Children, Primitive } from '../views/viewFlavors.js';
 
-export type NodeContentComputer<
-  T extends BaseViewNodeKind | Primitive | string,
-  U extends BaseViewNodeKind,
-> = (content: T[]) => U | U[] | false | null | undefined;
-
-type ToBase<T extends BaseViewNodeKind> = T extends EmbedBuilder
-  ? EmbedBuilder
-  : T extends ViewComponent
-    ? ViewComponent
-    : never;
+export type NodeContentComputer<T, U extends ViewNodeKind> = (
+  content: T,
+) => U | Children<U>;
 
 export class ViewComputedElementNode<
-  T extends ViewNodeKind,
-> extends ViewElementNode<T> {
-  constructor(
-    readonly computer: NodeContentComputer<
-      Extract<T, BaseViewNodeKind>,
-      ToBase<Extract<T, BaseViewNodeKind>>
-    >,
-  ) {
+  T_IN,
+  T_OUT extends ViewNodeKind,
+> extends ViewElementNode<T_OUT> {
+  constructor(readonly computer: NodeContentComputer<T_IN, T_OUT>) {
     super();
   }
 }
 
 export function elementComputed<
-  T extends BaseViewNodeKind | Primitive | string,
-  U extends BaseViewNodeKind,
+  T_SOURCE extends Array<BaseViewNodeKind | Primitive>,
+  T_OUT extends ViewNodeKind,
 >(
-  computer: NodeContentComputer<T, U>,
-  content: () => ViewNodeKind<T>[],
-): ViewComputedElementNode<T> {
-  const node = new ViewComputedElementNode<T>(computer as any);
-  const o = owner<T>(content);
+  computer: NodeContentComputer<T_SOURCE, T_OUT>,
+  content: () => T_SOURCE,
+): ViewComputedElementNode<T_SOURCE, T_OUT> {
+  const node = new ViewComputedElementNode<T_SOURCE, T_OUT>(computer);
+  const o = owner<T_SOURCE[number]>(content);
   node.addChild(o.root);
   return node;
 }
