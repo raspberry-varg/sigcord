@@ -15,6 +15,7 @@ import type { Owner } from '../render/owner.js';
 import type { ViewNodeKind } from '../dom/viewNodeKind.js';
 import type { Slot } from '../Slot.js';
 import type { ViewNode } from '../dom/viewNode.js';
+import type { DeferredComponent } from '../render/deferredComponent.js';
 
 export type EmbedComponent = EmbedBuilder;
 
@@ -102,6 +103,7 @@ export type Primitive = string | number | boolean | null | undefined;
 export type Children<T extends ViewNodeKind | Primitive> =
   | Children<T>[]
   | (() => Children<T>)
+  | DeferredComponent<Children<T>>
   | WritableSignal<Children<T>>
   | ViewNode<T>
   | Slot<T>

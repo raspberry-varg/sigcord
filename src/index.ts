@@ -95,6 +95,7 @@ export { ViewNode } from './lib/dom/viewNode.js';
 export { ViewContentNode } from './lib/dom/viewContentNode.js';
 export { ViewElementNode } from './lib/dom/viewElementNode.js';
 export { ViewManualComputedElementNode } from './lib/dom/viewManualComputedElementNode.js';
+export { DeferredComponent } from './lib/render/deferredComponent.js';
 export {
   MessageComponentCallback,
   MessageComponentCallbackFor,
