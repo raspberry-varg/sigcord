@@ -232,6 +232,8 @@ export interface Synapse {
 
   getMenuInfo(): Readonly<MenuContext>;
 
+  getNextUniqueComponentId(): string;
+
   /**
    * @deprecated Property will be removed soon. Please use {@link getMenuInfo()}
    *   or its reactive hook.

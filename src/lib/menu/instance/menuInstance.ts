@@ -388,6 +388,7 @@ export function instantiateMenu<
           patcher.deferUpdate(toDefer);
         }
       },
+      getNextUniqueComponentId: () => componentIdGenerator.next(),
     };
     return $;
   }
