@@ -11,6 +11,7 @@ import type { Recursive } from '../recursive.js';
 import { isSlot } from '../Slot.js';
 import { getOpenOwner } from './owner.js';
 import { read } from '../reactivity/core/read.js';
+import { DeferredComponent } from './deferredComponent.js';
 
 export function flattenToContentNodes<T extends ViewNodeKind>(
   content: T,
@@ -21,6 +22,10 @@ export function flattenToContentNodes<T extends ViewNodeKind>(
 
   if (content instanceof ViewNode) {
     return [content];
+  }
+
+  if (content instanceof DeferredComponent) {
+    return flattenToContentNodes(content.execute());
   }
 
   if (isStampedSignal(content) || isWritableSignal(content)) {

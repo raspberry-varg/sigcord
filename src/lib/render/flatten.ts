@@ -55,7 +55,7 @@ export function flatten<T extends BaseViewNodeKind | Primitive>(
         continue;
       }
       if (item instanceof ViewElementNode) {
-        stack.push(item.children as ViewNode<any>[]);
+        stack.push(item.children);
         continue;
       }
       if (item instanceof ViewNode) {
