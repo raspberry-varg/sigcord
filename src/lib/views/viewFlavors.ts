@@ -4,6 +4,7 @@ import {
   type MessageComponentBuilder,
   MessageComponentInteraction,
   type MessageFlags,
+  type StringSelectMenuOptionBuilder,
   type TopLevelComponent,
   type TopLevelComponentData,
 } from 'discord.js';
@@ -25,7 +26,8 @@ type ViewComponentKind =
   | TopLevelComponent
   | TopLevelComponentData
   | MessageComponentBuilder
-  | ContainerComponentBuilder;
+  | ContainerComponentBuilder
+  | StringSelectMenuOptionBuilder;
 
 export const IS_V2: unique symbol = Symbol('using v2 components');
 

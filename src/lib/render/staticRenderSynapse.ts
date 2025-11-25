@@ -62,6 +62,7 @@ export const STATIC_RENDER_SYNAPSE: Synapse = {
     return undefined;
   },
   deferUpdate: noop,
+  getNextUniqueComponentId: unsupported('getNextUniqueComponentId'),
 };
 
 function unsupported(feature: string, reason?: string) {

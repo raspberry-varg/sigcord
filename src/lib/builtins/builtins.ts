@@ -370,6 +370,9 @@ export function injectCurrentInteraction(): RepliableInteraction {
 export const component: Synapse['component'] = (definition) =>
   useSynapse().component(definition);
 
+export const getNextUniqueComponentId: Synapse['getNextUniqueComponentId'] =
+  () => useSynapse().getNextUniqueComponentId();
+
 // Navigation
 
 /**
