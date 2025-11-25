@@ -33,7 +33,7 @@ export function flatten<T extends BaseViewNodeKind | Primitive>(
         continue;
       }
       if (item instanceof ViewManualComputedElementNode) {
-        const content = item.getComputed();
+        const content = item.getFlattened();
         if (content) {
           if (Array.isArray(content)) {
             flattened.push(...content);
