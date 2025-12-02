@@ -9,11 +9,11 @@ import { type View, type ViewInstance } from './views/view.js';
 import {
   type EmbedComponent,
   IS_V2,
+  isRenderedReactiveViewV2,
   type RenderedReactiveView,
   type ViewComponent,
   type ViewMessagePayload,
 } from './views/viewFlavors.js';
-import { isRenderedReactiveViewV2 } from './views/viewFlavors.js';
 import { logger } from '../util/Logger.js';
 import { createUntracked } from './reactivity/core/signals.js';
 import { type PropsBase } from './views/viewDefinitionBase.js';
@@ -272,7 +272,7 @@ export class RenderingEngine {
           } else {
             if (!instance.root) {
               const [root, dispose, owner] = render<ViewComponent>(
-                () => instance.factory(),
+                () => instance.factory() as ViewComponent,
                 patchTarget,
               );
               owner.debugName = 'V2_root';

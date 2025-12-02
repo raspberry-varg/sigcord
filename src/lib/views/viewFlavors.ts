@@ -75,7 +75,7 @@ export interface ReactiveViewPayloadV1 {
   components?: () => Children<ViewComponent>;
 }
 
-export type ReactiveViewPayloadV2 = Children<ViewComponent>;
+export type ReactiveViewPayloadV2 = ViewNodeKind;
 
 export interface ViewMessagePayload {
   flags?: MessageFlags;
