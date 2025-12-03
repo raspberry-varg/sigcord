@@ -15,7 +15,7 @@ type StaticRenderFn<T extends BaseViewNodeKind> = () => ViewNodeKind<T>;
  * @returns
  */
 export function staticRender<T extends BaseViewNodeKind>(
-  renderFn: StaticRenderFn<T>,
+  renderFn: StaticRenderFn<BaseViewNodeKind>,
 ): T[] {
   const prevContext = setReactiveContext(STATIC_RENDER_SYNAPSE);
   let flattened, disposeFn;
@@ -28,5 +28,5 @@ export function staticRender<T extends BaseViewNodeKind>(
   }
 
   disposeFn();
-  return flattened;
+  return flattened as T[];
 }
