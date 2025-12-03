@@ -71,8 +71,8 @@ export type ReactiveViewPayload = ReactiveViewPayloadV1 | ReactiveViewPayloadV2;
 export interface ReactiveViewPayloadV1 {
   ephemeral?: boolean;
   content?: string | Signalish<string>;
-  embeds?: () => Children<EmbedComponent>;
-  components?: () => Children<ViewComponent>;
+  embeds?: () => ViewNodeKind;
+  components?: () => ViewNodeKind;
 }
 
 export type ReactiveViewPayloadV2 = ViewNodeKind;
