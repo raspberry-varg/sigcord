@@ -303,7 +303,7 @@ export class RenderingEngine {
             // TODO: @raspberry-varg - Content handling.
             if (result.embeds) {
               const [embedsRoot, , owner] = render<EmbedComponent>(
-                result.embeds,
+                result.embeds as () => EmbedBuilder[],
                 PatchTarget.Embeds,
               );
               owner.debugName = 'V1_embeds_root';
@@ -312,7 +312,7 @@ export class RenderingEngine {
             }
             if (result.components) {
               const [componentsRoot, , owner] = render<ViewComponent>(
-                result.components,
+                result.components as () => ViewComponent[],
                 PatchTarget.Components,
               );
               owner.debugName = 'V1_components_root';
