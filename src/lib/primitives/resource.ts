@@ -1,5 +1,5 @@
 import type { MaybePromise } from '../../util/TypesUtil.js';
-import { effect, suspend, update } from '../builtins/builtins.js';
+import { effect, update } from '../builtins/builtins.js';
 import { type Setter, type Signal } from '../reactivity/core/signals.js';
 import { untracked } from '../reactivity/untracked.js';
 import { signal } from './signal.js';
@@ -171,7 +171,7 @@ export function resource<T, SOURCE>(
       });
     } catch (e: unknown) {
       if (options.onError) {
-        resumeContext();
+        // resumeContext();
         options.onError?.(e, source);
       }
       batch(() => {
@@ -180,7 +180,7 @@ export function resource<T, SOURCE>(
       });
     } finally {
       if (options.autoUpdate ?? OPTIONS_DEFAULTS.autoUpdate) {
-        resumeContext();
+        // resumeContext();
         update();
       }
     }
@@ -225,13 +225,13 @@ export function resource<T, SOURCE>(
     },
   });
 
-  const resumeContext = suspend();
+  // const resumeContext = suspend();
   return [
     data,
     {
       mutate: setData,
       refetch() {
-        resumeContext();
+        // resumeContext();
         if (getOpenOwner()?.disposed) {
           logger.debug('Refetch resource ignored as owner is disposed.');
           return;
@@ -243,7 +243,7 @@ export function resource<T, SOURCE>(
             return fetch(src, true);
           }
         } else {
-          resumeContext();
+          // resumeContext();
           return fetch(true as NonNullable<SOURCE>, true);
         }
       },

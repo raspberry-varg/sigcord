@@ -63,7 +63,6 @@ export {
   injectLastCollectedInteraction,
   update,
   deferUpdate,
-  withResume,
   getNextUniqueComponentId,
 } from './lib/builtins/builtins.js';
 export {

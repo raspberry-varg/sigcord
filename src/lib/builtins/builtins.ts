@@ -7,6 +7,7 @@
  * with non-reactive views.
  */
 
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { Synapse } from '../menu/instance/synapse.js';
 import { PatchTarget } from '../RenderingEngine.js';
 import { assert } from '../../util/Assertions.js';
@@ -20,21 +21,31 @@ import {
   type CollectedMessageInteraction,
   type RepliableInteraction,
 } from 'discord.js';
-import { untracked } from '../reactivity/untracked.js';
 
 let currentSynapse: Synapse | null = null;
 
+const asyncLocalStorage = new AsyncLocalStorage<Synapse>();
+
 export function useSynapse(): Synapse {
+  let synapse: Synapse | undefined;
+  if (currentSynapse) {
+    synapse = currentSynapse;
+  } else {
+    synapse = asyncLocalStorage.getStore();
+  }
+
   assert(
-    currentSynapse,
+    synapse,
     'Attempted to use a hook outside of a reactive context. Was this called ' +
       'outside of a reactive view?\n\nClassic menu views should use the ' +
       'Synapse parameter directly ($).\n\n' +
-      'Did you forget to use the returned resume() function from a previous ' +
-      'call to suspend()? If in an async boundary, nested awaits must also ' +
-      'be pulled into their own async boundary.',
+      'Did you await within the body of a component function?',
   );
-  return currentSynapse;
+  return synapse;
+}
+
+export function getAsyncStore() {
+  return asyncLocalStorage;
 }
 
 /**
@@ -53,6 +64,11 @@ export function useMenuInfo(): Readonly<MenuContext> {
 export function setReactiveContext(synapse: Synapse | null): Synapse | null {
   const prev = currentSynapse;
   currentSynapse = synapse;
+  if (synapse) {
+    asyncLocalStorage.enterWith(synapse);
+  } else {
+    asyncLocalStorage.disable();
+  }
   return prev;
 }
 
@@ -121,8 +137,7 @@ export const effect: Synapse['createEffect'] = (fn, patchTarget) =>
  *   {@link PatchTarget} context.
  */
 export function patchEffect(effectFn: EffectFn): DisposeFn {
-  const owner = getOpenOwnerStrict();
-  const target = owner.patchTarget;
+  const target = getCurrentPatchTarget();
   const isValidTarget = target !== PatchTarget.None;
   assert(
     target != null &&
@@ -133,6 +148,10 @@ export function patchEffect(effectFn: EffectFn): DisposeFn {
       'appropriate PatchTarget bit mask instead.',
   );
   return effect(effectFn, target);
+}
+
+export function getCurrentPatchTarget(): PatchTarget | undefined {
+  return getOpenOwnerStrict().patchTarget;
 }
 
 /**
@@ -220,7 +239,7 @@ type ResumeCtxFn = () => void;
  *   to continue to be used after an `await`.
  */
 export function suspend(): ResumeCtxFn {
-  const capturedContext = currentSynapse;
+  const capturedContext = useSynapse();
   assert(
     capturedContext,
     'Attempted to suspend the current reactive context, but none was found. ' +
@@ -273,39 +292,6 @@ export async function asyncBoundary<T>(
     resume();
   }
   return result;
-}
-
-/**
- * Restore the current reactive context when the provided promise resolves.
- *
- * @example
- * ```ts
- * const onClick: (buttonInteraction: ButtonInteraction) => {
- *   const user = await withResume(fetchUserFromDb());
- *   // reactive hook context restored, allowing hooks to safely resume their work
- *   goTo(UserInfoView, {user});
- * }
- * ```
- *
- * @param promiseOrFn The promise to await or function to await in an {@link untracked}.
- * @param autoUpdate Automatically schedule an update when the promise resolves.
- *   Enabled by default.
- */
-export async function withResume<T>(
-  promiseOrFn: MaybePromise<T> | (() => MaybePromise<T>),
-  autoUpdate = true,
-): Promise<T> {
-  const resume = suspend();
-  try {
-    return await (typeof promiseOrFn === 'function'
-      ? untracked(promiseOrFn as () => MaybePromise<T>)
-      : promiseOrFn);
-  } finally {
-    resume();
-    if (autoUpdate) {
-      update();
-    }
-  }
 }
 
 /**
@@ -427,24 +413,21 @@ export function isSuspended(): boolean {
 // Modals
 
 export const showModal: Synapse['showModal'] = (interaction, modalOrOptions) =>
-  withResume(() =>
-    useSynapse().showModal(
-      interaction,
-      modalOrOptions as Parameters<Synapse['showModal']>[1],
-    ),
+  useSynapse().showModal(
+    interaction,
+    modalOrOptions as Parameters<Synapse['showModal']>[1],
   );
 
 export const awaitModalSubmit: Synapse['awaitModalSubmit'] = (
   interaction,
   options,
-) => withResume(() => useSynapse().awaitModalSubmit(interaction, options));
+) => useSynapse().awaitModalSubmit(interaction, options);
 
 export const onModalSubmit: Synapse['onModalSubmit'] = (
   interaction,
   options,
   callback,
-) =>
-  withResume(() => useSynapse().onModalSubmit(interaction, options, callback));
+) => useSynapse().onModalSubmit(interaction, options, callback);
 
 // Embed manipulation
 
