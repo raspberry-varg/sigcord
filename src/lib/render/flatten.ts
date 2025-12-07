@@ -1,4 +1,4 @@
-import type { Primitive, ViewComponent } from '../views/viewFlavors.js';
+import type { ViewComponent } from '../views/viewFlavors.js';
 import { ViewElementNode } from '../dom/viewElementNode.js';
 import type { ReadonlyRecursive } from '../recursive.js';
 import { ViewNode } from '../dom/viewNode.js';
@@ -8,7 +8,7 @@ import { ViewComputedElementNode } from '../dom/viewComputedElementNode.js';
 import type { BaseViewNodeKind } from '../dom/viewNodeKind.js';
 import { ViewManualComputedElementNode } from '../dom/viewManualComputedElementNode.js';
 
-export function flatten<T extends BaseViewNodeKind | Primitive>(
+export function flatten<T extends BaseViewNodeKind>(
   root: ViewNode<T> | ReadonlyArray<ViewNode<T>>,
   owner: Owner | null | undefined,
 ): T[] {

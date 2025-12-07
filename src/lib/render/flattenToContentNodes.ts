@@ -1,21 +1,21 @@
 import { ViewContentNode } from '../dom/viewContentNode.js';
 import { ViewElementNode } from '../dom/viewElementNode.js';
 import { ViewNode } from '../dom/viewNode.js';
-import type { ViewNodeKind } from '../dom/viewNodeKind.js';
+import type { BaseViewNodeKind, ViewNodeKind } from '../dom/viewNodeKind.js';
 import { patchEffect } from '../builtins/builtins.js';
 import {
   isStampedSignal,
   isWritableSignal,
 } from '../reactivity/core/signals.js';
 import type { Recursive } from '../recursive.js';
-import { isSlot } from '../Slot.js';
+import { isSlot, SlotImpl } from '../Slot.js';
 import { getOpenOwner } from './owner.js';
 import { read } from '../reactivity/core/read.js';
 import { DeferredComponent } from './deferredComponent.js';
 
 export function flattenToContentNodes<T extends ViewNodeKind>(
   content: T,
-): ViewNode<T>[] {
+): Array<ViewNode<T>> {
   if (Array.isArray(content)) {
     return content.flatMap(flattenToContentNodes);
   }
@@ -49,7 +49,7 @@ export function flattenToContentNodes<T extends ViewNodeKind>(
   }
 
   if (isSlot(content)) {
-    return [content.root];
+    return [(content as SlotImpl<BaseViewNodeKind>).node];
   }
 
   return [new ViewContentNode(content)];
