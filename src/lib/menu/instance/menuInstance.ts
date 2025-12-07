@@ -46,6 +46,7 @@ import { AutoComponentId } from '../../components/autocomponents.js';
 import type { ViewMessagePayload } from '../../views/viewFlavors.js';
 import { INTERNAL_CONTEXT_SYMBOL } from './internalMenuContext.js';
 import type { MessageComponentCallback } from '../../components/messageComponentCallback.js';
+import { untracked } from '../../reactivity/untracked.js';
 
 export interface MenuControllerAPI {
   // render API
@@ -720,7 +721,7 @@ export function instantiateMenu<
     let callbackResult;
     try {
       callbackResult = getAsyncStore().run(builtins, () =>
-        batch(() => interactionCallback(collected)),
+        untracked(() => batch(() => interactionCallback(collected))),
       );
     } catch (e) {
       logger.error('Error during component interaction handle', {
