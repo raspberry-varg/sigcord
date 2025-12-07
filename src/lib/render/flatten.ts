@@ -5,10 +5,10 @@ import { ViewNode } from '../dom/viewNode.js';
 import { setCurrentOwner, type Owner } from './owner.js';
 import { ViewContentNode } from '../dom/viewContentNode.js';
 import { ViewComputedElementNode } from '../dom/viewComputedElementNode.js';
-import type { BaseViewNodeKind } from '../dom/viewNodeKind.js';
+import type { ViewNodeKindBase } from '../dom/viewNodeKind.js';
 import { ViewManualComputedElementNode } from '../dom/viewManualComputedElementNode.js';
 
-export function flatten<T extends BaseViewNodeKind>(
+export function flatten<T extends ViewNodeKindBase>(
   root: ViewNode<T> | ReadonlyArray<ViewNode<T>>,
   owner: Owner | null | undefined,
 ): T[] {

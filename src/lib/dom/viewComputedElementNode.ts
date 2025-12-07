@@ -1,15 +1,15 @@
 import { ViewElementNode } from './viewElementNode.js';
-import type { BaseViewNodeKind } from './viewNodeKind.js';
+import type { ViewNodeKindBase } from './viewNodeKind.js';
 import { owner } from '../render/owner.js';
 import type { Children } from '../views/viewFlavors.js';
 
-export type NodeContentComputer<T, U extends BaseViewNodeKind> = (
+export type NodeContentComputer<T, U extends ViewNodeKindBase> = (
   content: T,
 ) => U | Children<U>;
 
 export class ViewComputedElementNode<
   T_IN,
-  T_OUT extends BaseViewNodeKind,
+  T_OUT extends ViewNodeKindBase,
 > extends ViewElementNode<T_OUT> {
   constructor(readonly computer: NodeContentComputer<T_IN, T_OUT>) {
     super();
@@ -17,8 +17,8 @@ export class ViewComputedElementNode<
 }
 
 export function elementComputed<
-  T_SOURCE extends Array<BaseViewNodeKind>,
-  T_OUT extends BaseViewNodeKind,
+  T_SOURCE extends Array<ViewNodeKindBase>,
+  T_OUT extends ViewNodeKindBase,
 >(
   computer: NodeContentComputer<T_SOURCE, T_OUT>,
   content: () => T_SOURCE,

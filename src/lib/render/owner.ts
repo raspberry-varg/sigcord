@@ -1,14 +1,14 @@
 import { logger } from '../../util/Logger.js';
 import { ViewElementNode } from '../dom/viewElementNode.js';
 import { ViewNode } from '../dom/viewNode.js';
-import type { BaseViewNodeKind, ViewNodeKind } from '../dom/viewNodeKind.js';
+import type { ViewNodeKindBase, ViewNodeKind } from '../dom/viewNodeKind.js';
 import type { Recursive } from '../recursive.js';
 import { PatchTarget } from '../RenderingEngine.js';
 import type { DisposeFn, ResumeFn, SuspendFn } from './dispose.js';
 import { flattenToContentNodes } from './flattenToContentNodes.js';
 import { flatten } from './flatten.js';
 
-export class Owner<T extends BaseViewNodeKind = BaseViewNodeKind>
+export class Owner<T extends ViewNodeKindBase = ViewNodeKindBase>
   implements Disposable
 {
   readonly root = new ViewElementNode<T>();
@@ -154,7 +154,7 @@ export function setCurrentOwner(newOwner: Owner | null): Owner | null {
   return prev;
 }
 
-export function owner<T extends BaseViewNodeKind>(
+export function owner<T extends ViewNodeKindBase>(
   ownerFn: () => ViewNodeKind<T> | void,
   patchTarget?: PatchTarget,
 ): Owner<T> {
