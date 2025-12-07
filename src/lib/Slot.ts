@@ -5,6 +5,8 @@ import { ViewManualComputedElementNode } from './dom/viewManualComputedElementNo
 import { getCurrentPatchTarget, patch, update } from './builtins/builtins.js';
 import { PatchTarget } from './RenderingEngine.js';
 
+const isTruthy = (x: unknown) => !!x;
+
 class SlotNode extends ViewManualComputedElementNode<ViewNodeKindBase> {
   private readonly items: ViewNodeKindBase[] = [];
   private readonly patchTarget: PatchTarget;
@@ -27,17 +29,34 @@ class SlotNode extends ViewManualComputedElementNode<ViewNodeKindBase> {
   }
 
   append(items: readonly ViewNodeKindBase[]) {
-    this.items.push(...items);
+    const filtered = items.filter(isTruthy);
+    if (!filtered.length) {
+      return;
+    }
+    this.items.push(...filtered);
     this.dirty();
   }
 
   unshift(items: readonly ViewNodeKindBase[]) {
-    this.items.unshift(...items);
+    const filtered = items.filter(isTruthy);
+    if (!filtered.length) {
+      return;
+    }
+    this.items.unshift(...filtered);
     this.dirty();
   }
 
   set(items: readonly ViewNodeKindBase[]) {
-    this.items.length = 0;
+    const currentlyEmpty = this.items.length === 0;
+    if (!currentlyEmpty) {
+      this.items.length = 0;
+    }
+
+    const filtered = items.filter(isTruthy);
+    if (currentlyEmpty && !filtered.length) {
+      return;
+    }
+
     this.items.push(...items);
     this.dirty();
   }
@@ -79,7 +98,7 @@ export class SlotImpl<T extends ViewNodeKindBase> {
    * Set the current list of elements in this slot.
    */
   set(...items: T[]): void {
-    this.node.set(items);
+    this.node.set(items.filter((item) => !!item));
   }
 
   /**
