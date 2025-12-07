@@ -1,7 +1,7 @@
 import { ViewContentNode } from '../dom/viewContentNode.js';
 import { ViewElementNode } from '../dom/viewElementNode.js';
 import { ViewNode } from '../dom/viewNode.js';
-import type { BaseViewNodeKind, ViewNodeKind } from '../dom/viewNodeKind.js';
+import type { ViewNodeKindBase, ViewNodeKind } from '../dom/viewNodeKind.js';
 import { patchEffect } from '../builtins/builtins.js';
 import {
   isStampedSignal,
@@ -49,7 +49,7 @@ export function flattenToContentNodes<T extends ViewNodeKind>(
   }
 
   if (isSlot(content)) {
-    return [(content as SlotImpl<BaseViewNodeKind>).node];
+    return [(content as SlotImpl<ViewNodeKindBase>).node];
   }
 
   return [new ViewContentNode(content)];

@@ -5,8 +5,8 @@ import type {
   ViewComponent,
 } from '../views/viewFlavors.js';
 
-export type ViewNodeKind<T extends BaseViewNodeKind = BaseViewNodeKind> =
+export type ViewNodeKind<T extends ViewNodeKindBase = ViewNodeKindBase> =
   | T
   | Children<T>;
 
-export type BaseViewNodeKind = EmbedComponent | ViewComponent | Primitive;
+export type ViewNodeKindBase = EmbedComponent | ViewComponent | Primitive;

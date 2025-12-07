@@ -1,12 +1,12 @@
-import type { BaseViewNodeKind } from './dom/viewNodeKind.js';
+import type { ViewNodeKindBase } from './dom/viewNodeKind.js';
 import type { ViewComponent } from './views/viewFlavors.js';
 import { type WritableSignal } from './reactivity/core/signals.js';
 import { ViewManualComputedElementNode } from './dom/viewManualComputedElementNode.js';
 import { getCurrentPatchTarget, patch, update } from './builtins/builtins.js';
 import { PatchTarget } from './RenderingEngine.js';
 
-class SlotNode extends ViewManualComputedElementNode<BaseViewNodeKind> {
-  private readonly items: BaseViewNodeKind[] = [];
+class SlotNode extends ViewManualComputedElementNode<ViewNodeKindBase> {
+  private readonly items: ViewNodeKindBase[] = [];
   private readonly patchTarget: PatchTarget;
 
   constructor(public ephemeral: boolean) {
@@ -26,17 +26,17 @@ class SlotNode extends ViewManualComputedElementNode<BaseViewNodeKind> {
     }
   }
 
-  append(items: readonly BaseViewNodeKind[]) {
+  append(items: readonly ViewNodeKindBase[]) {
     this.items.push(...items);
     this.dirty();
   }
 
-  unshift(items: readonly BaseViewNodeKind[]) {
+  unshift(items: readonly ViewNodeKindBase[]) {
     this.items.unshift(...items);
     this.dirty();
   }
 
-  set(items: readonly BaseViewNodeKind[]) {
+  set(items: readonly ViewNodeKindBase[]) {
     this.items.length = 0;
     this.items.push(...items);
     this.dirty();
@@ -59,7 +59,7 @@ class SlotNode extends ViewManualComputedElementNode<BaseViewNodeKind> {
   }
 }
 
-export class SlotImpl<T extends BaseViewNodeKind> {
+export class SlotImpl<T extends ViewNodeKindBase> {
   private writable?: WritableSignal<readonly T[]>;
 
   readonly node;
@@ -108,7 +108,7 @@ export class SlotImpl<T extends BaseViewNodeKind> {
   }
 }
 
-export type Slot<T extends BaseViewNodeKind> = Omit<SlotImpl<T>, 'node'>;
+export type Slot<T extends ViewNodeKindBase> = Omit<SlotImpl<T>, 'node'>;
 
 export interface SlotOptions {
   /**
@@ -118,7 +118,7 @@ export interface SlotOptions {
   ephemeral: boolean;
 }
 
-export function slot<T extends BaseViewNodeKind = ViewComponent>(
+export function slot<T extends ViewNodeKindBase = ViewComponent>(
   options?: Partial<SlotOptions>,
 ): Slot<T> {
   return new SlotImpl(!!options?.ephemeral);
