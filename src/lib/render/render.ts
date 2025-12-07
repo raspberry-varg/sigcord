@@ -1,11 +1,11 @@
 import type { ViewElementNode } from '../dom/viewElementNode.js';
 import type { BaseViewNodeKind } from '../dom/viewNodeKind.js';
-import type { Children, Primitive } from '../views/viewFlavors.js';
+import type { Children } from '../views/viewFlavors.js';
 import type { PatchTarget } from '../RenderingEngine.js';
 import type { DisposeFn } from './dispose.js';
 import { owner, type Owner } from './owner.js';
 
-export function render<T extends BaseViewNodeKind | Primitive>(
+export function render<T extends BaseViewNodeKind>(
   renderFn: () => T | Children<T>,
   patchTarget: PatchTarget,
 ): [root: ViewElementNode<T>, dispose: DisposeFn, owner: Owner<T>] {

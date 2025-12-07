@@ -13,7 +13,7 @@ import type { Signalish, WritableSignal } from '../reactivity/core/signals.js';
 import type { ViewElementNode } from '../dom/viewElementNode.js';
 import type { DisposeFn } from '../render/dispose.js';
 import type { Owner } from '../render/owner.js';
-import type { ViewNodeKind } from '../dom/viewNodeKind.js';
+import type { BaseViewNodeKind, ViewNodeKind } from '../dom/viewNodeKind.js';
 import type { Slot } from '../Slot.js';
 import type { ViewNode } from '../dom/viewNode.js';
 import type { DeferredComponent } from '../render/deferredComponent.js';
@@ -102,7 +102,7 @@ export interface IntrinsicViewProps {
 
 export type Primitive = string | number | boolean | null | undefined;
 
-export type Children<T extends ViewNodeKind | Primitive> =
+export type Children<T extends BaseViewNodeKind> =
   | Children<T>[]
   | (() => Children<T>)
   | DeferredComponent<Children<T>>

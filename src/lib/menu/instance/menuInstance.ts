@@ -36,7 +36,7 @@ import {
 } from '../../reactivity/core/signals.js';
 import type { PropsBase } from '../../views/viewDefinitionBase.js';
 import { Navigation } from '../../Navigation.js';
-import { setReactiveContext, withResume } from '../../builtins/builtins.js';
+import { getAsyncStore, setReactiveContext } from '../../builtins/builtins.js';
 import type { TimeoutEndReason } from '../../../util/CollectorUtil.js';
 import { batch } from '@preact/signals-core';
 import type { DisposeFn } from '../../render/dispose.js';
@@ -185,13 +185,13 @@ export function instantiateMenu<
       },
       awaitModalSubmit: async (interaction, options) => {
         latestModal.interactionId = interaction.id;
-        const response = await withResume(() =>
-          interaction.awaitModalSubmit(options).catch(() => {
+        const response = await interaction
+          .awaitModalSubmit(options)
+          .catch(() => {
             logger.info('Modal ended without receiving a response.');
             flushModal();
             return;
-          }),
-        );
+          });
         if (
           !response ||
           latestModal.interactionId !== interaction.id ||
@@ -200,8 +200,9 @@ export function instantiateMenu<
           return null;
         }
 
+        void response.deferUpdate();
+
         flushModal();
-        response.deferUpdate();
         return response;
       },
       onModalSubmit: async (interaction, options, callback) => {
@@ -397,14 +398,7 @@ export function instantiateMenu<
     patchTarget = PatchTarget.None,
   ): DisposeFn {
     function menuEffect(): void | DisposeFn {
-      let dispose;
-      const prevContext = setReactiveContext(builtins);
-      try {
-        dispose = fn();
-      } finally {
-        setReactiveContext(prevContext);
-      }
-
+      const dispose = getAsyncStore().run(builtins, fn);
       builtins.addPatchTargets(patchTarget);
       return dispose;
     }
@@ -723,17 +717,17 @@ export function instantiateMenu<
       return;
     }
 
-    const prevContext = setReactiveContext(builtins);
     let callbackResult;
     try {
-      callbackResult = batch(() => interactionCallback(collected));
+      callbackResult = getAsyncStore().run(builtins, () =>
+        batch(() => interactionCallback(collected)),
+      );
     } catch (e) {
       logger.error('Error during component interaction handle', {
         customId: collected.customId,
       });
       throw e;
     } finally {
-      setReactiveContext(prevContext);
       builtins.scheduleUpdate();
     }
 
