@@ -520,7 +520,7 @@ export function instantiateMenu<
   const navigation = new Navigation();
   const componentCallbacks = new Map<
     MenuViewComponentId,
-    MessageComponentCallback<any>
+    MessageComponentCallback
   >();
   const componentIdGenerator = new NamedIdGenerator('component');
   let idle: number =
@@ -718,32 +718,18 @@ export function instantiateMenu<
       return;
     }
 
-    let callbackResult;
     try {
-      callbackResult = getAsyncStore().run(builtins, () =>
-        untracked(() => batch(() => interactionCallback(collected))),
-      );
+      return void (await getAsyncStore().run(builtins, async () =>
+        untracked(
+          async () =>
+            await batch(async () => await interactionCallback(collected)),
+        ),
+      ));
     } catch (e) {
       logger.error('Error during component interaction handle', {
         customId: collected.customId,
       });
       throw e;
-    } finally {
-      builtins.scheduleUpdate();
-    }
-
-    if (!(callbackResult instanceof Promise)) {
-      return;
-    }
-
-    try {
-      await callbackResult;
-    } catch (error: unknown) {
-      logger.error(
-        `Error during component interaction async callback resolve.`,
-        { customId: collected.customId },
-      );
-      throw error;
     } finally {
       builtins.scheduleUpdate();
     }
