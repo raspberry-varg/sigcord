@@ -522,7 +522,7 @@ export function instantiateMenu<
     MenuViewComponentId,
     MessageComponentCallback
   >();
-  const componentIdGenerator = new NamedIdGenerator('component');
+  const componentIdGenerator = new NamedIdGenerator('component', menuId);
   let idle: number =
     props.idleTimeMs === undefined
       ? DEFAULT_IDLE
@@ -601,16 +601,10 @@ export function instantiateMenu<
     listeners.onRender.fire();
   }
 
-  function createComponentId(componentId: string): MenuViewComponentId {
-    if (componentId.includes(':')) {
-      throw new MenuViewComponentError(
-        `Internal delimiter uses ':' for MenuViewComponentIds. Please use ` +
-          `a different character.`,
-      );
-    }
-    return `${menuId}:${
-      renderer.viewDefinition ? renderer.viewDefinition.id : initialViewId
-    }:${componentId}`;
+  function createComponentId(
+    componentId: string | null | undefined,
+  ): MenuViewComponentId {
+    return componentId || componentIdGenerator.next();
   }
 
   function clearViewArtifacts() {
@@ -647,14 +641,7 @@ export function instantiateMenu<
   }
 
   function getComponentId(rawCustomId: string) {
-    const componentIdSplit = rawCustomId.split(':');
-    if (componentIdSplit.length !== 3) {
-      throw new MenuViewComponentError(
-        `customId for '${rawCustomId}' is malformed. Please use ` +
-          `'createMessageComponentId()' when defining a new component id.`,
-      );
-    }
-    return componentIdSplit.at(-1);
+    return rawCustomId;
   }
 
   function onTimeout() {
@@ -906,10 +893,4 @@ function buildProps<Props extends NonNullable<unknown>>(
     ...initProps,
     $: builtins,
   };
-}
-
-class MenuViewComponentError extends Error {
-  constructor(message: string) {
-    super(message);
-  }
 }
