@@ -45,7 +45,6 @@ import { NamedIdGenerator } from '../../ids/namedIdGenerator.js';
 import { AutoComponentId } from '../../components/autocomponents.js';
 import type { ViewMessagePayload } from '../../views/viewFlavors.js';
 import { INTERNAL_CONTEXT_SYMBOL } from './internalMenuContext.js';
-import type { MessageComponentCallback } from '../../components/messageComponentCallback.js';
 import { untracked } from '../../reactivity/untracked.js';
 
 export interface MenuControllerAPI {
@@ -148,11 +147,6 @@ export function instantiateMenu<
         }
       },
       component(definition) {
-        const controller =
-          'controller' in definition
-            ? definition.controller
-            : definition.handler;
-
         const componentId = createComponentId(
           definition.id ? definition.id : componentIdGenerator.next(),
         );
@@ -164,7 +158,7 @@ export function instantiateMenu<
         });
 
         // Must come after in case it's an existing componentId.
-        collector.onComponent(componentId, controller);
+        collector.onComponent(componentId, definition.handler);
 
         return definition.component;
       },
@@ -517,11 +511,6 @@ export function instantiateMenu<
     onStop: new Listener(),
     onTimeout: new Listener(),
   };
-  const navigation = new Navigation();
-  const componentCallbacks = new Map<
-    MenuViewComponentId,
-    MessageComponentCallback
-  >();
   const componentIdGenerator = new NamedIdGenerator('component', menuId);
   let idle: number =
     props.idleTimeMs === undefined
@@ -532,6 +521,7 @@ export function instantiateMenu<
           `Idle time must be greater than 0 milliseconds, got [${props.idleTimeMs}].`,
         );
   const collector = new CollectorService(listeners);
+  const navigation = new Navigation(collector);
   const latestModal = {
     interactionId: '',
     customId: '',
@@ -609,7 +599,6 @@ export function instantiateMenu<
 
   function clearViewArtifacts() {
     collector.clear();
-    componentCallbacks.clear();
     flushModal();
   }
 

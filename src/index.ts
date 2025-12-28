@@ -76,11 +76,7 @@ export {
 export { SlotOptions, Slot, slot, isSlot } from './lib/Slot.js';
 export { onCleanup } from './lib/hooks/onCleanup.js';
 export { batch } from '@preact/signals-core';
-export {
-  ComponentDefinition,
-  ComponentWithController,
-  ComponentWithHandler,
-} from './lib/components/componentDefinition.js';
+export { ComponentDefinition } from './lib/components/componentDefinition.js';
 export { owner, Owner } from './lib/render/owner.js';
 export { DisposeFn } from './lib/render/dispose.js';
 export {

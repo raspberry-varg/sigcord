@@ -11,15 +11,9 @@ type InteractionFromBuilder<
   Cached extends boolean,
 > = MappedInteractionTypes<Cached>[NonNullable<Builder['data']['type']>];
 
-export type ComponentDefinition<
+export interface ComponentDefinition<
   Builder extends MessageActionRowComponentBuilder,
   Cached extends boolean = boolean,
-> =
-  | ComponentWithHandler<Builder, Cached>
-  | ComponentWithController<Builder, Cached>;
-
-interface ComponentDefinitionBase<
-  Builder extends MessageActionRowComponentBuilder,
 > {
   /**
    * Custom identifier for this component. Populated with a randomly-generated
@@ -34,12 +28,6 @@ interface ComponentDefinitionBase<
    * autopopulated.
    */
   component: Builder;
-}
-
-export interface ComponentWithHandler<
-  Builder extends MessageActionRowComponentBuilder,
-  Cached extends boolean = boolean,
-> extends ComponentDefinitionBase<Builder> {
   /**
    * Called when the {@link component} receives a user interaction.
    *
@@ -52,16 +40,4 @@ export interface ComponentWithHandler<
    *   alternatives to avoid returning a promise.
    */
   handler: MessageComponentCallback<InteractionFromBuilder<Builder, Cached>>;
-}
-
-export interface ComponentWithController<
-  Builder extends MessageActionRowComponentBuilder,
-  Cached extends boolean = boolean,
-> extends ComponentDefinitionBase<Builder> {
-  /**
-   * @deprecated Please use the 'handler' property instead. This will soon
-   *   become a field for a full controller class for the component itself.
-   *   Currently, functions the same as {@link ComponentWithHandler.handler}.
-   */
-  controller: MessageComponentCallback<InteractionFromBuilder<Builder, Cached>>;
 }

@@ -3,6 +3,7 @@ import {
   ComponentType,
   type Interaction,
   type Message,
+  type MessageComponentInteraction,
 } from 'discord.js';
 import type { Listener } from '../../../util/Listener.js';
 import { logger } from '../../../util/Logger.js';
@@ -13,7 +14,10 @@ import {
 } from '../../../util/CollectorUtil.js';
 
 type ComponentId = string;
-type ComponentCallbackMap = Map<ComponentId, MessageComponentCallback<any>>;
+export type ComponentCallbackMap = Map<
+  ComponentId,
+  MessageComponentCallback<any>
+>;
 type OnCollectCallback = (
   collected: CollectedMessageInteraction,
 ) => void | Promise<void>;
@@ -39,9 +43,19 @@ export class CollectorService {
 
   constructor(private listeners: Partial<Listeners>) {}
 
-  onComponent(
+  snapshot(): ComponentCallbackMap {
+    const callbacks = this.componentCallbacks;
+    this.componentCallbacks = new Map();
+    return callbacks;
+  }
+
+  resume(map: ComponentCallbackMap): void {
+    this.componentCallbacks = map;
+  }
+
+  onComponent<T extends MessageComponentInteraction>(
     componentId: string,
-    callback: MessageComponentCallback<any>,
+    callback: MessageComponentCallback<T>,
   ): void {
     logger.info('CollectorService: Subscribed to component', {
       id: componentId,
