@@ -40,8 +40,8 @@ export interface Synapse {
   /**
    * Configures an interactive message component.
    *
-   * - Passed component id is auto-formatted to `menuId:viewId:componentId`.
-   *   - `viewId:viewId:componentId` if standalone.
+   * - Passed component id is unmodified. Generates a new id if none was
+   *   provided.
    * - Calls the passed component builder's `setCustomId` with the provided id.
    * - Binds a given handler to a component via its id.
    * @returns The provided component builder.
