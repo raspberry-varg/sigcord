@@ -318,7 +318,7 @@ export function instantiateMenu<
             'Tried to navigate before initial render in a reactive view.',
           );
           reactivePayload.owner?.suspend();
-          navigation.pushReactive(currentView, reactivePayload);
+          navigation.push(currentView, reactivePayload);
         } else {
           navigation.push(currentView);
         }
@@ -340,7 +340,7 @@ export function instantiateMenu<
             reactivePayload,
             'Tried to navigate before initial render in a reactive view.',
           );
-          navigation.pushReactive(currentView, reactivePayload);
+          navigation.push(currentView, reactivePayload);
         } else {
           navigation.push(currentView);
         }

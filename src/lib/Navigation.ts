@@ -17,15 +17,7 @@ export class Navigation {
 
   constructor(private readonly collectorService: CollectorService) {}
 
-  push(view: View): void {
-    this.views.push({
-      view,
-      collectorMap: this.collectorService.snapshot(),
-      reactiveInstance: undefined,
-    });
-  }
-
-  pushReactive(view: View, reactiveInstance: RenderedReactiveView) {
+  push(view: View, reactiveInstance?: RenderedReactiveView): void {
     this.views.push({
       view,
       reactiveInstance,
@@ -35,12 +27,6 @@ export class Navigation {
 
   empty(): boolean {
     return !this.views.length;
-  }
-
-  peek(): NavigationPayload {
-    const data = this.views.at(-1);
-    assert(data);
-    return data;
   }
 
   pop(): NavigationPayload {
