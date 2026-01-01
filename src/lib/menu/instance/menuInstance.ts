@@ -11,13 +11,9 @@ import { ClassViewProps } from '../../FunctionalMenuView.js';
 import { type MenuContextWithInternal } from './menuContext.js';
 import { View } from '../../views/view.js';
 import { IntrinsicMenuProps } from '../defineMenu.js';
-import {
-  assert,
-  assertAndReturn,
-  assertNotNull,
-} from '../../../util/Assertions.js';
+import { assert, assertAndReturn } from '../../../util/Assertions.js';
 import { Listener } from '../../../util/Listener.js';
-import { Logger, LogLevel, shouldLog } from '../../../util/Logger.js';
+import { Logger } from '../../../util/Logger.js';
 import {
   PatchTarget,
   PatchTargetBitMask,
@@ -46,16 +42,13 @@ import { AutoComponentId } from '../../components/autocomponents.js';
 import type { ViewMessagePayload } from '../../views/viewFlavors.js';
 import { INTERNAL_CONTEXT_SYMBOL } from './internalMenuContext.js';
 import { untracked } from '../../reactivity/untracked.js';
+import { MenuInstance } from './classBasedInstance.js';
 
 export interface MenuControllerAPI {
   // render API
   start(options?: Partial<RenderOptions>): Promise<void>;
   reply(
     options: Omit<Partial<RenderOptions<string>>, 'forceReply'>,
-  ): Promise<void>;
-  /** @deprecated Please use {@link start} instead. */
-  render(
-    options?: Omit<Partial<RenderOptions<string>>, 'forceReply'>,
   ): Promise<void>;
   // listener API
   onRender(callback: () => unknown, once?: boolean): void;
@@ -101,7 +94,6 @@ interface MenuControllerListeners {
 }
 
 export function instantiateMenu<
-  MenuProps extends NonNullable<unknown> = NonNullable<unknown>,
   ViewId extends string = string,
   AllProps extends PropsBase = PropsBase,
 >(
@@ -109,7 +101,26 @@ export function instantiateMenu<
   initialViewId: string,
   registeredViews: View<AllProps>[],
   interaction: RepliableInteraction,
-  initProps: MenuProps,
+  initProps: NonNullable<unknown>,
+): MenuControllerAPI {
+  return new MenuInstance<ViewId, AllProps>(
+    menuId,
+    initialViewId,
+    interaction,
+    initProps,
+    registeredViews,
+  );
+}
+
+export function instantiateMenuLegacy<
+  ViewId extends string = string,
+  AllProps extends PropsBase = PropsBase,
+>(
+  menuId: string,
+  initialViewId: string,
+  registeredViews: View<AllProps>[],
+  interaction: RepliableInteraction,
+  initProps: NonNullable<unknown>,
 ): MenuControllerAPI {
   const logger = Logger.namespaced('MenuInstance');
 
@@ -250,18 +261,8 @@ export function instantiateMenu<
         updateListenerIdle(idleSeconds * 1_000);
       },
       close: async () => await closeMenu(),
-      skipRender: (shouldSkip = true) => {
-        skipRender = shouldSkip;
-      },
       stop: (reason?: string) => {
         void stopMenu(reason);
-      },
-      queueRender: (queueRender = true) => {
-        if (queueRender) {
-          manualPatchQueued |= PatchTarget.All;
-        } else {
-          manualPatchQueued = 0;
-        }
       },
       /**
        * Manually schedule an update to the current view in a microtask.
@@ -303,8 +304,6 @@ export function instantiateMenu<
       },
       createComputed: (fn) => createComputed(fn),
       createEffect: (fn, patchTarget) => registerEffect(fn, patchTarget),
-      createEmbedEffect: (fn) => registerEffect(fn, PatchTarget.Embeds),
-      createComponentEffect: (fn) => registerEffect(fn, PatchTarget.Components),
       goTo(view, props) {
         const currentView = renderer.getCurrentView();
         assert(
@@ -327,24 +326,6 @@ export function instantiateMenu<
           props,
           /** skipCache= */ true,
         );
-      },
-      goToCached: (view, props) => {
-        const currentView = renderer.getCurrentView();
-        assert(
-          currentView,
-          'Tried to navigate before initial render in a reactive view.',
-        );
-        if (renderer.isCurrentViewReactive()) {
-          const reactivePayload = renderer.getReactivePayload();
-          assert(
-            reactivePayload,
-            'Tried to navigate before initial render in a reactive view.',
-          );
-          navigation.push(currentView, reactivePayload);
-        } else {
-          navigation.push(currentView);
-        }
-        renderer.queueViewSwapWithProps(view, props);
       },
       goBack: () => {
         assert(
@@ -372,11 +353,6 @@ export function instantiateMenu<
         }
         owner.registerOnSuspend(action);
       },
-      resumableSuspend: async (action) =>
-        await action().then((r) => {
-          setReactiveContext($);
-          return r;
-        }),
       getMenuInfo: () => ctx,
       deferUpdate(interaction) {
         const toDefer = interaction ?? collector.lastCollected;
@@ -526,19 +502,10 @@ export function instantiateMenu<
     interactionId: '',
     customId: '',
   };
-  let skipRender = false;
   let manualPatchQueued: PatchTargetBitMask = 0;
-
-  const [activeView, setActiveView] = builtins.createSignal<View | null>(null);
-  if (shouldLog(LogLevel.Debug)) {
-    createEffect(() => {
-      logger.debug(`activeView set to --> ${activeView()?.id ?? null}`);
-    });
-  }
 
   function getPatchTargets(): PatchTargetBitMask {
     logger.debug({
-      skipRender,
       collectorEnded: collector.hasEnded(),
       collectorInitialized: collector.isInitialized(),
       isCurrentViewReactive: renderer.isCurrentViewReactive(),
@@ -564,31 +531,6 @@ export function instantiateMenu<
       return patchTargets;
     }
     return PatchTarget.All;
-  }
-
-  function beforeRender() {
-    const queued = renderer.getQueuedView();
-    const queuedNav = renderer.getQueuedNavigation();
-    if (queued) {
-      logger.debug(':: about to set active view --> queued is not null');
-      setActiveView(() => queued.view);
-    } else if (queuedNav) {
-      logger.debug(
-        ':: about to set active view --> queuedNavigation is not null',
-      );
-      setActiveView(() => queuedNav.view);
-    } else {
-      logger.debug(
-        ':: about to set active view --> queued was null, using current view',
-      );
-      setActiveView(() => assertNotNull(renderer.getCurrentView()));
-    }
-  }
-
-  function afterRender() {
-    skipRender = false;
-    manualPatchQueued = 0;
-    listeners.onRender.fire();
   }
 
   function createComponentId(
@@ -765,7 +707,6 @@ export function instantiateMenu<
       return null;
     }
 
-    beforeRender();
     let payload: ViewMessagePayload | Promise<ViewMessagePayload> | null = null;
     try {
       payload = batch(() =>
@@ -780,7 +721,8 @@ export function instantiateMenu<
       );
       throw error;
     } finally {
-      afterRender();
+      manualPatchQueued = 0;
+      listeners.onRender.fire();
     }
 
     if (payload instanceof Promise) {
@@ -859,7 +801,6 @@ export function instantiateMenu<
   return {
     // render API
     reply,
-    render: start,
     start,
     // listener API
     onRender,

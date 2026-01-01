@@ -154,75 +154,7 @@ export function getCurrentPatchTarget(): PatchTarget | undefined {
   return getOpenOwnerStrict().patchTarget;
 }
 
-/**
- * @deprecated
- * Effect context is now dynamically-tracked as a component is rendered and
- * re-rendered. Please use {@link patchEffect} instead to have updates to embed
- * objects automatically reflected to the user.
- *
- * Components V1: If you must set up effects that mutate embed objects outside
- * of the call to {@link ReactiveViewPayloadV1.embeds}, please pass
- * {@link PatchTarget.Embeds} to the optional second parameter in
- * {@link effect}.
- *
- * @summary
- * Create an effect that runs when the value of signals in the function are
- * changed.
- *
- * Automatically queues a patch to the menu's message embeds when the effect
- * is run.
- * @param fn The effect to run.
- * @param params Extra configuration for debugging.
- */
-export const embedEffect: Synapse['createEmbedEffect'] = (fn) =>
-  useSynapse().createEmbedEffect(fn);
-
-/**
- * @deprecated
- * Effect context is now dynamically-tracked as a component is rendered and
- * re-rendered. Please use {@link patchEffect} instead to have updates to
- * component objects automatically reflected to the user.
- *
- * Components V1: If you must set up effects that mutate embed objects outside
- * of the call to {@link ReactiveViewPayloadV1.components}, please pass
- * {@link PatchTarget.Components} to the optional second parameter in
- * {@link effect}.
- *
- * @summary
- * Create an effect that runs when the value of signals in the function are
- * changed.
- *
- * Automatically queues a patch to the menu's message components when the
- * effect is run.
- * @param fn The effect to run.
- * @param params Extra configuration for debugging.
- */
-export const componentEffect: Synapse['createComponentEffect'] = (fn) =>
-  useSynapse().createComponentEffect(fn);
-
 // Asynchronous escape-hatches
-
-/**
- * @deprecated Use {@link asyncBoundary()} instead.
- *
- * Perform an asynchronous action, resetting the reactive context back to the
- * current menu once the action's promise resolves.
- *
- * @example
- * ```ts
- * function onClick(buttonInteraction) {
- *   const user = await resumableAction(() => fetchUserFromDb());
- *   // reactive context restored, allowing calls to context-sensitive built-ins
- *   goTo(UserInfoView, {user});
- * }
- * ```
- *
- * @param action The asynchronous action to perform immediately.
- * @returns Promise which resets the current reactive context when the provided
- *    action's promise resolves.
- */
-export const resumableAction: Synapse['resumableSuspend'] = (action) =>
-  useSynapse().resumableSuspend(action);
 
 /**
  * Resumes a reactive hook context to the value before an `await` expression.

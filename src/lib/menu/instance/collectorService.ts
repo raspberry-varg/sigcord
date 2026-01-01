@@ -41,7 +41,7 @@ export class CollectorService {
   private collector?: ReturnType<Message['createMessageComponentCollector']>;
   private componentCallbacks: ComponentCallbackMap = new Map();
 
-  constructor(private listeners: Partial<Listeners>) {}
+  constructor(private listeners: Partial<Readonly<Listeners>>) {}
 
   snapshot(): ComponentCallbackMap {
     const callbacks = this.componentCallbacks;

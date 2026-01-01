@@ -74,7 +74,7 @@ export function defineMenu<
 
   // factory callback
   return (interaction: RepliableInteraction, props: Props) =>
-    instantiateMenu<Props, typeof initialView>(
+    instantiateMenu<typeof initialView>(
       id,
       initialView,
       [...idToClass.values()],
