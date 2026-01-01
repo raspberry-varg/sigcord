@@ -31,30 +31,20 @@ export const STATIC_RENDER_SYNAPSE: Synapse = {
     return s;
   },
   createEffect: (fn) => staticEffect(fn),
-  createEmbedEffect: (fn) => staticEffect(fn),
-  createComponentEffect: (fn) => staticEffect(fn),
   goTo: unsupported('goTo'),
-  goToCached: unsupported('goToCached'),
   goBack: unsupported('goBack'),
   canGoBack() {
     return false;
   },
   onResume: noop,
   onSuspend: noop,
-  resumableSuspend: async (action) =>
-    await action().then((r) => {
-      setReactiveContext(STATIC_RENDER_SYNAPSE);
-      return r;
-    }),
   getMenuInfo: unsupported('getMenuInfo'),
   scheduleUpdate: unsupported('doUpdate'),
   onModalSubmit: unsupported('onModalSubmit'),
   addPatchTargets: noop,
-  queueRender: noop,
   setIdleMs: noop,
   setIdleSec: noop,
   showModal: unsupported('showModal'),
-  skipRender: noop,
   stop: noop,
   swap: unsupported('swap'),
   get ctx(): any {

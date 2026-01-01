@@ -25,8 +25,6 @@ import type {
   ModalRepliableInteraction,
 } from '../../interactivity/modalHandling.js';
 import type { ComponentDefinition } from '../../components/componentDefinition.js';
-import type { effect, patchEffect } from '../../builtins/builtins.js';
-import type { ReactiveViewPayloadV1 } from '../../views/viewFlavors.js';
 
 /**
  * Closure functions to manage and interact with a bound menu instance.
@@ -82,8 +80,6 @@ export interface Synapse {
   setIdleSec(idleSeconds: number): void;
   close: () => Promise<void>;
   stop: (reason?: string) => void;
-  queueRender: () => void;
-  skipRender: () => void;
   /**
    * In reactive views, manually queue patches for specific pieces the message
    * instead of relying on reactivity.
@@ -105,8 +101,6 @@ export interface Synapse {
   createComputed<T>(fn: () => T): Signal<T>;
 
   /**
-   * @deprecated Use the {@link patchEffect()} hook instead.
-   *
    * @summary Create an effect that runs when signals referenced in the effect
    * function change.
    *
@@ -115,48 +109,6 @@ export interface Synapse {
    *   Useful when mutating content objects like component or embed builders to
    *   have the change reflected to the user.   */
   createEffect: (fn: EffectFn, patchTarget?: PatchTarget) => DisposeFn;
-
-  /**
-   * @deprecated
-   * Effect context is now dynamically-tracked as a component is rendered and
-   * re-rendered. Please use {@link patchEffect} instead to have updates to embed
-   * objects automatically reflected to the user.
-   *
-   * Components V1: If you must set up effects that mutate embed objects outside
-   * of the call to {@link ReactiveViewPayloadV1.embeds}, please pass
-   * {@link PatchTarget.Embeds} to the optional second parameter in
-   * {@link effect}.
-   *
-   * @summary
-   * Create an effect that runs when the value of signals in the function are
-   * changed.
-   *
-   * Automatically queues a patch to the menu's message embeds when the effect
-   * is run.
-   * @param fn The effect to run.
-   * @param params Extra configuration for debugging.   */
-  createEmbedEffect: (fn: EffectFn) => DisposeFn;
-
-  /**
-   * @deprecated
-   * Effect context is now dynamically-tracked as a component is rendered and
-   * re-rendered. Please use {@link patchEffect} instead to have updates to
-   * component objects automatically reflected to the user.
-   *
-   * Components V1: If you must set up effects that mutate embed objects outside
-   * of the call to {@link ReactiveViewPayloadV1.components}, please pass
-   * {@link PatchTarget.Components} to the optional second parameter in
-   * {@link effect}.
-   *
-   * @summary
-   * Create an effect that runs when the value of signals in the function are
-   * changed.
-   *
-   * Automatically queues a patch to the menu's message components when the
-   * effect is run.
-   * @param fn The effect to run.
-   * @param params Extra configuration for debugging.   */
-  createComponentEffect: (fn: EffectFn) => DisposeFn;
 
   /**
    * Instantiate and navigate to a different view. The current view will be
@@ -193,12 +145,6 @@ export interface Synapse {
     props: Props,
   ): void;
 
-  /** @deprecated Not recommended. Not implemented. */
-  goToCached<View extends DefinedView<any>>(
-    view: View,
-    props: View extends DefinedView<infer P> ? P : never,
-  ): void;
-
   /**
    * Navigate back to the calling view.
    *
@@ -225,8 +171,6 @@ export interface Synapse {
    * @param action Action to perform when this menu is navigated back to.
    */
   onResume(action: ResumeFn): void;
-
-  resumableSuspend<R>(action: () => Promise<R>): Promise<R>;
 
   getMenuInfo(): Readonly<MenuContext>;
 
