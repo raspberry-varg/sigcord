@@ -178,8 +178,6 @@ export interface Synapse {
    *   });
    * });
    * ```
-   * fefe
-   * wefwf
    *
    * @see {@link goBack()} for navigating back.
    * @see {@link canGoBack()} for checking if
