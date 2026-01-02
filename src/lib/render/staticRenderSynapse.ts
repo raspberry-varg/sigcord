@@ -27,8 +27,7 @@ export const STATIC_RENDER_SYNAPSE: Synapse = {
     return createSignal(fnOrValue, PatchTarget.None).split();
   },
   createWritableSignal<T>(initialValue: T | undefined = undefined) {
-    const s = createSignal(initialValue, PatchTarget.None);
-    return s;
+    return createSignal(initialValue, PatchTarget.None);
   },
   createEffect: (fn) => staticEffect(fn),
   goTo: unsupported('goTo'),
