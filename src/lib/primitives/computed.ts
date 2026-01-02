@@ -1,5 +1,5 @@
 import type { Synapse } from '../menu/instance/synapse.js';
-import { useSynapse } from '../builtins/builtins.js';
+import { getCurrentSynapse } from '../builtins/builtins.js';
 
 /**
  * Create a signal that only updates if any of its dependencies change.
@@ -8,4 +8,4 @@ import { useSynapse } from '../builtins/builtins.js';
  *    call.
  */
 export const computed: Synapse['createComputed'] = <T>(derived: () => T) =>
-  useSynapse().createComputed(derived);
+  getCurrentSynapse().createComputed(derived);

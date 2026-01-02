@@ -49,7 +49,6 @@ export {
   closeMenu,
   stopMenu,
   patch,
-  useSynapse,
   useMenuInfo,
   suspend,
   asyncBoundary,

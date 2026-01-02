@@ -1,5 +1,4 @@
 import type { IntrinsicMenuProps, MenuFactory } from '../../menu/defineMenu.js';
-import { instantiateMenu } from '../../menu/instance/menuInstance.js';
 import { IS_V2 } from '../viewFlavors.js';
 import type { PropsBase } from '../viewDefinitionBase.js';
 import type {
@@ -11,6 +10,7 @@ import type {
   ReactiveViewFactoryV2,
 } from './reactiveViewFactory.js';
 import { REACTIVE_VIEW_SYMBOL } from './reactiveViewSymbol.js';
+import { instantiateMenu } from '../../menu/instance/instantiateMenu.js';
 
 /**
  * Define a reactive view instance.

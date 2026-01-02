@@ -1,12 +1,10 @@
 import type { Message, RepliableInteraction } from 'discord.js';
 import type { IntrinsicViewProps } from '../views/viewFlavors.js';
 import { type DefinedView, View } from '../views/view.js';
-import {
-  instantiateMenu,
-  type MenuControllerAPI,
-} from './instance/menuInstance.js';
 import type { PropsBase } from '../views/viewDefinitionBase.js';
 import type { ArrayUnionToIntersection } from '../../util/TypesUtil.js';
+import type { MenuInstanceActions } from './instance/menuInstanceActions.js';
+import { instantiateMenu } from './instance/instantiateMenu.js';
 
 type ViewDefinitions = DefinedView<any>[];
 
@@ -86,7 +84,7 @@ export function defineMenu<
 export type MenuFactory<Props extends PropsBase> = (
   interaction: RepliableInteraction,
   props: Props & Partial<IntrinsicMenuProps>,
-) => MenuControllerAPI;
+) => MenuInstanceActions;
 
 class InteractiveMenuError extends Error {
   constructor(message: string) {

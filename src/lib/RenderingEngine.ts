@@ -23,7 +23,7 @@ import {
   type ReactiveViewInstance,
 } from './menu/instance/instantiateReactiveView.js';
 import { isReactiveViewDefinition } from './views/reactive/reactiveViewDefinition.js';
-import { setReactiveContext } from './builtins/builtins.js';
+import { setCurrentSynapse } from './builtins/builtins.js';
 import { batch } from '@preact/signals-core';
 import type { Props } from '../index.js';
 import { render } from './render/render.js';
@@ -246,7 +246,7 @@ export class RenderingEngine {
       viewInstance: instance.id,
       isV2: IS_V2 in instance,
     });
-    const prevContext = setReactiveContext($);
+    const prevContext = setCurrentSynapse($);
     try {
       batch(() => {
         const isV2 = isRenderedReactiveViewV2(instance);
@@ -385,7 +385,7 @@ export class RenderingEngine {
       });
     } finally {
       this.postRender();
-      setReactiveContext(prevContext);
+      setCurrentSynapse(prevContext);
     }
     return payload;
   }
@@ -458,7 +458,7 @@ export class RenderingEngine {
       if (!reactiveInstance || viewDefinition.id !== reactiveInstance.id) {
         // rendering must be synchronous; built-ins rely on the single-threaded
         // nature of JS
-        const prevContext = setReactiveContext(props.$);
+        const prevContext = setCurrentSynapse(props.$);
         try {
           reactiveInstance = instantiateReactiveView(viewDefinition, props);
           this.reactiveViewInstance = reactiveInstance;
@@ -470,7 +470,7 @@ export class RenderingEngine {
           );
           throw e;
         } finally {
-          setReactiveContext(prevContext);
+          setCurrentSynapse(prevContext);
         }
       }
       return reactiveInstance;
