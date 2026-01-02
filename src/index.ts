@@ -6,10 +6,7 @@ export {
   ClassViewProps as Props,
 } from './lib/FunctionalMenuView.js';
 export { ViewRender } from './lib/views/classic/classViewRender.js';
-export {
-  Synapse,
-  Synapse as ViewSynapse,
-} from './lib/menu/instance/synapse.js';
+export { Synapse } from './lib/menu/instance/synapse.js';
 export * from './lib/SmartComponents.js';
 export * from './lib/PrebuiltEmbeds.js';
 export * from './lib/Renderable.js';

@@ -17,7 +17,14 @@ export abstract class ViewClass<Props extends PropsBase = PropsBase> {
     props: Props & { $: Synapse },
   ): MaybePromise<ViewMessagePayload>;
 
-  /** @deprecated It is recommended to use $.goTo instead. */
+  /**
+   * Action to perform when this view is swapped back into via id with $.swap().
+   *
+   * It is more preferable if $.goTo() is used instead as it provides the most
+   * type safety and doesn't require registration of views in advance.
+   *
+   * @param _args Args passed through the call to $.swap.
+   */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onSwap(..._args: unknown[]): void {}
 }

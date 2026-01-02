@@ -5,7 +5,7 @@ import {
 } from 'discord.js';
 
 /**
- * Special Id attached to one of the pre-configured {@link AutoComponents}.
+ * Special id attached to one of the pre-configured {@link AutoComponents}.
  */
 export enum AutoComponentId {
   CloseMenuButton = '%%RSRV%%_CloseMenuButton',
