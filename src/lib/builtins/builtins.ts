@@ -1,10 +1,7 @@
 /**
- * This module contains built-ins that can be used in a synchronous reactive
- * view, removing the need to pass a `$` synapse prop to reactive components
- * or nested reactive views.
- *
- * `$` can still be accessed by a built-in getter for backwards-compatibility
- * with non-reactive views.
+ * This module contains built-ins that can be used in a reactive view, removing
+ * the need to drill a `$` synapse prop to reactive components or nested
+ * reactive views.
  */
 
 import { AsyncLocalStorage } from 'node:async_hooks';
@@ -26,50 +23,44 @@ let currentSynapse: Synapse | null = null;
 
 const asyncLocalStorage = new AsyncLocalStorage<Synapse>();
 
-export function useSynapse(): Synapse {
-  let synapse: Synapse | undefined;
-  if (currentSynapse) {
-    synapse = currentSynapse;
-  } else {
-    synapse = asyncLocalStorage.getStore();
-  }
+export function getAsyncStore(): AsyncLocalStorage<Synapse> {
+  return asyncLocalStorage;
+}
 
+export function getCurrentSynapse(): Synapse {
+  const instance = asyncLocalStorage.getStore() ?? currentSynapse;
   assert(
-    synapse,
+    instance,
     'Attempted to use a hook outside of a reactive context. Was this called ' +
       'outside of a reactive view?\n\nClassic menu views should use the ' +
       'Synapse parameter directly ($).\n\n' +
       'Did you await within the body of a component function?',
   );
-  return synapse;
+  return instance;
 }
 
-export function getAsyncStore() {
-  return asyncLocalStorage;
+/**
+ * Replace the current active reactive context.
+ *
+ * @param instance The new active context.
+ * @returns The previous context.
+ */
+export function setCurrentSynapse(instance: Synapse | null): Synapse | null {
+  const prev = currentSynapse;
+  currentSynapse = instance;
+  if (instance) {
+    asyncLocalStorage.enterWith(instance);
+  } else {
+    asyncLocalStorage.disable();
+  }
+  return prev;
 }
 
 /**
  * Get info and state about the current menu.
  */
 export function useMenuInfo(): Readonly<MenuContext> {
-  return useSynapse().getMenuInfo();
-}
-
-/**
- * Replace the current active reactive context.
- *
- * @param synapse The new active context.
- * @returns The previous context.
- */
-export function setReactiveContext(synapse: Synapse | null): Synapse | null {
-  const prev = currentSynapse;
-  currentSynapse = synapse;
-  if (synapse) {
-    asyncLocalStorage.enterWith(synapse);
-  } else {
-    asyncLocalStorage.disable();
-  }
-  return prev;
+  return getCurrentSynapse().getMenuInfo();
 }
 
 // Signal effects
@@ -84,7 +75,7 @@ export function setReactiveContext(synapse: Synapse | null): Synapse | null {
  *   have the change reflected to the user.
  */
 export const effect: Synapse['createEffect'] = (fn, patchTarget) =>
-  useSynapse().createEffect(fn, patchTarget);
+  getCurrentSynapse().createEffect(fn, patchTarget);
 
 /**
  * Create an effect that runs when signals referenced in the effect function
@@ -171,7 +162,7 @@ type ResumeCtxFn = () => void;
  *   to continue to be used after an `await`.
  */
 export function suspend(): ResumeCtxFn {
-  const capturedContext = useSynapse();
+  const capturedContext = getCurrentSynapse();
   assert(
     capturedContext,
     'Attempted to suspend the current reactive context, but none was found. ' +
@@ -180,7 +171,7 @@ export function suspend(): ResumeCtxFn {
       'be pulled into their own async boundary.',
   );
   return function resumeSuspendedContext() {
-    setReactiveContext(capturedContext);
+    setCurrentSynapse(capturedContext);
   };
 }
 
@@ -257,11 +248,7 @@ export async function asyncBoundary<T>(
  * @param interaction
  */
 export function deferUpdate(interaction?: RepliableInteraction): void {
-  useSynapse().deferUpdate(interaction);
-}
-
-export function injectActiveInteraction(): RepliableInteraction {
-  return useMenuInfo().activeInteraction;
+  getCurrentSynapse().deferUpdate(interaction);
 }
 
 export function injectLastCollectedInteraction():
@@ -286,10 +273,10 @@ export function injectCurrentInteraction(): RepliableInteraction {
  * @returns The provided component builder.
  */
 export const component: Synapse['component'] = (definition) =>
-  useSynapse().component(definition);
+  getCurrentSynapse().component(definition);
 
 export const getNextUniqueComponentId: Synapse['getNextUniqueComponentId'] =
-  () => useSynapse().getNextUniqueComponentId();
+  () => getCurrentSynapse().getNextUniqueComponentId();
 
 // Navigation
 
@@ -299,21 +286,21 @@ export const getNextUniqueComponentId: Synapse['getNextUniqueComponentId'] =
  * - Can navigate back out of the view using {@link goBack}
  */
 export const goTo: Synapse['goTo'] = (view, props) =>
-  useSynapse().goTo(view, props);
+  getCurrentSynapse().goTo(view, props);
 
 /**
  * Navigate back to the calling view.
  *
  * @throws If not navigated to using {@link goTo}
  */
-export const goBack: Synapse['goBack'] = () => useSynapse().goBack();
+export const goBack: Synapse['goBack'] = () => getCurrentSynapse().goBack();
 
 /**
  * Returns true if this view was navigated to using {@link goTo}. Safely allows
  * the use of {@link goBack} since the previous menu is on the navigation stack.
  */
 export const canNavigateBack: Synapse['canGoBack'] = () =>
-  useSynapse().canGoBack();
+  getCurrentSynapse().canGoBack();
 
 /**
  * Perform an action when this reactive view is navigated away from.
@@ -321,7 +308,7 @@ export const canNavigateBack: Synapse['canGoBack'] = () =>
  * @param action Action to perform when this view suspends.
  */
 export const onSuspend: Synapse['onSuspend'] = (action) =>
-  useSynapse().onSuspend(action);
+  getCurrentSynapse().onSuspend(action);
 
 /**
  * Perform an action when this reactive view is navigated back to.
@@ -329,7 +316,7 @@ export const onSuspend: Synapse['onSuspend'] = (action) =>
  * @param action Action to perform when this menu is navigated back to.
  */
 export const onResume: Synapse['onResume'] = (action) =>
-  useSynapse().onResume(action);
+  getCurrentSynapse().onResume(action);
 
 /**
  * Check if the current reactive view is suspended.
@@ -345,7 +332,7 @@ export function isSuspended(): boolean {
 // Modals
 
 export const showModal: Synapse['showModal'] = (interaction, modalOrOptions) =>
-  useSynapse().showModal(
+  getCurrentSynapse().showModal(
     interaction,
     modalOrOptions as Parameters<Synapse['showModal']>[1],
   );
@@ -353,40 +340,41 @@ export const showModal: Synapse['showModal'] = (interaction, modalOrOptions) =>
 export const awaitModalSubmit: Synapse['awaitModalSubmit'] = (
   interaction,
   options,
-) => useSynapse().awaitModalSubmit(interaction, options);
+) => getCurrentSynapse().awaitModalSubmit(interaction, options);
 
 export const onModalSubmit: Synapse['onModalSubmit'] = (
   interaction,
   options,
   callback,
-) => useSynapse().onModalSubmit(interaction, options, callback);
+) => getCurrentSynapse().onModalSubmit(interaction, options, callback);
 
 // Embed manipulation
 
 export const queueEmbeds: Synapse['appendEmbeds'] = (...embeds) =>
-  useSynapse().appendEmbeds(...embeds);
+  getCurrentSynapse().appendEmbeds(...embeds);
 
 export const queueEmbedsAtHead: Synapse['prependEmbeds'] = (...embeds) =>
-  useSynapse().prependEmbeds(...embeds);
+  getCurrentSynapse().prependEmbeds(...embeds);
 
 export const queueComponents: Synapse['appendComponents'] = (...components) =>
-  useSynapse().appendComponents(...components);
+  getCurrentSynapse().appendComponents(...components);
 
 export const queueComponentsAtHead: Synapse['prependComponents'] = (
   ...components
-) => useSynapse().prependComponents(...components);
+) => getCurrentSynapse().prependComponents(...components);
 
 // Menu manipulation
 
 export const setIdleMs: Synapse['setIdleMs'] = (idleMilliseconds) =>
-  useSynapse().setIdleMs(idleMilliseconds);
+  getCurrentSynapse().setIdleMs(idleMilliseconds);
 
 export const setIdleSec: Synapse['setIdleSec'] = (idleSeconds) =>
-  useSynapse().setIdleSec(idleSeconds);
+  getCurrentSynapse().setIdleSec(idleSeconds);
 
-export const closeMenu: Synapse['close'] = () => useSynapse().close();
+export const closeMenu: Synapse['close'] = () => getCurrentSynapse().close();
 
-export const stopMenu: Synapse['stop'] = (reason) => useSynapse().stop(reason);
+export const stopMenu: Synapse['stop'] = (reason) =>
+  getCurrentSynapse().stop(reason);
 
 // Rendering
 
@@ -394,7 +382,7 @@ export const stopMenu: Synapse['stop'] = (reason) => useSynapse().stop(reason);
  * Manually queue patches for specific message parts.
  */
 export const patch: Synapse['addPatchTargets'] = (...targets) =>
-  useSynapse().addPatchTargets(...targets);
+  getCurrentSynapse().addPatchTargets(...targets);
 
 /**
  * Manually schedule an update to the current view in a microtask.
@@ -403,5 +391,5 @@ export const patch: Synapse['addPatchTargets'] = (...targets) =>
  * handlers resolve.
  */
 export const update: Synapse['scheduleUpdate'] = () => {
-  return useSynapse().scheduleUpdate();
+  return getCurrentSynapse().scheduleUpdate();
 };

@@ -27,9 +27,9 @@ import type {
 import type { ComponentDefinition } from '../../components/componentDefinition.js';
 
 /**
- * Closure functions to manage and interact with a bound menu instance.
+ * Methods to manage and interact with a bound menu instance.
  *
- * The `Synapse` is a collection of closure functions bound to a menu instance.
+ * The `Synapse` is a collection of methods functions bound to a menu instance.
  * These act as the central nervous system for your interactive menus.
  *
  * Prefer reactive hooks over using the Synapse directly for reactive menus.

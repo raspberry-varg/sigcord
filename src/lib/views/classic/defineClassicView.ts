@@ -1,10 +1,10 @@
 import type { MaybePromise } from '../../../util/TypesUtil.js';
 import type { ClassViewDefinition } from '../../FunctionalMenuView.js';
 import type { IntrinsicMenuProps, MenuFactory } from '../../menu/defineMenu.js';
-import { instantiateMenu } from '../../menu/instance/menuInstance.js';
 import type { ViewMessagePayload } from '../viewFlavors.js';
 import type { Synapse } from '../../menu/instance/synapse.js';
 import type { PropsBase } from '../viewDefinitionBase.js';
+import { instantiateMenu } from '../../menu/instance/instantiateMenu.js';
 
 export interface ViewClassImplementation<Props extends PropsBase> {
   new (props: Props & { $: Synapse }): ViewClass<Props>;

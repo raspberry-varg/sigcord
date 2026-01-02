@@ -2,7 +2,7 @@ import type { ViewNodeKindBase, ViewNodeKind } from '../dom/viewNodeKind.js';
 import { PatchTarget } from '../RenderingEngine.js';
 import { render } from './render.js';
 import { flatten } from './flatten.js';
-import { setReactiveContext } from '../builtins/builtins.js';
+import { setCurrentSynapse } from '../builtins/builtins.js';
 import { STATIC_RENDER_SYNAPSE } from './staticRenderSynapse.js';
 
 type StaticRenderFn<T extends ViewNodeKindBase> = () => ViewNodeKind<T>;
@@ -17,14 +17,14 @@ type StaticRenderFn<T extends ViewNodeKindBase> = () => ViewNodeKind<T>;
 export function staticRender<T extends ViewNodeKindBase>(
   renderFn: StaticRenderFn<ViewNodeKindBase>,
 ): T[] {
-  const prevContext = setReactiveContext(STATIC_RENDER_SYNAPSE);
+  const prevContext = setCurrentSynapse(STATIC_RENDER_SYNAPSE);
   let flattened, disposeFn;
   try {
     const [root, dispose, owner] = render(renderFn, PatchTarget.None);
     flattened = flatten(root, owner);
     disposeFn = dispose;
   } finally {
-    setReactiveContext(prevContext);
+    setCurrentSynapse(prevContext);
   }
 
   disposeFn();

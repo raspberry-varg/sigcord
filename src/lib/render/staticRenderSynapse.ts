@@ -1,5 +1,5 @@
 import type { Synapse } from '../menu/instance/synapse.js';
-import { setReactiveContext } from '../builtins/builtins.js';
+import { setCurrentSynapse } from '../builtins/builtins.js';
 import { createComputed, createSignal } from '../reactivity/core/signals.js';
 import { PatchTarget } from '../RenderingEngine.js';
 import type { DisposeFn } from './dispose.js';
@@ -67,11 +67,11 @@ function unsupported(feature: string, reason?: string) {
 function staticEffect(fn: () => void | DisposeFn): DisposeFn {
   function menuEffect(): void | DisposeFn {
     let dispose;
-    const prevContext = setReactiveContext(STATIC_RENDER_SYNAPSE);
+    const prevContext = setCurrentSynapse(STATIC_RENDER_SYNAPSE);
     try {
       dispose = fn();
     } finally {
-      setReactiveContext(prevContext);
+      setCurrentSynapse(prevContext);
     }
 
     return dispose;
