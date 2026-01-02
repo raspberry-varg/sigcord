@@ -50,7 +50,7 @@ export interface Synapse {
   >(
     definition: ComponentDefinition<Builder, Cached>,
   ): Builder;
-  swap(toViewId: string, ...args: any[]): void;
+  swap(toViewId: string, ...args: unknown[]): void;
   swap<ViewDefinition extends View<P>, P extends PropsBase>(
     viewDefinition: ViewDefinition & View<P>,
     props: UnionToIntersection<P>,
@@ -115,7 +115,7 @@ export interface Synapse {
    * suspended, but signals and effects will be unaffected.
    *
    * **Note:** Take extra care to not let state leak in any direction of the
-   *   current navigation stack. Use {@link onNavigate()} and {@link onResume()}
+   *   current navigation stack. Use {@link onSuspend()} and {@link onResume()}
    *   to properly manage state based on navigation.
    *
    * @example

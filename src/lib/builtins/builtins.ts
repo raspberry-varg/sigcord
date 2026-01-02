@@ -17,6 +17,7 @@ import { STATIC_RENDER_SYNAPSE } from '../render/staticRenderSynapse.js';
 import {
   type CollectedMessageInteraction,
   type RepliableInteraction,
+  type MessageComponentInteraction,
 } from 'discord.js';
 
 let currentSynapse: Synapse | null = null;
@@ -218,9 +219,9 @@ export async function asyncBoundary<T>(
 }
 
 /**
- * Defer an update if the provided interaction is a {@link MessageComponent}. If
- * no interaction is provided, it will attempt to defer update of the latest
- * interaction collected.
+ * Defer an update if the provided interaction is a
+ * {@link MessageComponentInteraction}. If no interaction is provided, it will
+ * attempt to defer update of the latest interaction collected.
  *
  * If update deferral is possible, no scheduled updates to the interaction will
  * occur until the deferral is complete.
