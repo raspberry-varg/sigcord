@@ -86,7 +86,7 @@ export function createSignal<T>(
   const s = core.signal(initialVal);
   const w = s as WritableSignalInternal<T | undefined>;
   (w as any)[WRITABLE_STAMP] = true;
-  w._patchContext = patchContext;
+  (w as any)._patchContext = patchContext;
 
   w.get = () => s.value;
   (w.get as any)[FROM_SIGNAL] = s;
@@ -157,8 +157,4 @@ export function createEffect(action: EffectFn): DisposeFn {
       dispose?.();
     };
   });
-}
-
-export function getWritable<T>(signal: Getter<T>): WritableSignal<T> {
-  return (signal as any)[FROM_SIGNAL];
 }

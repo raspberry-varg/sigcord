@@ -73,7 +73,6 @@ export class RenderingEngine {
   private queuedComponents?: Partial<QueuedComponents>;
   private queuedClears: PatchTargetBitMask = 0;
   private reactiveViewInstance?: ReactiveViewInstance;
-  private patchContext = PatchTarget.None;
   private queuedNavigation?: NavigationPayload;
 
   isCurrentViewReactive(): boolean {
@@ -105,24 +104,8 @@ export class RenderingEngine {
     return !!this.queuedComponents;
   }
 
-  clearCachedView(id: string): void {
-    this.instances.delete(id);
-  }
-
-  getPatchContext(): PatchTarget {
-    return this.patchContext;
-  }
-
   getCurrentView(): View | undefined {
     return this.viewDefinition;
-  }
-
-  getQueuedView(): Readonly<QueuedView> | undefined {
-    return this.queuedView;
-  }
-
-  getQueuedNavigation(): Readonly<NavigationPayload> | undefined {
-    return this.queuedNavigation;
   }
 
   getReactivePayload(): RenderedReactiveView | undefined {
@@ -266,7 +249,7 @@ export class RenderingEngine {
 
         if (isV2) {
           payload.flags = (payload.flags ?? 0) | MessageFlags.IsComponentsV2;
-          const patchTarget = (this.patchContext = PatchTarget.Components);
+          const patchTarget = PatchTarget.Components;
           if (this.isQueuedForClear(patchTarget)) {
             payload.components = [];
           } else {
@@ -300,7 +283,6 @@ export class RenderingEngine {
             instance.roots = {};
             const roots: ViewElementNode<EmbedComponent | ViewComponent>[] = [];
             const result = (instance.lastRender = instance.factory());
-            // TODO: @raspberry-varg - Content handling.
             if (result.embeds) {
               const [embedsRoot, , owner] = render<EmbedComponent>(
                 result.embeds as () => EmbedBuilder[],
@@ -357,7 +339,6 @@ export class RenderingEngine {
           }
         }
 
-        // TODO: @raspberry-varg - Content should be a tree as well.
         if (this.isQueuedForClear(PatchTarget.Content)) {
           payload.content = '';
         } else if (instance.lastRender.content) {
@@ -446,7 +427,6 @@ export class RenderingEngine {
     this.queuedEmbeds = undefined;
     this.queuedNavigation = undefined;
     this.queuedClears = 0;
-    this.patchContext = PatchTarget.None;
   }
 
   private getViewInstance(props: Props): ViewInstance {
