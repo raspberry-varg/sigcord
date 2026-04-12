@@ -14,10 +14,10 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint .",
     "format": "npx prettier --write src",
-    "prebuild": "npm run clean",
+    "prebuild": "pnpm run clean",
     "build": "tsc",
     "clean": "rm -rf dist",
-    "prepack": "npm run build && npx prettier --check src"
+    "prepack": "pnpm run build && pnpm dlx prettier --check src"
   },
   "author": "irii",
   "license": "ISC",
