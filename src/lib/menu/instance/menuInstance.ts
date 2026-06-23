@@ -85,9 +85,9 @@ export interface RenderOptions<ViewIds extends string = string> {
 }
 
 export class MenuInstance<
-    ViewId extends string = string,
-    AllProps extends PropsBase = PropsBase,
-  >
+  ViewId extends string = string,
+  AllProps extends PropsBase = PropsBase,
+>
   implements Synapse, MenuInstanceActions
 {
   private readonly logger = Logger.namespaced('MenuInstance');
