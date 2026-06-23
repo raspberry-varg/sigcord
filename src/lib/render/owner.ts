@@ -8,9 +8,9 @@ import type { DisposeFn, ResumeFn, SuspendFn } from './dispose.js';
 import { flattenToContentNodes } from './flattenToContentNodes.js';
 import { flatten } from './flatten.js';
 
-export class Owner<T extends ViewNodeKindBase = ViewNodeKindBase>
-  implements Disposable
-{
+export class Owner<
+  T extends ViewNodeKindBase = ViewNodeKindBase,
+> implements Disposable {
   readonly root = new ViewElementNode<T>();
   patchTarget?: PatchTarget;
   parent: Owner | null = null;

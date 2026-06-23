@@ -14,8 +14,7 @@ export type ModalOnSubmitHandler = (
   modal: ModalSubmitInteraction,
 ) => void | Promise<void>;
 
-export interface ModalHandlingOptions
-  extends AwaitModalSubmitOptions<ModalSubmitInteraction> {
+export interface ModalHandlingOptions extends AwaitModalSubmitOptions<ModalSubmitInteraction> {
   modal: ModalBuilder;
   onSubmit: ModalOnSubmitHandler;
 }
