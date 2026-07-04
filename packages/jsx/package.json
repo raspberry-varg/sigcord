@@ -1,0 +1,56 @@
+{
+  "name": "@sigcord/jsx",
+  "version": "0.0.1",
+  "description": "",
+  "directories": {
+    "lib": "dist"
+  },
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint .",
+    "format": "npx prettier --write src",
+    "prebuild": "pnpm run clean",
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "prepack": "pnpx prettier --check src && pnpm run build"
+  },
+  "keywords": [],
+  "license": "ISC",
+  "packageManager": "pnpm@10.11.0",
+  "dependencies": {},
+  "devDependencies": {
+    "discord.js": "catalog:",
+    "@sigcord/core": "workspace:*",
+    "nx": "22.0.3",
+    "prettier": "catalog:",
+    "typescript": "catalog:"
+  },
+  "exports": {
+    ".": {
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./jsx-runtime": {
+      "default": "./dist/jsx-runtime.js",
+      "types": "./dist/jsx-runtime.d.ts"
+    },
+    "./jsx-dev-runtime": {
+      "default": "./dist/jsx-runtime.js",
+      "types": "./dist/jsx-runtime.d.ts"
+    },
+    "./components": {
+      "default": "./dist/components/index.js",
+      "types": "./dist/components/index.d.ts"
+    },
+    "./flow": {
+      "default": "./dist/controlFlow/index.js",
+      "types": "./dist/controlFlow/index.d.ts"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "nx": {}
+}

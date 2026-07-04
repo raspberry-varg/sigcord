@@ -1,5 +1,5 @@
 {
-  "name": "discord-interactive-menus",
+  "name": "@sigcord/core",
   "repository": "https://github.com/raspberry-varg/discord-interactive-menus.git",
   "version": "6.0.0",
   "description": "Simple utility to have reactive, routed, and interactive Discord menus.",
@@ -19,7 +19,6 @@
     "clean": "rm -rf dist",
     "prepack": "pnpm run build && pnpm dlx prettier --check src"
   },
-  "author": "irii",
   "license": "ISC",
   "dependencies": {
     "@preact/signals-core": "^1.8.0"
