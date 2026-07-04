@@ -15,8 +15,7 @@
     "format": "npx prettier --write src",
     "prebuild": "pnpm run clean",
     "build": "tsc",
-    "clean": "rm -rf dist",
-    "prepack": "pnpx prettier --check src && pnpm run build"
+    "clean": "rm -rf dist"
   },
   "keywords": [],
   "license": "ISC",

@@ -23,15 +23,13 @@ interface ReactiveViewDefinitionBase<Props extends PropsBase> {
   [REACTIVE_VIEW_SYMBOL]: true;
 }
 
-export interface ReactiveViewDefinitionV1<
-  Props extends PropsBase,
-> extends ReactiveViewDefinitionBase<Props> {
+export interface ReactiveViewDefinitionV1<Props extends PropsBase>
+  extends ReactiveViewDefinitionBase<Props> {
   factory: ReactiveViewFactoryV1<Props>;
 }
 
-export interface ReactiveViewDefinitionV2<
-  Props extends PropsBase,
-> extends ReactiveViewDefinitionBase<Props> {
+export interface ReactiveViewDefinitionV2<Props extends PropsBase>
+  extends ReactiveViewDefinitionBase<Props> {
   [IS_V2]: true;
   factory: ReactiveViewFactoryV2<Props>;
 }
