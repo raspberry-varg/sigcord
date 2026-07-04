@@ -1,6 +1,6 @@
 {
   "name": "sigcord",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Build interactive and stateful menus for Discord.",
   "directories": {
     "lib": "dist"
