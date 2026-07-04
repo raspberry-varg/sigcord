@@ -52,5 +52,8 @@
     }
   },
   "types": "./dist/index.d.ts",
-  "nx": {}
+  "nx": {},
+  "publishConfig": {
+    "access": "public"
+  }
 }

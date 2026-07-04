@@ -31,5 +31,8 @@
   },
   "exports": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "nx": {}
+  "nx": {},
+  "publishConfig": {
+    "access": "public"
+  }
 }
