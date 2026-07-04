@@ -8,17 +8,19 @@ Integrates with [Discord.js](https://discord.js.org) under the hood.
 
 Add `sigcord` as a dependency to your `package.json`. JSX is recommended, but not required.
 
+**Note that [Discord.js](https://discord.js.org) is required.**
+
 ```shell
-npm install sigcord @sigcord/jsx
-yarn add sigcord @sigcord/jsx
-pnpm add sigcord @sigcord/jsx
-bun add sigcord @sigcord/jsx
+npm install sigcord @sigcord/jsx discord.js
+yarn add sigcord @sigcord/jsx discord.js
+pnpm add sigcord @sigcord/jsx discord.js
+bun add sigcord @sigcord/jsx discord.js
 
 # Without JSX
-npm install sigcord
-yarn add sigcord
-pnpm add sigcord
-bun add sigcord
+npm install sigcord discord.js
+yarn add sigcord discord.js
+pnpm add sigcord discord.js
+bun add sigcord discord.js
 ```
 
 ### JSX (React syntax)
