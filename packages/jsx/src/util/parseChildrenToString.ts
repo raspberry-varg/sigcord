@@ -18,9 +18,7 @@ export function parseChildrenToString(
         finalString = upgradeStringSequenceToReactive(finalString, children, i);
         break;
       }
-      if (children[i] !== undefined && children[i] !== null) {
-        finalString += children[i];
-      }
+      finalString += resolveString(children[i]);
     }
   }
 

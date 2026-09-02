@@ -11,7 +11,7 @@ export function upgradeStringSequenceToReactive(
     let final = partialString;
     for (let i = nextIndex; i < stringSequence.length; i++) {
       const next = read(stringSequence[i]);
-      if (next) {
+      if (next != null && next !== false) {
         final += next;
       }
     }

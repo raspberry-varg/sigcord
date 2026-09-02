@@ -25,6 +25,9 @@ export function flatten<T extends ViewNodeKindBase>(
         }
         continue;
       }
+      if (item == null || (item as any) === false) {
+        continue;
+      }
       if (item instanceof ViewContentNode) {
         const content = item.getContent();
         if (content) {
@@ -62,9 +65,7 @@ export function flatten<T extends ViewNodeKindBase>(
         // How did we get here?
         throw new Error(`Unhandled ViewNode: ${item}`);
       }
-      if (item) {
-        flattened.push(item as T);
-      }
+      flattened.push(item as T);
     }
   } finally {
     setCurrentOwner(prevOwner);
