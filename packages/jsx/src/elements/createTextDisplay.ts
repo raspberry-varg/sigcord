@@ -9,7 +9,7 @@ export function createTextDisplay(
   props: IntrinsicElementProps['text'],
 ): TextDisplayBuilder | ViewContentNode<TextDisplayBuilder> | null {
   const children = props.children;
-  if (!children) {
+  if (children == null || children === false) {
     return null;
   }
 
