@@ -101,6 +101,7 @@ export class Owner<T extends ViewNodeKindBase = ViewNodeKindBase>
 
   dispose() {
     if (this.disposed) return;
+    this.disposed_ = true;
 
     this.childOwners.forEach((owner) => owner.dispose());
     this.childOwners.clear();
