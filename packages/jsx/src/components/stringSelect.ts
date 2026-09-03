@@ -39,7 +39,6 @@ const MAX_DEFAULT = 1;
 
 interface StringSelectProps<T>
   extends BaseSelectMenuProps<StringSelectMenuInteraction> {
-  id: string;
   of: () => Iterable<T>;
   children: (
     value: T,
