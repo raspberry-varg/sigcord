@@ -19,11 +19,15 @@
     "format": "npx prettier --write src",
     "prebuild": "pnpm run clean",
     "build": "tsc",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "prepack": "pnpm run build"
   },
   "license": "Apache-2.0",
   "dependencies": {
     "@preact/signals-core": "^1.8.0"
+  },
+  "peerDependencies": {
+    "discord.js": "catalog:"
   },
   "devDependencies": {
     "discord.js": "catalog:",
