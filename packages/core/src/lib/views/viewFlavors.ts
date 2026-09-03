@@ -4,6 +4,7 @@ import {
   type MessageComponentBuilder,
   MessageComponentInteraction,
   type MessageFlags,
+  type SelectMenuComponentOptionData,
   type StringSelectMenuOptionBuilder,
   type TopLevelComponent,
   type TopLevelComponentData,
@@ -27,7 +28,8 @@ type ViewComponentKind =
   | TopLevelComponentData
   | MessageComponentBuilder
   | ContainerComponentBuilder
-  | StringSelectMenuOptionBuilder;
+  | StringSelectMenuOptionBuilder
+  | SelectMenuComponentOptionData;
 
 export const IS_V2: unique symbol = Symbol('using v2 components');
 

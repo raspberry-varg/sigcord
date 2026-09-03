@@ -39,8 +39,8 @@ export function applyPatchEffect(
 ) {
   patchEffect(() => {
     selectMenu
-      .setMinValues(props.min())
-      .setMaxValues(props.max())
+      .setMinValues(read(props.min))
+      .setMaxValues(read(props.max))
       .setPlaceholder(read(props.placeholder) ?? '')
       .setDisabled(!!read(props.disabled));
   });
