@@ -19,7 +19,8 @@
     "format": "npx prettier --write src",
     "prebuild": "pnpm run clean",
     "build": "tsc",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "prepack": "pnpm run build"
   },
   "keywords": [],
   "license": "Apache-2.0",
