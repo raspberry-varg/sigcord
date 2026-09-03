@@ -70,7 +70,7 @@ export class Owner<T extends ViewNodeKindBase = ViewNodeKindBase>
   }
 
   suspend() {
-    if (this.disposed || this.suspended === true) return;
+    if (this.disposed || this.suspended) return;
     this.suspended_ = true;
 
     for (let i = 0; i < this.onSuspendFns.length; i++) {
@@ -83,7 +83,7 @@ export class Owner<T extends ViewNodeKindBase = ViewNodeKindBase>
   }
 
   resume() {
-    if (this.disposed || this.suspended === false) return;
+    if (this.disposed || !this.suspended) return;
     this.suspended_ = false;
 
     for (let i = 0; i < this.onResumeFns.length; i++) {
