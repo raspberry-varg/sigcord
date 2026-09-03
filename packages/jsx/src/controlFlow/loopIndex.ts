@@ -57,7 +57,6 @@ export function Index<
     const existingMin = Math.min(prevItems.length, nextItems.length);
 
     for (let i = 0; i < existingMin; i++) {
-      console.log(`reusing @${i}`);
       prevSetters[i](nextItems[i]);
 
       nextSetters[i] = prevSetters[i];
@@ -65,7 +64,6 @@ export function Index<
     }
 
     for (let i = existingMin; i < nextItems.length; i++) {
-      console.log(`rendering for @${i}`);
       const [get, set] = signal(nextItems[i] as Each[keyof Each]);
       nextSetters[i] = set;
 
@@ -79,7 +77,6 @@ export function Index<
     }
 
     for (let i = nextItems.length; i < prevItems.length; i++) {
-      console.log(`disposing @${i}`);
       prevOwners[i].dispose();
     }
 
