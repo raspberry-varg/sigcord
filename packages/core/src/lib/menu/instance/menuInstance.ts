@@ -727,7 +727,9 @@ export class MenuInstance<
 
     const currentOwner = getOpenOwner();
     const dispose = createEffect(menuEffect);
-    if (!currentOwner) {
+    if (currentOwner) {
+      currentOwner.registerDisposal(dispose);
+    } else {
       this.hangingDisposals.push(dispose);
     }
     return dispose;
