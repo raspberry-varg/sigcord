@@ -22,10 +22,10 @@ export function createStringSelectOption(
 
   const value = props.value;
   if (!isSignal(value)) {
-    option.setValue(value);
+    option.setValue(String(value));
   } else {
     (reactiveSetters ??= []).push(() => {
-      option.setValue(value());
+      option.setValue(String(value()));
     });
   }
 
