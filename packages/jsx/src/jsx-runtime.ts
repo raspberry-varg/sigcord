@@ -123,7 +123,12 @@ interface RowAttributes {
 interface StringSelectOptionAttributes {
   selected?: MaybeSignal<boolean>;
   label: MaybeSignal<string>;
-  value: MaybeSignal<string>;
+  /**
+   * The value provided to this option.
+   *
+   * Numbers are coerced to strings, so `'1' === 1`
+   */
+  value: MaybeSignal<string | number>;
   description?: MaybeSignal<string | null | undefined>;
   emoji?: MaybeSignal<ComponentEmojiResolvable | null | undefined>;
 }
