@@ -229,7 +229,7 @@ export class RenderingEngine {
       viewInstance: instance.id,
       isV2: IS_V2 in instance,
     });
-    const prevContext = setCurrentSynapse($);
+    setCurrentSynapse($);
     try {
       batch(() => {
         const isV2 = isRenderedReactiveViewV2(instance);
@@ -366,7 +366,6 @@ export class RenderingEngine {
       });
     } finally {
       this.postRender();
-      setCurrentSynapse(prevContext);
     }
     return payload;
   }
@@ -438,7 +437,7 @@ export class RenderingEngine {
       if (!reactiveInstance || viewDefinition.id !== reactiveInstance.id) {
         // rendering must be synchronous; built-ins rely on the single-threaded
         // nature of JS
-        const prevContext = setCurrentSynapse(props.$);
+        setCurrentSynapse(props.$);
         try {
           reactiveInstance = instantiateReactiveView(viewDefinition, props);
           this.reactiveViewInstance = reactiveInstance;
@@ -449,8 +448,6 @@ export class RenderingEngine {
             e,
           );
           throw e;
-        } finally {
-          setCurrentSynapse(prevContext);
         }
       }
       return reactiveInstance;

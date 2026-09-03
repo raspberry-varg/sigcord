@@ -600,7 +600,7 @@ export class MenuInstance<
       return;
     }
 
-    const prevContext = setCurrentSynapse(this);
+    setCurrentSynapse(this);
     let callbackResult;
     try {
       callbackResult = batch(() => callback(response));
@@ -610,7 +610,6 @@ export class MenuInstance<
       });
       throw e;
     } finally {
-      setCurrentSynapse(prevContext);
       this.scheduleUpdate();
     }
 
