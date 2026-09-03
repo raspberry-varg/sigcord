@@ -19,12 +19,17 @@
     "format": "npx prettier --write src",
     "prebuild": "pnpm run clean",
     "build": "tsc",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "prepack": "pnpm run build"
   },
   "keywords": [],
   "license": "Apache-2.0",
   "packageManager": "pnpm@10.11.0",
   "dependencies": {},
+  "peerDependencies": {
+    "discord.js": "catalog:",
+    "@sigcord/core": "workspace:*"
+  },
   "devDependencies": {
     "discord.js": "catalog:",
     "@sigcord/core": "workspace:*",
