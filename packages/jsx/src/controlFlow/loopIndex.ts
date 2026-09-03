@@ -6,6 +6,7 @@ import {
   type ViewNodeKind,
   batch,
   isSignal,
+  onCleanup,
   owner,
   patchEffect,
   signal,
@@ -48,6 +49,12 @@ export function Index<
   let prevItems: unknown[] = [];
   let prevOwners: Owner[] = [];
   let prevSetters: Setter<unknown>[] = [];
+
+  onCleanup(() => {
+    for (let i = 0; i < prevOwners.length; i++) {
+      prevOwners[i].dispose();
+    }
+  });
 
   const effectFn = () => {
     const nextItems: unknown[] = Array.from(each());
