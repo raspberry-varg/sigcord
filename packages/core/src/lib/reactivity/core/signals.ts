@@ -9,8 +9,17 @@ const GETTER_STAMP = Symbol('getter');
 const SETTER_STAMP = Symbol('setter');
 const FROM_SIGNAL = Symbol('signal source instance');
 
+/**
+ * @deprecated Writable signals will be removed or heavily reduced in v1.2
+ */
 export type Signalish<T> = Signal<T> | WritableSignal<T>;
+/**
+ * @deprecated Writable signals will be removed or heavily reduced in v1.2
+ */
 export type MaybeSignalish<T> = T | Signalish<T>;
+/**
+ * @deprecated Writable signals will be removed or heavily reduced in v1.2
+ */
 export type UnwrapSignalish<T> = T extends Signalish<infer S> ? S : T;
 
 export type MaybeSignal<T> = T | Signal<T>;
@@ -23,13 +32,22 @@ export function isStampedSignal<T>(
   return isSignal(value) && GETTER_STAMP in value;
 }
 
+/**
+ * @deprecated Writable signals will be removed or heavily reduced in v1.2
+ */
 export type MaybeWritableSignal<T> = T | Signalish<T>;
+/**
+ * @deprecated Writable signals will be removed or heavily reduced in v1.2
+ */
 export function isWritableSignal<T>(
   value?: T | Signalish<T>,
 ): value is WritableSignal<T> {
   return HasWritableSignalStamp(value);
 }
 
+/**
+ * @deprecated Writable signals will be removed or heavily reduced in v1.2
+ */
 export function HasWritableSignalStamp<T>(
   value?: T,
 ): value is T & { [WRITABLE_STAMP]: true } {
@@ -40,6 +58,9 @@ export interface Signal<T> {
   (): T;
 }
 
+/**
+ * @deprecated Writable signals will be removed or heavily reduced in v1.2
+ */
 export interface WritableSignal<T> extends core.Signal<T> {
   readonly _patchContext: PatchTarget;
   get: Getter<T>;
