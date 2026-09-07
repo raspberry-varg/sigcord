@@ -1,6 +1,6 @@
 {
   "name": "@sigcord/core",
-  "version": "7.1.2",
+  "version": "7.1.3",
   "description": "Simple utility to have reactive, routed, and interactive Discord menus.",
   "directories": {
     "lib": "dist"
