@@ -34,8 +34,7 @@ type ViewComponentKind =
 export const IS_V2: unique symbol = Symbol('using v2 components');
 
 export type RenderedReactiveView =
-  | RenderedReactiveViewV1
-  | RenderedReactiveViewV2;
+  RenderedReactiveViewV1 | RenderedReactiveViewV2;
 
 interface RenderedReactiveViewBase {
   readonly [REACTIVE_VIEW_SYMBOL]: true;
@@ -113,4 +112,5 @@ export type Children<T extends ViewNodeKindBase> =
   | Slot<T>
   | T[]
   | T
-  | Primitive;
+  | Primitive
+  | Element;
