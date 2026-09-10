@@ -28,7 +28,7 @@ import { batch } from '@preact/signals-core';
 import type { Props } from '../index.js';
 import { render } from './render/render.js';
 import { ViewElementNode } from './dom/viewElementNode.js';
-import { owner } from './render/owner.js';
+import { owner } from './owners/owner.js';
 import { flatten } from './render/flatten.js';
 import { read } from './reactivity/core/read.js';
 

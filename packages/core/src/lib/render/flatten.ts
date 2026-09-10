@@ -2,7 +2,7 @@ import type { ViewComponent } from '../views/viewFlavors.js';
 import { ViewElementNode } from '../dom/viewElementNode.js';
 import type { ReadonlyRecursive } from '../recursive.js';
 import { ViewNode } from '../dom/viewNode.js';
-import { setCurrentOwner, type Owner } from './owner.js';
+import { setCurrentOwner, type Owner } from '../owners/owner.js';
 import { ViewContentNode } from '../dom/viewContentNode.js';
 import { ViewComputedElementNode } from '../dom/viewComputedElementNode.js';
 import type { ViewNodeKindBase } from '../dom/viewNodeKind.js';

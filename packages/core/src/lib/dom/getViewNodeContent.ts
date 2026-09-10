@@ -1,6 +1,6 @@
 import { type EmbedBuilder } from 'discord.js';
 import type { ViewComponent } from '../views/viewFlavors.js';
-import { getOpenOwner } from '../render/owner.js';
+import { getOpenOwner } from '../owners/owner.js';
 import type { ViewNode } from './viewNode.js';
 import { flatten } from '../render/flatten.js';
 

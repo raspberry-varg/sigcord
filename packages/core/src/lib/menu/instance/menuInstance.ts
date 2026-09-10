@@ -36,7 +36,7 @@ import { MenuContext } from './menuContext.js';
 import { assert, assertAndReturn } from '../../../util/Assertions.js';
 import type { ViewMessagePayload } from '../../views/viewFlavors.js';
 import { batch } from '@preact/signals-core';
-import { getOpenOwner } from '../../render/owner.js';
+import { getOpenOwner } from '../../owners/owner.js';
 import { AutoComponentId } from '../../components/autocomponents.js';
 import { TimeoutComponent, TimeoutEmbed } from '../../PrebuiltEmbeds.js';
 import { getAsyncStore, setCurrentSynapse } from '../../builtins/builtins.js';
@@ -85,9 +85,9 @@ export interface RenderOptions<ViewIds extends string = string> {
 }
 
 export class MenuInstance<
-    ViewId extends string = string,
-    AllProps extends PropsBase = PropsBase,
-  >
+  ViewId extends string = string,
+  AllProps extends PropsBase = PropsBase,
+>
   implements Synapse, MenuInstanceActions
 {
   private readonly logger = Logger.namespaced('MenuInstance');
@@ -737,7 +737,7 @@ export class MenuInstance<
 
   goTo<
     ViewDef extends DefinedView<any>,
-    Props extends ViewDef extends DefinedView<infer P> ? P : never,
+    Props extends (ViewDef extends DefinedView<infer P> ? P : never),
   >(view: ViewDef, props: Props): void {
     const currentView = this.renderer.getCurrentView();
     assert(

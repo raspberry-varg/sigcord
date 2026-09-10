@@ -10,7 +10,7 @@ import { PatchTarget } from '../RenderingEngine.js';
 import { assert } from '../../util/Assertions.js';
 import type { EffectFn } from '../reactivity/core/signals.js';
 import type { DisposeFn } from '../render/dispose.js';
-import { getOpenOwnerStrict } from '../render/owner.js';
+import { getOpenOwnerStrict } from '../owners/owner.js';
 import type { MaybePromise } from '../../util/TypesUtil.js';
 import type { MenuContext } from '../menu/instance/menuContext.js';
 import { STATIC_RENDER_SYNAPSE } from '../render/staticRenderSynapse.js';
@@ -253,8 +253,7 @@ export function deferUpdate(interaction?: RepliableInteraction): void {
 }
 
 export function injectLastCollectedInteraction():
-  | CollectedMessageInteraction
-  | undefined {
+  CollectedMessageInteraction | undefined {
   return useMenuInfo().lastCollectedInteraction;
 }
 

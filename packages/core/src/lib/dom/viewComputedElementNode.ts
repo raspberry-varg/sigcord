@@ -1,6 +1,6 @@
 import { ViewElementNode } from './viewElementNode.js';
 import type { ViewNodeKindBase } from './viewNodeKind.js';
-import { owner } from '../render/owner.js';
+import { owner } from '../owners/owner.js';
 import type { Children } from '../views/viewFlavors.js';
 
 export type NodeContentComputer<T, U extends ViewNodeKindBase> = (

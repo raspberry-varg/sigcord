@@ -3,7 +3,7 @@ import { setCurrentSynapse } from '../builtins/builtins.js';
 import { createComputed, createSignal } from '../reactivity/core/signals.js';
 import { PatchTarget } from '../RenderingEngine.js';
 import type { DisposeFn } from './dispose.js';
-import { getOpenOwner } from './owner.js';
+import { getOpenOwner } from '../owners/owner.js';
 
 const noop = (() => {}) as any;
 

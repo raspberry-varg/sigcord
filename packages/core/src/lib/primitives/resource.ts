@@ -6,7 +6,7 @@ import { signal } from './signal.js';
 import { computed } from './computed.js';
 import { read } from '../reactivity/core/read.js';
 import { batch } from '@preact/signals-core';
-import { getOpenOwner } from '../render/owner.js';
+import { getOpenOwner } from '../owners/owner.js';
 import { logger } from '../../util/Logger.js';
 
 const OPTIONS_DEFAULTS: Readonly<ResourceOptions<unknown, unknown>> = {
@@ -125,8 +125,7 @@ export function resource<T, SOURCE>(
  */
 export function resource<T, SOURCE>(
   fetcherOrOptions:
-    | ResourceFetcher<T, SOURCE>
-    | Readonly<ResourceOptions<T, SOURCE>>,
+    ResourceFetcher<T, SOURCE> | Readonly<ResourceOptions<T, SOURCE>>,
   fetcherOrUndefined?: ResourceFetcher<T, SOURCE>,
 ): ResourceTuple<T | undefined> {
   let options: Readonly<ResourceOptions<T, SOURCE>>;

@@ -1,12 +1,17 @@
 import { logger } from '../../util/Logger.js';
 import { ViewElementNode } from '../dom/viewElementNode.js';
 import { ViewNode } from '../dom/viewNode.js';
-import type { ViewNodeKindBase, ViewNodeKind } from '../dom/viewNodeKind.js';
+import type { ViewNodeKind, ViewNodeKindBase } from '../dom/viewNodeKind.js';
 import type { Recursive } from '../recursive.js';
 import { PatchTarget } from '../RenderingEngine.js';
 import type { DisposeFn, ResumeFn, SuspendFn } from './dispose.js';
 import { flattenToContentNodes } from './flattenToContentNodes.js';
 import { flatten } from './flatten.js';
+import type { DisposeFn, ResumeFn, SuspendFn } from '../render/dispose.js';
+import { flattenToContentNodes } from '../render/flattenToContentNodes.js';
+import { flatten } from '../render/flatten.js';
+import type { ContextNode } from '../contexts/contextNode.js';
+
 
 export class Owner<T extends ViewNodeKindBase = ViewNodeKindBase>
   implements Disposable
