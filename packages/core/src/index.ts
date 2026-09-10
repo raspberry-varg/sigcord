@@ -71,6 +71,9 @@ export { onCleanup } from './lib/hooks/onCleanup.js';
 export { batch } from '@preact/signals-core';
 export { ComponentDefinition } from './lib/components/componentDefinition.js';
 export { owner, Owner } from './lib/owners/owner.js';
+export { Context } from './lib/contexts/context.js';
+export { provideContextValue } from './lib/contexts/provideContext.js';
+export { useContext, useContextStrict } from './lib/contexts/useContext.js';
 export { DisposeFn } from './lib/render/dispose.js';
 export {
   AutoComponentId,
