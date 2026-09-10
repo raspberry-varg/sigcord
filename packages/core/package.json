@@ -14,7 +14,7 @@
     "url": "git+https://github.com/raspberry-varg/sigcord.git"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "bun test",
     "lint": "eslint .",
     "format": "npx prettier --write src",
     "prebuild": "pnpm run clean",
@@ -30,10 +30,11 @@
     "discord.js": "catalog:"
   },
   "devDependencies": {
+    "@types/bun": "catalog:",
     "discord.js": "catalog:",
+    "nx": "22.0.3",
     "prettier": "catalog:",
-    "typescript": "catalog:",
-    "nx": "22.0.3"
+    "typescript": "catalog:"
   },
   "exports": "./dist/index.js",
   "types": "./dist/index.d.ts",

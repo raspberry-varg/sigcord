@@ -14,7 +14,6 @@
     "url": "git+https://github.com/raspberry-varg/sigcord.git"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint .",
     "format": "npx prettier --write src",
     "prebuild": "pnpm run clean",
@@ -65,5 +64,14 @@
     }
   },
   "types": "./dist/index.d.ts",
-  "nx": {}
+  "nx": {
+    "targets": {
+      "test": {
+        "dependsOn": [
+          "^test"
+        ],
+        "executor": "nx:noop"
+      }
+    }
+  }
 }
