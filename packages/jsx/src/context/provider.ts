@@ -17,22 +17,30 @@ export interface Context<T> extends CoreContext<T> {
   Provider: (props: ProviderProps<T>) => (typeof props)['children'];
 }
 
-interface CreateContextOptions<T> {
+interface CreateContextOptions {
   name?: string;
-  default?: T;
 }
 
 /**
  * Creates a new context with a Provider component.
  */
 export function createContext<T>(
-  options?: CreateContextOptions<T>,
-): Context<T> {
-  const context: Context<T> = {
+  defaultValue?: undefined,
+  options?: CreateContextOptions,
+): Context<T | undefined>;
+export function createContext<T>(
+  defaultValue: T,
+  options?: CreateContextOptions,
+): Context<T>;
+export function createContext<T>(
+  defaultValue?: T,
+  options?: CreateContextOptions,
+): Context<T | undefined> {
+  const context: Context<T | undefined> = {
     id: Symbol(options?.name ?? 'unnamed context'),
-    default: options?.default,
-    Provider: (props) =>
-      provideContextValue(context, props.value, () =>
+    default: defaultValue,
+    Provider: (props: ProviderProps<T | undefined>) =>
+      provideContextValue(context, props.value!, () =>
         flattenToContentNodes(props.children),
       ),
   };
