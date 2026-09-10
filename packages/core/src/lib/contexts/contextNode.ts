@@ -3,7 +3,8 @@ export const CONTEXT_NOT_FOUND: unique symbol = Symbol('Context not found');
 export class ContextNode {
   constructor(
     readonly parent: ContextNode | undefined,
-    private readonly idToValues: Readonly<Record<symbol, unknown>>,
+    private readonly id?: symbol,
+    private readonly value?: unknown,
   ) {}
 
   /**
@@ -13,8 +14,8 @@ export class ContextNode {
    * @param id
    */
   get(id: symbol): unknown | typeof CONTEXT_NOT_FOUND {
-    if (id in this.idToValues) {
-      return this.idToValues[id];
+    if (this.id === id) {
+      return this.value;
     }
     if (this.parent) {
       return this.parent.get(id);
