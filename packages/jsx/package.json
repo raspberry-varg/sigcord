@@ -54,6 +54,10 @@
       "default": "./dist/components/index.js",
       "types": "./dist/components/index.d.ts"
     },
+    "./context": {
+      "default": "./dist/context/index.js",
+      "types": "./dist/context/index.d.ts"
+    },
     "./flow": {
       "default": "./dist/controlFlow/index.js",
       "types": "./dist/controlFlow/index.d.ts"
