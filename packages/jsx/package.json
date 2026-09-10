@@ -14,7 +14,7 @@
     "url": "git+https://github.com/raspberry-varg/sigcord.git"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "echo 'No tests for JSX yet' && echo 0",
     "lint": "eslint .",
     "format": "npx prettier --write src",
     "prebuild": "pnpm run clean",
@@ -25,14 +25,14 @@
   "keywords": [],
   "license": "Apache-2.0",
   "packageManager": "pnpm@10.11.0",
-  "dependencies": {},
   "peerDependencies": {
-    "discord.js": "catalog:",
-    "@sigcord/core": "workspace:*"
+    "@sigcord/core": "workspace:*",
+    "discord.js": "catalog:"
   },
   "devDependencies": {
-    "discord.js": "catalog:",
     "@sigcord/core": "workspace:*",
+    "@types/bun": "catalog:",
+    "discord.js": "catalog:",
     "nx": "22.0.3",
     "prettier": "catalog:",
     "typescript": "catalog:"
