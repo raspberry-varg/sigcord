@@ -9,7 +9,7 @@ import {
 } from '../reactivity/core/signals.js';
 import type { Recursive } from '../recursive.js';
 import { isSlot, SlotImpl } from '../Slot.js';
-import { getOpenOwner } from './owner.js';
+import { getOpenOwner } from '../owners/owner.js';
 import { read } from '../reactivity/core/read.js';
 import { DeferredComponent } from './deferredComponent.js';
 

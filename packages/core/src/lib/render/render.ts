@@ -3,7 +3,7 @@ import type { ViewNodeKindBase } from '../dom/viewNodeKind.js';
 import type { Children } from '../views/viewFlavors.js';
 import type { PatchTarget } from '../RenderingEngine.js';
 import type { DisposeFn } from './dispose.js';
-import { owner, type Owner } from './owner.js';
+import { owner, type Owner } from '../owners/owner.js';
 
 export function render<T extends ViewNodeKindBase>(
   renderFn: () => T | Children<T>,

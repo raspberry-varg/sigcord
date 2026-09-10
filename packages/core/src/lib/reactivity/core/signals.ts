@@ -1,6 +1,6 @@
 import { logger } from '../../../util/Logger.js';
 import type { DisposeFn } from '../../render/dispose.js';
-import { getOpenOwner, setCurrentOwner } from '../../render/owner.js';
+import { getOpenOwner, setCurrentOwner } from '../../owners/owner.js';
 import type { PatchTarget } from '../../RenderingEngine.js';
 import * as core from '@preact/signals-core';
 
