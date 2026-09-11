@@ -1,7 +1,7 @@
 import { ViewElementNode } from './viewElementNode.js';
 import type { ViewNodeKindBase } from './viewNodeKind.js';
-import { owner } from '../owners/owner.js';
 import type { Children } from '../views/viewFlavors.js';
+import { render } from '../render/render.js';
 
 export type NodeContentComputer<T, U extends ViewNodeKindBase> = (
   content: T,
@@ -24,7 +24,6 @@ export function elementComputed<
   content: () => T_SOURCE,
 ): ViewComputedElementNode<T_SOURCE, T_OUT> {
   const node = new ViewComputedElementNode<T_SOURCE, T_OUT>(computer);
-  const o = owner<T_SOURCE[number]>(content);
-  node.addChild(o.root);
+  render<T_SOURCE[number]>(node, content);
   return node;
 }

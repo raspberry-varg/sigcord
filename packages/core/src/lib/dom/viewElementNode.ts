@@ -1,6 +1,7 @@
 import { logger } from '../../util/Logger.js';
 import { ViewNode } from './viewNode.js';
 import type { ViewNodeKind } from './viewNodeKind.js';
+import { removeManyInPlace } from '../../util/arrays/removeManyInPlace.js';
 
 export class ViewElementNode<T extends ViewNodeKind> extends ViewNode<T> {
   private readonly children_: ViewNode<T>[] = [];
@@ -31,32 +32,20 @@ export class ViewElementNode<T extends ViewNodeKind> extends ViewNode<T> {
   }
 
   setChildren(...children: ViewNode<T>[]): void {
-    // TODO: @raspberry-varg - There is a much better way to do this; too tired.
     const incomingSet = new Set(children);
-    const newChildren = incomingSet.difference(this.childrenSet);
     const abandoned = this.childrenSet.difference(incomingSet);
-    for (const a of abandoned) {
-      this.removeChild(a);
-    }
+    this.removeMany(abandoned);
 
+    // All abandoned are removed, let's just re-order and register any that
+    // are not yet added.
     for (let i = 0; i < children.length; i++) {
       const child = children[i];
-      if (newChildren.has(child)) {
-        this.spliceChild(i, child);
+      this.children_[i] = child;
+      if (!this.hasChild(child)) {
+        this.registerChild(child);
       }
     }
-
-    for (const child of children) {
-      if (newChildren.has(child)) {
-        this.addChild();
-      }
-    }
-
-    for (const child of children) {
-      if (this.hasChild(child)) {
-        continue;
-      }
-    }
+    this.children_.length = children.length;
   }
 
   removeChild(child: ViewNode<T>): ViewNode<T> | null {
@@ -64,30 +53,19 @@ export class ViewElementNode<T extends ViewNodeKind> extends ViewNode<T> {
       return null;
     }
 
-    this.childrenSet.delete(child);
     this.children_.splice(this.children_.indexOf(child));
-    child.remove();
+    this.unregisterChild(child);
     return child;
   }
 
-  spliceChild(index: number, child: ViewNode<T>): void {
-    if (this.childrenSet.has(child)) {
-      // remove from old spot
-      const existingIdx = this.children_.indexOf(child);
-      if (existingIdx === index) {
-        return;
-      }
-      this.children_.splice(existingIdx);
-      if (existingIdx < index) {
-        // everything above the removed element is shifted down
-        index--;
-      }
-      if (this.children_.length === 0) {
-        this.addChild(child);
-      }
+  removeMany(children: Iterable<ViewNode<T>>): void {
+    if (!this.childrenSet.size) {
+      return;
     }
-    this.children_.splice(index, 1, child);
-    this.registerChild(child);
+    removeManyInPlace(this.children_, new Set(children));
+    for (const child of children) {
+      this.unregisterChild(child);
+    }
   }
 
   clear(): void {
@@ -101,17 +79,22 @@ export class ViewElementNode<T extends ViewNodeKind> extends ViewNode<T> {
     child.reparentTo(this);
   }
 
-  override dispose(): void {
-    // TODO: @raspberry-varg - Implement disposal
-    if (this.disposed) return;
+  private unregisterChild(child: ViewNode<T>): void {
+    this.childrenSet.delete(child);
+    child.remove();
+  }
 
+  override dispose(): void {
+    if (this.disposed) return;
     this.reset();
     this.disposed_ = true;
   }
 
   reset(): void {
     logger.verbose('DisposingViewElementNode', { childCount: this.childCount });
-    this.children_.forEach((child) => child.dispose());
+    for (let i = 0; i < this.children_.length; i++) {
+      this.children_[i].dispose();
+    }
     this.children_.length = 0;
     this.childrenSet.clear();
   }

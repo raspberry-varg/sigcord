@@ -56,7 +56,7 @@ interface RenderedReactiveViewV1 extends RenderedReactiveViewBase {
 interface RenderedReactiveViewV2 extends RenderedReactiveViewBase {
   [IS_V2]: true;
   root?: ViewElementNode<ViewComponent>;
-  owner?: Owner<ViewComponent>;
+  owner?: Owner;
   lastRender?: ReactiveViewPayloadV2;
   factory: () => ReactiveViewPayloadV2;
 }

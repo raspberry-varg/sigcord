@@ -254,14 +254,14 @@ export class RenderingEngine {
             payload.components = [];
           } else {
             if (!instance.root) {
-              const [root, dispose, owner] = render<ViewComponent>(
+              const root = new ViewElementNode();
+              [instance.dispose, instance.owner] = render(
+                root,
                 () => instance.factory() as ViewComponent,
                 patchTarget,
               );
-              owner.debugName = 'V2_root';
+              instance.owner.debugName = 'V2_root';
               instance.root = root;
-              instance.dispose = dispose;
-              instance.owner = owner;
             }
 
             const flattened = flatten(instance.root, instance.owner);
@@ -284,7 +284,9 @@ export class RenderingEngine {
             const roots: ViewElementNode<EmbedComponent | ViewComponent>[] = [];
             const result = (instance.lastRender = instance.factory());
             if (result.embeds) {
-              const [embedsRoot, , owner] = render<EmbedComponent>(
+              const embedsRoot = new ViewElementNode<EmbedComponent>();
+              const [, owner] = render(
+                embedsRoot,
                 result.embeds as () => EmbedBuilder[],
                 PatchTarget.Embeds,
               );
@@ -293,7 +295,9 @@ export class RenderingEngine {
               roots.push(embedsRoot);
             }
             if (result.components) {
-              const [componentsRoot, , owner] = render<ViewComponent>(
+              const componentsRoot = new ViewElementNode<ViewComponent>();
+              const [, owner] = render(
+                componentsRoot,
                 result.components as () => ViewComponent[],
                 PatchTarget.Components,
               );
