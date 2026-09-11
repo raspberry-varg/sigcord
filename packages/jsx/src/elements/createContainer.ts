@@ -8,6 +8,7 @@ import {
   type Owner,
   ViewManualComputedElementNode,
   type ViewNode,
+  flatten,
   flattenToContentNodes,
   owner,
   patchEffect,
@@ -19,19 +20,16 @@ import type {IntrinsicElementProps} from '../index.js';
 class ContainerElement extends ViewManualComputedElementNode<ContainerBuilder> {
   constructor(
     private readonly container: ContainerBuilder,
-    private readonly contentOwner: Owner,
+    private readonly containerOwner: Owner,
+    private readonly nodes: readonly ViewNode[],
   ) {
     super();
   }
 
-  override getFlattened(): ContainerBuilder | ContainerBuilder[] | undefined {
-    const flattened = this.contentOwner.flatten();
+  override getFlattened(): ContainerBuilder | undefined {
+    const flattened = flatten(this.nodes, this.containerOwner);
     const content: ContainerComponentBuilder[] = [];
     for (const item of flattened) {
-      if (!item) {
-        continue;
-      }
-
       if (
         typeof item === 'boolean' ||
         typeof item === 'number' ||
@@ -48,40 +46,45 @@ class ContainerElement extends ViewManualComputedElementNode<ContainerBuilder> {
       this.container.components.length,
       content,
     );
-    return this.container;
+    return content.length ? this.container : undefined;
   }
 
   override dispose(): void {
     if (this.disposed_) return;
     this.disposed_ = true;
 
-    this.contentOwner.dispose();
+    this.containerOwner.dispose();
+    for (let i = 0; i < this.nodes.length; i++) {
+      this.nodes[i].dispose();
+    }
   }
 }
 
 export function createContainer(
   props: IntrinsicElementProps['container'],
 ): ViewNode<ContainerBuilder> {
+  // Render content immediately
+  let nodes!: readonly ViewNode[];
   const container = new ContainerBuilder();
-
-  if (props.accent || props.spoiler) {
-    patchEffect(() => {
-      if (props.accent) {
-        const color = read(props.accent);
-        if (color === null || color === undefined || color === false) {
-          container.clearAccentColor();
-        } else {
-          container.setAccentColor(color === true ? 1 : color);
+  const containerOwner = owner(() => {
+    if (props.accent || props.spoiler) {
+      patchEffect(() => {
+        if (props.accent) {
+          const color = read(props.accent);
+          if (color === null || color === undefined || color === false) {
+            container.clearAccentColor();
+          } else {
+            container.setAccentColor(color === true ? 1 : color);
+          }
         }
-      }
-      if (props.spoiler) {
-        container.setSpoiler(read(props.spoiler));
-      }
-    });
-  }
+        if (props.spoiler) {
+          container.setSpoiler(read(props.spoiler));
+        }
+      });
+    }
 
-  return new ContainerElement(
-    container,
-    owner(() => flattenToContentNodes(props.children)),
-  );
+    nodes = flattenToContentNodes(props.children);
+  });
+
+  return new ContainerElement(container, containerOwner, nodes);
 }

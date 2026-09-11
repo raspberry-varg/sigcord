@@ -11,6 +11,8 @@ import {
   type Owner,
   type Signal,
   ViewManualComputedElementNode,
+  ViewNode,
+  flatten,
   flattenToContentNodes,
   owner,
 } from '@sigcord/core';
@@ -23,8 +25,10 @@ class SectionElement extends ViewManualComputedElementNode<
   SectionBuilder | TextDisplayBuilder
 > {
   constructor(
-    private readonly accessoryOwner: Owner<ButtonBuilder | ThumbnailBuilder>,
-    private readonly textOwner: Owner<TextDisplayBuilder | string>,
+    private readonly accessoryOwner: Owner,
+    private readonly accessoryNodes: readonly ViewNode[],
+    private readonly textOwner: Owner,
+    private readonly textNodes: readonly ViewNode[],
   ) {
     super();
   }
@@ -38,7 +42,7 @@ class SectionElement extends ViewManualComputedElementNode<
 
   override getFlattened() {
     const accessory = this.resolveAccessory();
-    const text = this.textOwner.flatten();
+    const text = flatten(this.textNodes, this.textOwner);
     const textBuilders: TextDisplayBuilder[] = [];
     let currentString: Signal<string> | string = '';
     for (let t of text) {
@@ -61,7 +65,7 @@ class SectionElement extends ViewManualComputedElementNode<
       }
 
       if (isTextDisplayData(t)) {
-        textBuilders.push(t);
+        textBuilders.push(new TextDisplayBuilder(t));
         continue;
       }
 
@@ -93,11 +97,8 @@ class SectionElement extends ViewManualComputedElementNode<
   }
 
   private resolveAccessory():
-    | ButtonBuilder
-    | ThumbnailBuilder
-    | APIButtonComponent
-    | null {
-    const accessoryResult = this.accessoryOwner.flatten();
+    ButtonBuilder | ThumbnailBuilder | APIButtonComponent | null {
+    const accessoryResult = flatten(this.accessoryNodes, this.accessoryOwner);
     if (!accessoryResult.length) {
       return null;
     }
@@ -135,13 +136,20 @@ export function createSection(props: IntrinsicElementProps['section']) {
     return children;
   }
 
-  const accessoryOwner = owner<ButtonBuilder>(() => {
-    return flattenToContentNodes(accessory);
+  let accessoryNodes!: readonly ViewNode[];
+  const accessoryOwner = owner(() => {
+    accessoryNodes = flattenToContentNodes(accessory);
   });
 
-  const childrenOwner = owner<TextDisplayBuilder>(() => {
-    return flattenToContentNodes(children);
+  let childrenNodes!: readonly ViewNode[];
+  const childrenOwner = owner(() => {
+    childrenNodes = flattenToContentNodes(children);
   });
 
-  return new SectionElement(accessoryOwner, childrenOwner);
+  return new SectionElement(
+    accessoryOwner,
+    accessoryNodes,
+    childrenOwner,
+    childrenNodes,
+  );
 }

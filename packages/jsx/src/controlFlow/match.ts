@@ -1,14 +1,14 @@
 import {
   DeferredComponent,
   type DisposeFn,
+  type Owner,
   type Signal,
   ViewElementNode,
   type ViewNodeKind,
   type ViewNodeKindBase,
   onCleanup,
-  owner,
   patchEffect,
-  untracked,
+  render,
 } from '@sigcord/core';
 
 import {type JSXElement, type JSXNode} from '../index.js';
@@ -36,7 +36,7 @@ interface MatchProps {
 export function Match(
   ...props: [MatchProps] | JSXElement[]
 ): ViewElementNode<ViewNodeKind> {
-  const node = new ViewElementNode();
+  const node = new ViewElementNode<ViewNodeKind>();
   let dispose: DisposeFn | undefined;
   const cases = (
     props.length === 1 &&
@@ -99,12 +99,13 @@ export function Match(
       finalIndex = defaultIndex;
     }
 
-    dispose?.();
-    const c = cases[finalIndex];
-    const o = owner(() => untracked(() => c.content()) as ViewNodeKindBase);
-    node.clear();
-    node.setChildren(o.root);
-    dispose = o.dispose.bind(o);
+    let o: Owner;
+    [dispose, o] = render(
+      node,
+      cases[finalIndex].content as () => ViewNodeKindBase,
+      /* patchTarget= */ undefined,
+    );
+    o.debugName = `[Match_${finalIndex === defaultIndex ? 'Default' : finalIndex}_Branch]%`;
   });
 
   onCleanup(() => {
@@ -121,8 +122,7 @@ interface CaseProps<Condition = unknown> {
 
 export function Case<Condition = unknown>(
   ...props:
-    | [CaseProps<Condition>]
-    | [when: () => Condition, content: () => unknown]
+    [CaseProps<Condition>] | [when: () => Condition, content: () => unknown]
 ): JSXNode {
   let when;
   let content;

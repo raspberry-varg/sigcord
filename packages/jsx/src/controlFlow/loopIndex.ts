@@ -1,14 +1,15 @@
 import {
-  Owner,
+  type DisposeFn,
   type Setter,
   type Signal,
   ViewElementNode,
+  ViewNode,
   type ViewNodeKind,
   batch,
   isSignal,
   onCleanup,
-  owner,
   patchEffect,
+  render,
   signal,
   untracked,
 } from '@sigcord/core';
@@ -47,19 +48,21 @@ export function Index<
   const node = new ViewElementNode();
 
   let prevItems: unknown[] = [];
-  let prevOwners: Owner[] = [];
+  let prevDisposeFns: DisposeFn[] = [];
   let prevSetters: Setter<unknown>[] = [];
+  let prevNodes: Array<ViewNode[]> = [];
 
   onCleanup(() => {
-    for (let i = 0; i < prevOwners.length; i++) {
-      prevOwners[i].dispose();
+    for (let i = 0; i < prevDisposeFns.length; i++) {
+      prevDisposeFns[i]();
     }
   });
 
   const effectFn = () => {
     const nextItems: unknown[] = Array.from(each());
-    const nextOwners = new Array(nextItems.length);
+    const nextDisposeFns = new Array(nextItems.length);
     const nextSetters = new Array(nextItems.length);
+    const nextNodes: typeof prevNodes = new Array(nextItems.length);
 
     const existingMin = Math.min(prevItems.length, nextItems.length);
 
@@ -67,29 +70,34 @@ export function Index<
       prevSetters[i](nextItems[i]);
 
       nextSetters[i] = prevSetters[i];
-      nextOwners[i] = prevOwners[i];
+      nextDisposeFns[i] = prevDisposeFns[i];
+      nextNodes[i] = prevNodes[i];
     }
 
+    const intermediateRoot = new ViewElementNode();
     for (let i = existingMin; i < nextItems.length; i++) {
       const [get, set] = signal(nextItems[i] as Each[keyof Each]);
       nextSetters[i] = set;
 
-      const o = owner(() => {
-        return untracked(() => props.children(get as any, i));
-      });
+      const [dispose, o] = render(intermediateRoot, () =>
+        props.children(get as any, i),
+      );
       o.debugName = `[Loop_Index_${i}]${props.debugName ?? '%'}`;
-      node.addChild(o.root);
+      nextNodes[i] = [...intermediateRoot.children];
+      node.addChild(...nextNodes[i]);
 
-      nextOwners[i] = o;
+      nextDisposeFns[i] = dispose;
     }
 
     for (let i = nextItems.length; i < prevItems.length; i++) {
-      prevOwners[i].dispose();
+      node.removeMany(prevNodes[i]);
+      prevDisposeFns[i]();
     }
 
     prevItems = nextItems;
-    prevOwners = nextOwners;
+    prevDisposeFns = nextDisposeFns;
     prevSetters = nextSetters;
+    prevNodes = nextNodes;
   };
   patchEffect(() => batch(effectFn));
 
