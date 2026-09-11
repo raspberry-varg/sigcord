@@ -12,7 +12,6 @@ import type { ContextNode } from '../contexts/contextNode.js';
 export interface Owner<
   T extends ViewNodeKindBase = ViewNodeKindBase,
 > extends Disposable {
-  readonly root: ViewElementNode<T>;
   readonly patchTarget?: PatchTarget;
   readonly context?: ContextNode;
   readonly parent: Owner | null;
@@ -20,10 +19,6 @@ export interface Owner<
   debugName?: string;
   readonly disposed: boolean;
   readonly suspended: boolean;
-
-  getNodes(): readonly ViewNode<T>[];
-
-  registerNode(node: ViewNode<T>): void;
 
   registerDisposal(disposal: DisposeFn): void;
 
@@ -41,6 +36,9 @@ export interface Owner<
 
   resume(): void;
 
+  /**
+   * @deprecated Use a {@link ViewElementNode} that was rendered within an owner.
+   */
   flatten(): T[];
 
   dispose(): void;
@@ -51,6 +49,7 @@ export interface Owner<
 class OwnerImpl<
   T extends ViewNodeKindBase = ViewNodeKindBase,
 > implements Owner<T> {
+  /** @deprecated Remove me */
   root = new ViewElementNode<T>();
   patchTarget?: PatchTarget;
   context?: ContextNode;
@@ -62,7 +61,6 @@ class OwnerImpl<
   private componentDisposals = new Map<string, DisposeFn>();
   private onSuspendFns: SuspendFn[] = [];
   private onResumeFns: ResumeFn[] = [];
-  private readonly nodes: ViewNode<T>[] = [];
   private disposed_ = false;
   private suspended_ = false;
 
@@ -72,14 +70,6 @@ class OwnerImpl<
 
   get suspended() {
     return this.suspended_;
-  }
-
-  getNodes(): readonly ViewNode<T>[] {
-    return this.nodes;
-  }
-
-  registerNode(node: ViewNode<T>): void {
-    this.nodes.push(node);
   }
 
   registerDisposal(disposal: DisposeFn): void {
@@ -150,7 +140,6 @@ class OwnerImpl<
       debugName: this.debugName ?? '',
       toDispose: {
         disposalFns: this.disposals,
-        nodes: this.nodes,
         childOwners: this.childOwners,
       },
     });
@@ -160,8 +149,6 @@ class OwnerImpl<
     this.componentDisposals.forEach((dispose) => dispose());
     this.componentDisposals.clear();
     this.root.dispose();
-    this.nodes.forEach((node) => node.dispose());
-    this.nodes.length = 0;
 
     if (this.parent) {
       this.parent.removeChild(this);

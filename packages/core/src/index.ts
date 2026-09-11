@@ -70,7 +70,7 @@ export { SlotOptions, Slot, slot, isSlot } from './lib/Slot.js';
 export { onCleanup } from './lib/hooks/onCleanup.js';
 export { batch } from '@preact/signals-core';
 export { ComponentDefinition } from './lib/components/componentDefinition.js';
-export { owner, Owner } from './lib/owners/owner.js';
+export { owner, Owner, ownerLite } from './lib/owners/owner.js';
 export { Context } from './lib/contexts/context.js';
 export { provideContextValue } from './lib/contexts/provideContext.js';
 export { useContext } from './lib/contexts/useContext.js';
@@ -99,6 +99,7 @@ export {
 } from './lib/dom/viewComputedElementNode.js';
 export { getViewNodeContent } from './lib/dom/getViewNodeContent.js';
 export { staticRender } from './lib/render/staticRender.js';
+export { render, renderRoot, renderFragment } from './lib/render/render.js';
 export * from './lib/primitives/index.js';
 export { untracked } from './lib/reactivity/untracked.js';
 export { read } from './lib/reactivity/core/read.js';
