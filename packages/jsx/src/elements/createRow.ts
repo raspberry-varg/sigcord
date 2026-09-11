@@ -6,6 +6,8 @@ import {
 import {
   type Owner,
   ViewManualComputedElementNode,
+  ViewNode,
+  flatten,
   flattenToContentNodes,
   owner,
 } from '@sigcord/core';
@@ -15,22 +17,19 @@ import type {IntrinsicElementProps} from '../index.js';
 class RowNode extends ViewManualComputedElementNode<ActionRowBuilder | null> {
   private readonly actionRow = new ActionRowBuilder();
   constructor(
-    private readonly contentOwner: Owner<
-      MessageActionRowComponentBuilder | boolean | null | undefined
-    >,
+    private readonly contentOwner: Owner,
+    private readonly nodes: readonly ViewNode[],
   ) {
     super();
   }
 
   override getFlattened() {
-    const content = this.contentOwner
-      .flatten()
-      .filter((content) => !!content && typeof content !== 'boolean');
+    const content = flatten(this.nodes, this.contentOwner);
     if (!content.length) {
       return null;
     }
 
-    this.actionRow.setComponents(content.filter((c) => typeof c !== 'boolean'));
+    this.actionRow.setComponents(content as MessageActionRowComponentBuilder[]);
     return this.actionRow;
   }
 
@@ -38,14 +37,17 @@ class RowNode extends ViewManualComputedElementNode<ActionRowBuilder | null> {
     if (this.disposed) return;
     this.disposed_ = true;
 
-    this.contentOwner.dispose();
+    this.contentOwner?.dispose();
+    for (let i = 0; i < this.nodes.length; i++) {
+      this.nodes[i].dispose();
+    }
   }
 }
 
 export function createRow(props: IntrinsicElementProps['row']) {
-  return new RowNode(
-    owner<MessageActionRowComponentBuilder>(() =>
-      flattenToContentNodes(props.children),
-    ),
-  );
+  let nodes!: readonly ViewNode[];
+  const contentOwner = owner(() => {
+    nodes = flattenToContentNodes(props.children);
+  });
+  return new RowNode(contentOwner, nodes);
 }

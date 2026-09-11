@@ -11,8 +11,10 @@ import {
   type Setter,
   type Signal,
   ViewManualComputedElementNode,
+  ViewNode,
   component,
   computed,
+  flatten,
   flattenToContentNodes,
   getNextUniqueComponentId,
   owner,
@@ -39,8 +41,7 @@ const fallbackOption = (id: string) => ({
 const MIN_DEFAULT = 0;
 const MAX_DEFAULT = 1;
 
-interface StringSelectProps
-  extends BaseSelectMenuProps<StringSelectMenuInteraction> {
+interface StringSelectProps extends BaseSelectMenuProps<StringSelectMenuInteraction> {
   children: JSXElement | JSXElement[];
 }
 
@@ -48,16 +49,13 @@ interface StringSelectProps
  * String select menu that relies on an array of values.
  */
 export function StringSelect(props: StringSelectProps) {
-  return new StringSelectNode(
-    props,
-    owner<
-      | StringSelectMenuOptionBuilder
-      | SelectMenuComponentOptionData
-      | boolean
-      | null
-      | undefined
-    >(() => flattenToContentNodes(props.children)),
-  );
+  // Render content immediately
+  let nodes!: readonly ViewNode[];
+  const contentOwner = owner(() => {
+    nodes = flattenToContentNodes(props.children);
+  });
+
+  return new StringSelectNode(props, contentOwner, nodes);
 }
 
 class StringSelectNode extends ViewManualComputedElementNode<StringSelectMenuBuilder> {
@@ -68,13 +66,8 @@ class StringSelectNode extends ViewManualComputedElementNode<StringSelectMenuBui
 
   constructor(
     props: StringSelectProps,
-    private readonly contentOwner: Owner<
-      | StringSelectMenuOptionBuilder
-      | SelectMenuComponentOptionData
-      | boolean
-      | null
-      | undefined
-    >,
+    private readonly contentOwner: Owner,
+    private readonly nodes: readonly ViewNode[],
   ) {
     super();
     this.id = props.id || getNextUniqueComponentId();
@@ -104,9 +97,7 @@ class StringSelectNode extends ViewManualComputedElementNode<StringSelectMenuBui
   }
 
   override getFlattened(): StringSelectMenuBuilder {
-    const content = this.contentOwner
-      .flatten()
-      .filter((content) => content != null && typeof content !== 'boolean');
+    const content = flatten(this.nodes, this.contentOwner);
     const updatedOptions: Option[] = [];
     for (let i = 0; i < content.length; i++) {
       const item = content[i];
@@ -137,7 +128,10 @@ class StringSelectNode extends ViewManualComputedElementNode<StringSelectMenuBui
     if (this.disposed) return;
     this.disposed_ = true;
 
-    this.contentOwner.dispose();
+    this.contentOwner?.dispose();
+    for (let i = 0; i < this.nodes.length; i++) {
+      this.nodes[i].dispose();
+    }
   }
 }
 

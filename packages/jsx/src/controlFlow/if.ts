@@ -1,15 +1,13 @@
 import {
   type Children,
-  type Owner,
   type Signal,
   ViewElementNode,
   type ViewNodeKind,
-  type ViewNodeKindBase,
   computed,
   isSignal,
-  owner,
   patchEffect,
   read,
+  render,
   untracked,
 } from '@sigcord/core';
 
@@ -60,24 +58,19 @@ export function If<Condition, T_TRUE, T_FALSE>(
   const node = new ViewElementNode();
   const truthy = computed(() => !!read<Condition>(cond as Condition));
   patchEffect(() => {
-    let o: Owner | undefined;
+    let renderFn: () => ViewNodeKind;
     const res = truthy();
     if (res) {
       const then = 'then' in props ? props.then : props.children;
-      o = owner(
-        () =>
-          untracked(() =>
-            then(cond as Parameters<typeof then>[0]),
-          ) as ViewNodeKindBase,
-      );
+      renderFn = () => then(cond as Parameters<typeof then>[0]) as ViewNodeKind;
     } else if ('else' in props) {
-      o = owner(() => untracked(() => props.else?.()) as ViewNodeKindBase);
+      renderFn = () => props.else?.() as ViewNodeKind;
+    } else {
+      renderFn = () => null;
     }
-    if (o) {
-      o.debugName = `[If_${res ? 'True' : 'False'}_Branch]${props.debugName ?? '%'}`;
-      node.addChild(o.root);
-    }
-    return () => o?.dispose();
+    const [dispose, o] = render(node, renderFn, /* patchTarget= */ undefined);
+    o.debugName = `[If_${res ? 'True' : 'False'}_Branch]${props.debugName ?? '%'}`;
+    return dispose;
   });
 
   return node as any;
