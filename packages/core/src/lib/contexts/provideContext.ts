@@ -1,5 +1,5 @@
 import type { Context } from './context.js';
-import { getOpenOwner, ownerLite } from '../owners/owner.js';
+import { getOpenOwner, owner } from '../owners/owner.js';
 import { ContextNode } from './contextNode.js';
 
 const ROOT_CONTEXT: Readonly<Context<void>> = {
@@ -20,7 +20,7 @@ export function provideContextValue<T, U>(
   const contextNode = new ContextNode(openOwner?.context, context.id, value);
 
   let result: U;
-  ownerLite(
+  owner(
     () => {
       result = callback();
     },
