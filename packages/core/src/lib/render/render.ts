@@ -2,7 +2,7 @@ import { ViewElementNode } from '../dom/viewElementNode.js';
 import type { ViewNodeKind, ViewNodeKindBase } from '../dom/viewNodeKind.js';
 import type { PatchTarget } from '../RenderingEngine.js';
 import type { DisposeFn } from './dispose.js';
-import { type Owner, ownerLite } from '../owners/owner.js';
+import { type Owner, owner } from '../owners/owner.js';
 import { onCleanup } from '../hooks/onCleanup.js';
 import { flattenToContentNodes } from './flattenToContentNodes.js';
 import type { Recursive } from '../recursive.js';
@@ -15,7 +15,7 @@ export function render<T extends ViewNodeKindBase>(
   renderFn: () => ViewNodeKind<T>,
   patchTarget?: PatchTarget,
 ): [dispose: DisposeFn, owner: Owner] {
-  const o = ownerLite(() => {
+  const o = owner(() => {
     into.setChildren(...renderFragment(renderFn));
     onCleanup(into.reset.bind(into));
   }, patchTarget ?? getCurrentPatchTarget());
