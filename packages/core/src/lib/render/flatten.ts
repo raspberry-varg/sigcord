@@ -8,11 +8,13 @@ import { ViewComputedElementNode } from '../dom/viewComputedElementNode.js';
 import type { ViewNodeKindBase } from '../dom/viewNodeKind.js';
 import { ViewManualComputedElementNode } from '../dom/viewManualComputedElementNode.js';
 
+type ExcludeEmptyTypes<T> = NonNullable<Exclude<T, boolean>>;
+
 export function flatten<T extends ViewNodeKindBase>(
   root: ViewNode<T> | ReadonlyArray<ViewNode<T>>,
   owner: Owner | null | undefined,
-): T[] {
-  const flattened: T[] = [];
+): Array<ExcludeEmptyTypes<T>> {
+  const flattened: Array<ExcludeEmptyTypes<T>> = [];
   const stack: ReadonlyRecursive<ViewComponent | ViewNode<ViewComponent>>[] =
     Array.isArray(root) ? [...root] : [root];
   const prevOwner = setCurrentOwner(owner ?? null);
@@ -20,9 +22,7 @@ export function flatten<T extends ViewNodeKindBase>(
     while (stack.length) {
       const item = stack.pop();
       if (Array.isArray(item)) {
-        for (const inner of item) {
-          stack.push(inner);
-        }
+        stack.push(...item);
         continue;
       }
       if (item == null || (item as any) === false) {
@@ -30,31 +30,17 @@ export function flatten<T extends ViewNodeKindBase>(
       }
       if (item instanceof ViewContentNode) {
         const content = item.getContent();
-        if (content) {
-          flattened.push(content);
-        }
+        stack.push(content);
         continue;
       }
       if (item instanceof ViewManualComputedElementNode) {
         const content = item.getFlattened();
-        if (content) {
-          if (Array.isArray(content)) {
-            flattened.push(...content);
-          } else {
-            flattened.push(content);
-          }
-        }
+        stack.push(content);
         continue;
       }
       if (item instanceof ViewComputedElementNode) {
         const content = item.computer(flatten(item.children, owner));
-        if (content) {
-          if (Array.isArray(content)) {
-            flattened.push(...(content as T[]));
-          } else {
-            flattened.push(content as T);
-          }
-        }
+        stack.push(content);
         continue;
       }
       if (item instanceof ViewElementNode) {
@@ -65,7 +51,7 @@ export function flatten<T extends ViewNodeKindBase>(
         // How did we get here?
         throw new Error(`Unhandled ViewNode: ${item}`);
       }
-      flattened.push(item as T);
+      flattened.push(item as (typeof flattened)[number]);
     }
   } finally {
     setCurrentOwner(prevOwner);
