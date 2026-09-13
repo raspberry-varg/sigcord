@@ -21,11 +21,11 @@ export function flatten<T extends ViewNodeKindBase>(
   try {
     while (stack.length) {
       const item = stack.pop();
-      if (Array.isArray(item)) {
-        stack.push(...item);
+      if (item == null || (item as any) === false) {
         continue;
       }
-      if (item == null || (item as any) === false) {
+      if (Array.isArray(item)) {
+        stack.push(...item);
         continue;
       }
       if (item instanceof ViewContentNode) {
