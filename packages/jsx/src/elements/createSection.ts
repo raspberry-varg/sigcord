@@ -1,5 +1,6 @@
 import {
   type APIButtonComponent,
+  type APIThumbnailComponent,
   ButtonBuilder,
   ComponentBuilder,
   SectionBuilder,
@@ -20,6 +21,7 @@ import {
 import type {IntrinsicElementProps} from '../index.js';
 import {isButtonData} from '../util/isButtonData.js';
 import {isTextDisplayData} from '../util/isTextDisplayData.js';
+import {isThumbnailData} from '../util/isThumbnailData.js';
 
 class SectionElement extends ViewManualComputedElementNode<
   SectionBuilder | TextDisplayBuilder
@@ -89,7 +91,7 @@ class SectionElement extends ViewManualComputedElementNode<
     const section = new SectionBuilder().addTextDisplayComponents(textBuilders);
     if (accessory instanceof ThumbnailBuilder) {
       section.setThumbnailAccessory(accessory);
-    } else {
+    } else if (accessory instanceof ButtonBuilder) {
       section.setButtonAccessory(accessory);
     }
 
@@ -97,7 +99,11 @@ class SectionElement extends ViewManualComputedElementNode<
   }
 
   private resolveAccessory():
-    ButtonBuilder | ThumbnailBuilder | APIButtonComponent | null {
+    | ButtonBuilder
+    | ThumbnailBuilder
+    | APIButtonComponent
+    | APIThumbnailComponent
+    | null {
     const accessoryResult = flatten(this.accessoryNodes, this.accessoryOwner);
     if (!accessoryResult.length) {
       return null;
@@ -120,11 +126,14 @@ class SectionElement extends ViewManualComputedElementNode<
     }
 
     if (isButtonData(accessory)) {
-      return accessory;
+      return new ButtonBuilder(accessory);
+    }
+    if (isThumbnailData(accessory)) {
+      return new ThumbnailBuilder(accessory);
     }
 
     throw new Error(
-      `Accessory must be a thumbnail builder, a button builder, or button data. Got: ${accessory}`,
+      `Accessory must be a thumbnail builder, a button builder, or button data. Got: ${JSON.stringify(accessory)}`,
     );
   }
 }
