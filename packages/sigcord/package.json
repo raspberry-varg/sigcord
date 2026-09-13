@@ -16,10 +16,9 @@
   "scripts": {
     "lint": "eslint .",
     "format": "npx prettier --write src",
-    "prebuild": "pnpm run clean",
     "build": "tsc",
     "clean": "rm -rf dist",
-    "prepack": "pnpm run build"
+    "prepack": "pnpm run clean && pnpm run build"
   },
   "keywords": [],
   "license": "Apache-2.0",
