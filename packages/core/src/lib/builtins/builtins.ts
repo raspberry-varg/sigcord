@@ -4,13 +4,12 @@
  * reactive views.
  */
 
-import { AsyncLocalStorage } from 'node:async_hooks';
 import { Synapse } from '../menu/instance/synapse.js';
 import { PatchTarget } from '../RenderingEngine.js';
 import { assert } from '../../util/Assertions.js';
 import type { EffectFn } from '../reactivity/core/signals.js';
 import type { DisposeFn } from '../render/dispose.js';
-import { getOwner, getOwnerOrThrow } from '../owners/owner.js';
+import { getOwner, getOwnerOrThrow, setCurrentOwner } from '../owners/owner.js';
 import type { MaybePromise } from '../../util/TypesUtil.js';
 import type { MenuContext } from '../menu/instance/menuContext.js';
 import { STATIC_RENDER_SYNAPSE } from '../render/staticRenderSynapse.js';
@@ -20,22 +19,14 @@ import {
   type MessageComponentInteraction,
 } from 'discord.js';
 
-let currentSynapse: Synapse | null = null;
-
-const asyncLocalStorage = new AsyncLocalStorage<Synapse>();
-
-export function getAsyncStore(): AsyncLocalStorage<Synapse> {
-  return asyncLocalStorage;
-}
-
-export const SYNAPSE_CONTEXT = Symbol('Synapse');
+export const SYNAPSE_CONTEXT_ID = Symbol('Synapse');
 
 export function getCurrentSynapse(): Synapse {
   const owner = getOwner();
   if (!owner) {
     throw new Error('no owner??');
   }
-  if (!owner.context[SYNAPSE_CONTEXT]) {
+  if (!owner.context[SYNAPSE_CONTEXT_ID]) {
     throw new Error(
       'Attempted to use a hook outside of a reactive context. Was this called ' +
         'outside of a reactive view?\n\nClassic menu views should use the ' +
@@ -43,26 +34,7 @@ export function getCurrentSynapse(): Synapse {
         'Did you await within the body of a component function?',
     );
   }
-  return owner.context[SYNAPSE_CONTEXT] as Synapse;
-}
-
-/**
- * @deprecated Synapse should be stashed into the owner's context.
- *
- * Replace the current active reactive context.
- *
- * @param instance The new active context.
- * @returns The previous context.
- */
-export function setCurrentSynapse(instance: Synapse | null): Synapse | null {
-  const prev = currentSynapse;
-  currentSynapse = instance;
-  if (instance) {
-    asyncLocalStorage.enterWith(instance);
-  } else {
-    asyncLocalStorage.disable();
-  }
-  return prev;
+  return owner.context[SYNAPSE_CONTEXT_ID] as Synapse;
 }
 
 /**
@@ -141,7 +113,7 @@ export function patchEffect(effectFn: EffectFn): DisposeFn {
   const isValidTarget = target !== PatchTarget.None;
   assert(
     target != null &&
-      (isValidTarget || currentSynapse === STATIC_RENDER_SYNAPSE),
+      (isValidTarget || getCurrentSynapse() === STATIC_RENDER_SYNAPSE),
     'patchEffect() was called outside of the embed or component render ' +
       'lifecycle. If effects that mutate content in the embed or component ' +
       'must be set up in the body of the view, use patch() with the ' +
@@ -154,7 +126,7 @@ export function getCurrentPatchTarget(): PatchTarget | undefined {
   return getOwnerOrThrow().patchTarget;
 }
 
-// Asynchronous escape-hatches
+// Asynchronous escape-hatches. Pretty much unnecessary with AsyncLocalStore.
 
 /**
  * Resumes a reactive hook context to the value before an `await` expression.
@@ -171,16 +143,16 @@ type ResumeCtxFn = () => void;
  *   to continue to be used after an `await`.
  */
 export function suspend(): ResumeCtxFn {
-  const capturedContext = getCurrentSynapse();
+  const capturedOwner = getOwner();
   assert(
-    capturedContext,
+    capturedOwner,
     'Attempted to suspend the current reactive context, but none was found. ' +
       'Did you forget to use the returned resume() function from a previous ' +
       'call to suspend()? If in an async boundary, nested awaits must also ' +
       'be pulled into their own async boundary.',
   );
   return function resumeSuspendedContext() {
-    setCurrentSynapse(capturedContext);
+    setCurrentOwner(capturedOwner);
   };
 }
 

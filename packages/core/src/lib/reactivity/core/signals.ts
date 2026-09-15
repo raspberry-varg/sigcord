@@ -1,6 +1,6 @@
 import { logger } from '../../../util/Logger.js';
 import type { DisposeFn } from '../../render/dispose.js';
-import { getOwner, setCurrentOwner } from '../../owners/owner.js';
+import { getOwner, runWithOwner, setCurrentOwner } from '../../owners/owner.js';
 import type { PatchTarget } from '../../RenderingEngine.js';
 import * as core from '@preact/signals-core';
 
@@ -166,13 +166,7 @@ export function createEffect(action: EffectFn): DisposeFn {
   );
   const capturedOwner = getOwner();
   return core.effect(() => {
-    const prevOwner = setCurrentOwner(capturedOwner);
-    let dispose;
-    try {
-      dispose = action();
-    } finally {
-      setCurrentOwner(prevOwner);
-    }
+    const dispose = runWithOwner(capturedOwner, action);
     return () => {
       logger.debug(`disposing effectId=${capturedId}`);
       dispose?.();
