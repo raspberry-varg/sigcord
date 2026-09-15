@@ -2,10 +2,11 @@ import { logger } from '../../util/Logger.js';
 import { PatchTarget } from '../RenderingEngine.js';
 import type { DisposeFn, ResumeFn, SuspendFn } from '../render/dispose.js';
 import type { ContextNode } from '../contexts/contextNode.js';
+import { AsyncLocalStorage } from 'node:async_hooks';
 
 export interface Owner extends Disposable {
   readonly patchTarget?: PatchTarget;
-  readonly context?: ContextNode;
+  readonly context: ContextNode;
   readonly parent: Owner | null;
   readonly childOwners: Set<Owner>;
   debugName?: string;
@@ -35,10 +36,10 @@ export interface Owner extends Disposable {
 
 class OwnerImpl implements Owner {
   patchTarget?: PatchTarget;
-  context?: ContextNode;
-  parent: Owner | null = null;
   childOwners: Set<Owner> = new Set<Owner>();
   debugName?: string;
+
+  readonly context: ContextNode;
 
   private disposals: DisposeFn[] = [];
   private componentDisposals = new Map<string, DisposeFn>();
@@ -46,6 +47,10 @@ class OwnerImpl implements Owner {
   private onResumeFns: ResumeFn[] = [];
   private disposed_ = false;
   private suspended_ = false;
+
+  constructor(public parent: Owner | null) {
+    this.context = this.parent ? Object.create(this.parent.context) : {};
+  }
 
   get disposed() {
     return this.disposed_;
@@ -110,7 +115,6 @@ class OwnerImpl implements Owner {
   dispose() {
     if (this.disposed) return;
     this.disposed_ = true;
-    this.context = undefined;
 
     this.childOwners.forEach((owner) => owner.dispose());
     this.childOwners.clear();
@@ -139,44 +143,43 @@ class OwnerImpl implements Owner {
   }
 }
 
-let currentOwner: Owner | null = null;
+const ownerStore = new AsyncLocalStorage<Owner | null>();
 
-export function getOpenOwner(): Owner | null {
+export function getOwner(): Owner | null {
+  const currentOwner = ownerStore.getStore();
   logger.verbose('getting current open owner', { currentOwner });
-  return currentOwner;
+  return currentOwner ?? null;
 }
 
-export function getOpenOwnerStrict(): Owner {
-  const owner = getOpenOwner();
+export function getOwnerOrThrow(): Owner {
+  const owner = getOwner();
   if (!owner) {
-    throw new Error('No current owner. Was there an asynchronous break?');
+    throw new Error('No current owner. Were we called outside a menu context?');
   }
   return owner;
 }
 
 export function setCurrentOwner(newOwner: Owner | null): Owner | null {
-  const prev = currentOwner;
-  currentOwner = newOwner;
+  const prev = ownerStore.getStore() ?? null;
+  ownerStore.enterWith(newOwner);
   return prev;
 }
 
-export function owner<T>(
-  ownerFn: () => T,
-  patchTarget?: PatchTarget,
-  contextNode?: ContextNode,
-): Owner {
+export function owner<T>(ownerFn: () => T, patchTarget?: PatchTarget): Owner {
   logger.verbose(`creating a new owner with fn=${ownerFn}`);
-  const newOwner = new OwnerImpl();
+  const newOwner = new OwnerImpl(getOwner());
   const prevOwner = setCurrentOwner(newOwner);
   newOwner.patchTarget = prevOwner?.patchTarget ?? patchTarget;
-  newOwner.parent = prevOwner;
-  newOwner.context = contextNode ?? prevOwner?.context; // Reduce extra lookup loops.
   prevOwner?.addChild(newOwner);
 
-  try {
-    ownerFn();
-  } finally {
-    setCurrentOwner(prevOwner);
-  }
+  runWithOwner(newOwner, ownerFn);
   return newOwner;
+}
+
+export function createRootOwner(): Owner {
+  return new OwnerImpl(null);
+}
+
+export function runWithOwner<T>(owner: Owner | null, ownerFn: () => T): T {
+  return ownerStore.run(owner, ownerFn);
 }

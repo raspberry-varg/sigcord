@@ -25,7 +25,7 @@ import {
 import { isReactiveViewDefinition } from './views/reactive/reactiveViewDefinition.js';
 import { setCurrentSynapse } from './builtins/builtins.js';
 import { batch } from '@preact/signals-core';
-import type { Props } from '../index.js';
+import { type Owner, type Props, setCurrentOwner } from '../index.js';
 import { render } from './render/render.js';
 import { ViewElementNode } from './dom/viewElementNode.js';
 import { owner } from './owners/owner.js';
@@ -74,6 +74,8 @@ export class RenderingEngine {
   private queuedClears: PatchTargetBitMask = 0;
   private reactiveViewInstance?: ReactiveViewInstance;
   private queuedNavigation?: NavigationPayload;
+
+  constructor(private readonly menuRootOwner: Owner) {}
 
   isCurrentViewReactive(): boolean {
     return (
@@ -213,15 +215,10 @@ export class RenderingEngine {
       this.reactiveViewInstance,
       'Internal error: Reactive payload was not set.',
     );
-    return this.patchReactive(this.reactiveViewInstance, props, targets);
+    return this.patchReactive(this.reactiveViewInstance, targets);
   }
 
-  patchReactive(
-    instance: ReactiveViewInstance,
-    props: Props,
-    targets: PatchTargetBitMask,
-  ) {
-    const $ = props.$;
+  patchReactive(instance: ReactiveViewInstance, targets: PatchTargetBitMask) {
     targets |= this.queuedClears;
     const payload: ViewMessagePayload = {};
     logger.debug('Patching reactive view', {
@@ -229,7 +226,6 @@ export class RenderingEngine {
       viewInstance: instance.id,
       isV2: IS_V2 in instance,
     });
-    setCurrentSynapse($);
     try {
       batch(() => {
         const isV2 = isRenderedReactiveViewV2(instance);
@@ -248,33 +244,37 @@ export class RenderingEngine {
         }
 
         if (isV2) {
-          payload.flags = (payload.flags ?? 0) | MessageFlags.IsComponentsV2;
-          const patchTarget = PatchTarget.Components;
-          if (this.isQueuedForClear(patchTarget)) {
-            payload.components = [];
-          } else {
-            if (!instance.root) {
-              const root = new ViewElementNode();
-              [instance.dispose, instance.owner] = render(
-                root,
-                () => instance.factory() as ViewComponent,
-                patchTarget,
-              );
-              instance.owner.debugName = 'V2_root';
-              instance.root = root;
-            }
+          const prevOwner = setCurrentOwner(this.menuRootOwner);
+          try {
+            payload.flags = (payload.flags ?? 0) | MessageFlags.IsComponentsV2;
+            const patchTarget = PatchTarget.Components;
+            if (this.isQueuedForClear(patchTarget)) {
+              payload.components = [];
+            } else {
+              if (!instance.root) {
+                const root = new ViewElementNode();
+                [instance.dispose, instance.owner] = render(
+                  root,
+                  () => instance.factory() as ViewComponent,
+                  patchTarget,
+                );
+                instance.owner.debugName = 'V2_root';
+                instance.root = root;
+              }
 
-            const flattened = flatten(instance.root, instance.owner);
-            instance.lastRender = payload.components = flattened;
+              const flattened = flatten(instance.root, instance.owner);
+              instance.lastRender = payload.components = flattened;
 
-            if (this.queuedComponents) {
-              payload.components = this.resolveWithQueuedItems(
-                payload.components,
-                this.queuedComponents,
-              );
+              if (this.queuedComponents) {
+                payload.components = this.resolveWithQueuedItems(
+                  payload.components,
+                  this.queuedComponents,
+                );
+              }
             }
+          } finally {
+            setCurrentOwner(prevOwner);
           }
-
           return;
         }
 
@@ -382,11 +382,7 @@ export class RenderingEngine {
     if (this.queuedNavigation) {
       this.applyQueuedNavigation();
       if (this.reactiveViewInstance) {
-        return this.patchReactive(
-          this.reactiveViewInstance,
-          props,
-          PatchTarget.All,
-        );
+        return this.patchReactive(this.reactiveViewInstance, PatchTarget.All);
       }
     }
 
@@ -404,7 +400,7 @@ export class RenderingEngine {
     }
     if (isReactiveViewInstance(view)) {
       this.reactiveViewInstance = view;
-      return this.patchReactive(view, props, PatchTarget.All);
+      return this.patchReactive(view, PatchTarget.All);
     }
     const payload = batch(() => view.instance.render(props));
     if (payload instanceof Promise) {

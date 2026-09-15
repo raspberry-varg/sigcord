@@ -19,15 +19,15 @@ export function instantiateReactiveView<Props extends PropsBase = PropsBase>(
   const id = view.id;
   const isV2 = isReactiveViewDefinitionV2(view);
   if (isV2) {
-    const instance: ReactiveViewInstance = {
+    return {
       [REACTIVE_VIEW_SYMBOL]: true,
       [IS_V2]: true,
       id,
       root: undefined,
       lastRender: undefined,
+      owner: undefined,
       factory: () => view.factory(props) as any,
     };
-    return instance;
   }
 
   return {

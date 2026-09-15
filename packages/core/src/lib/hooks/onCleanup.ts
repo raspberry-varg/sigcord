@@ -1,7 +1,7 @@
 import type { DisposeFn } from '../render/dispose.js';
-import { getOpenOwnerStrict } from '../owners/owner.js';
+import { getOwnerOrThrow } from '../owners/owner.js';
 
 export function onCleanup(disposalFn: DisposeFn): void {
-  const owner = getOpenOwnerStrict();
+  const owner = getOwnerOrThrow();
   owner.registerDisposal(disposalFn);
 }

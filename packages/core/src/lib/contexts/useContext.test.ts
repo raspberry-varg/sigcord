@@ -1,7 +1,8 @@
 import { describe, expect, expectTypeOf, test } from 'bun:test';
 import type { Context } from './context.js';
-import { provideContextValue, provideRootContext } from './provideContext.js';
+import { provideContextValue } from './provideContext.js';
 import { useContext } from './useContext.js';
+import { owner } from '../owners/owner.js';
 
 const numberContext: Context<number | undefined> = {
   id: Symbol('NumberContext'),
@@ -40,14 +41,17 @@ const falseContext: Context<false> = {
 
 describe('useContext', () => {
   test('gets value from context', () => {
-    provideContextValue(numberContext, 5, () => {
+    owner(() => {
+      provideContextValue(numberContext, 5);
       expect(useContext(numberContext)).toBe(5);
     });
   });
 
   test('gets value from nested context', () => {
-    provideContextValue(numberContext, 5, () => {
-      provideContextValue(stringContext, 'foo', () => {
+    owner(() => {
+      provideContextValue(numberContext, 5);
+      owner(() => {
+        provideContextValue(stringContext, 'foo');
         expect(useContext(numberContext)).toBe(5);
         expect(useContext(stringContext)).toBe('foo');
       });
@@ -55,7 +59,7 @@ describe('useContext', () => {
   });
 
   test('returns default value', () => {
-    provideRootContext(() => {
+    owner(() => {
       expect(useContext(objectContextWithDefault)).toEqual({
         name: 'default name',
       });
@@ -63,44 +67,46 @@ describe('useContext', () => {
   });
 
   test('does not return default when the context is provided', () => {
-    provideContextValue(
-      objectContextWithDefault,
-      { name: 'Spike Minoda' },
-      () => {
-        expect(useContext(objectContextWithDefault)).toEqual({
-          name: 'Spike Minoda',
-        });
-      },
-    );
+    owner(() => {
+      provideContextValue(objectContextWithDefault, { name: 'Spike Minoda' });
+      expect(useContext(objectContextWithDefault)).toEqual({
+        name: 'Spike Minoda',
+      });
+    });
   });
 
   describe('falsy values', () => {
     test('gets empty string from context', () => {
-      provideContextValue(stringContext, '', () => {
+      owner(() => {
+        provideContextValue(stringContext, '');
         expect(useContext(stringContext)).toBe('');
       });
     });
 
     test('gets 0 from context', () => {
-      provideContextValue(numberContext, 0, () => {
+      owner(() => {
+        provideContextValue(numberContext, 0);
         expect(useContext(numberContext)).toBe(0);
       });
     });
 
     test('gets false from context', () => {
-      provideContextValue(falseContext, false, () => {
+      owner(() => {
+        provideContextValue(falseContext, false);
         expect(useContext(falseContext)).toBe(false);
       });
     });
 
     test('gets null from context', () => {
-      provideContextValue(nullContext, null, () => {
+      owner(() => {
+        provideContextValue(nullContext, null);
         expect(useContext(nullContext)).toBe(null);
       });
     });
 
     test('gets undefined from context', () => {
-      provideContextValue(undefinedContext, undefined, () => {
+      owner(() => {
+        provideContextValue(undefinedContext, undefined);
         expect(useContext(undefinedContext)).toBe(undefined);
       });
     });

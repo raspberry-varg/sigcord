@@ -1,6 +1,6 @@
 import { logger } from '../../../util/Logger.js';
 import type { DisposeFn } from '../../render/dispose.js';
-import { getOpenOwner, setCurrentOwner } from '../../owners/owner.js';
+import { getOwner, setCurrentOwner } from '../../owners/owner.js';
 import type { PatchTarget } from '../../RenderingEngine.js';
 import * as core from '@preact/signals-core';
 
@@ -137,7 +137,7 @@ export function createUntracked<T>(signal: () => T): T {
 }
 
 export function createComputed<T>(derived: () => T): Getter<T> {
-  const capturedOwner = getOpenOwner();
+  const capturedOwner = getOwner();
   const computed = core.computed(() => {
     const prevOwner = setCurrentOwner(capturedOwner);
     let value;
@@ -164,7 +164,7 @@ export function createEffect(action: EffectFn): DisposeFn {
   logger.verbose(
     `creating a new effect. action=${action}, effectId=${capturedId}`,
   );
-  const capturedOwner = getOpenOwner();
+  const capturedOwner = getOwner();
   return core.effect(() => {
     const prevOwner = setCurrentOwner(capturedOwner);
     let dispose;

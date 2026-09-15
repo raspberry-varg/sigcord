@@ -6,7 +6,7 @@ export {
   ClassViewProps as Props,
 } from './lib/FunctionalMenuView.js';
 export { ViewRender } from './lib/views/classic/classViewRender.js';
-export { Synapse } from './lib/menu/instance/synapse.js';
+export { Synapse, SynapseContext } from './lib/menu/instance/synapse.js';
 export * from './lib/SmartComponents.js';
 export * from './lib/PrebuiltEmbeds.js';
 export * from './lib/Renderable.js';
@@ -70,7 +70,14 @@ export { SlotOptions, Slot, slot, isSlot } from './lib/Slot.js';
 export { onCleanup } from './lib/hooks/onCleanup.js';
 export { batch } from '@preact/signals-core';
 export { ComponentDefinition } from './lib/components/componentDefinition.js';
-export { owner, Owner } from './lib/owners/owner.js';
+export {
+  owner,
+  Owner,
+  runWithOwner,
+  getOwner,
+  getOwnerOrThrow,
+  setCurrentOwner,
+} from './lib/owners/owner.js';
 export { Context } from './lib/contexts/context.js';
 export { provideContextValue } from './lib/contexts/provideContext.js';
 export { useContext } from './lib/contexts/useContext.js';
