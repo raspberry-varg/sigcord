@@ -23,10 +23,7 @@ export const SYNAPSE_CONTEXT_ID = Symbol('Synapse');
 
 export function getCurrentSynapse(): Synapse {
   const owner = getOwner();
-  if (!owner) {
-    throw new Error('no owner??');
-  }
-  if (!owner.context[SYNAPSE_CONTEXT_ID]) {
+  if (!owner?.context[SYNAPSE_CONTEXT_ID]) {
     throw new Error(
       'Attempted to use a hook outside of a reactive context. Was this called ' +
         'outside of a reactive view?\n\nClassic menu views should use the ' +
