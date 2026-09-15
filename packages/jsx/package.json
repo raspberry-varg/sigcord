@@ -24,12 +24,13 @@
   "keywords": [],
   "license": "Apache-2.0",
   "packageManager": "pnpm@10.11.0",
+  "dependencies": {
+    "@sigcord/core": "workspace:*"
+  },
   "peerDependencies": {
-    "@sigcord/core": "workspace:*",
     "discord.js": "catalog:"
   },
   "devDependencies": {
-    "@sigcord/core": "workspace:*",
     "@types/bun": "catalog:",
     "discord.js": "catalog:",
     "nx": "22.0.3",

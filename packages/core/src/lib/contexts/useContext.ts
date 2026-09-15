@@ -1,6 +1,5 @@
-import { getOpenOwnerStrict } from '../owners/owner.js';
+import { getOwnerOrThrow } from '../owners/owner.js';
 import type { Context } from './context.js';
-import { CONTEXT_NOT_FOUND } from './contextNode.js';
 
 /**
  * Attempt to inject a value from the current context.
@@ -8,11 +7,11 @@ import { CONTEXT_NOT_FOUND } from './contextNode.js';
  * @param context
  */
 export function useContext<T>(context: Context<T>): T {
-  const openOwner = getOpenOwnerStrict();
+  const openOwner = getOwnerOrThrow();
   const node = openOwner.context;
   if (!node) {
     return context.default;
   }
-  const result = node.get(context.id);
-  return result !== CONTEXT_NOT_FOUND ? (result as T) : context.default;
+
+  return context.id in node ? (node[context.id] as T) : context.default;
 }

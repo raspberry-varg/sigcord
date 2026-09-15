@@ -25,6 +25,13 @@ import type {
   ModalRepliableInteraction,
 } from '../../interactivity/modalHandling.js';
 import type { ComponentDefinition } from '../../components/componentDefinition.js';
+import type { Context } from '../../contexts/context.js';
+import { STATIC_RENDER_SYNAPSE } from '../../render/staticRenderSynapse.js';
+
+export const SynapseContext: Context<Readonly<Synapse>> = Object.freeze({
+  id: Symbol('MenuContext'),
+  default: STATIC_RENDER_SYNAPSE,
+});
 
 /**
  * Methods to manage and interact with a bound menu instance.
@@ -139,7 +146,7 @@ export interface Synapse {
    */
   goTo<
     ViewDef extends DefinedView<any>,
-    Props extends ViewDef extends DefinedView<infer P> ? P : never,
+    Props extends (ViewDef extends DefinedView<infer P> ? P : never),
   >(
     view: ViewDef,
     props: Props,

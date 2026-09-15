@@ -10,7 +10,7 @@ import { PatchTarget } from '../RenderingEngine.js';
 import { assert } from '../../util/Assertions.js';
 import type { EffectFn } from '../reactivity/core/signals.js';
 import type { DisposeFn } from '../render/dispose.js';
-import { getOpenOwnerStrict } from '../owners/owner.js';
+import { getOwner, getOwnerOrThrow } from '../owners/owner.js';
 import type { MaybePromise } from '../../util/TypesUtil.js';
 import type { MenuContext } from '../menu/instance/menuContext.js';
 import { STATIC_RENDER_SYNAPSE } from '../render/staticRenderSynapse.js';
@@ -28,19 +28,27 @@ export function getAsyncStore(): AsyncLocalStorage<Synapse> {
   return asyncLocalStorage;
 }
 
+export const SYNAPSE_CONTEXT = Symbol('Synapse');
+
 export function getCurrentSynapse(): Synapse {
-  const instance = asyncLocalStorage.getStore() ?? currentSynapse;
-  assert(
-    instance,
-    'Attempted to use a hook outside of a reactive context. Was this called ' +
-      'outside of a reactive view?\n\nClassic menu views should use the ' +
-      'Synapse parameter directly ($).\n\n' +
-      'Did you await within the body of a component function?',
-  );
-  return instance;
+  const owner = getOwner();
+  if (!owner) {
+    throw new Error('no owner??');
+  }
+  if (!owner.context[SYNAPSE_CONTEXT]) {
+    throw new Error(
+      'Attempted to use a hook outside of a reactive context. Was this called ' +
+        'outside of a reactive view?\n\nClassic menu views should use the ' +
+        'Synapse parameter directly ($).\n\n' +
+        'Did you await within the body of a component function?',
+    );
+  }
+  return owner.context[SYNAPSE_CONTEXT] as Synapse;
 }
 
 /**
+ * @deprecated Synapse should be stashed into the owner's context.
+ *
  * Replace the current active reactive context.
  *
  * @param instance The new active context.
@@ -143,7 +151,7 @@ export function patchEffect(effectFn: EffectFn): DisposeFn {
 }
 
 export function getCurrentPatchTarget(): PatchTarget | undefined {
-  return getOpenOwnerStrict().patchTarget;
+  return getOwnerOrThrow().patchTarget;
 }
 
 // Asynchronous escape-hatches
@@ -326,7 +334,7 @@ export const onResume: Synapse['onResume'] = (action) =>
  * {@link goTo()}.
  */
 export function isSuspended(): boolean {
-  return getOpenOwnerStrict().suspended;
+  return getOwnerOrThrow().suspended;
 }
 
 // Modals

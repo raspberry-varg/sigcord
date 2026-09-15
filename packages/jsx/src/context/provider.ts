@@ -1,6 +1,8 @@
 import {
   type Context as CoreContext,
+  ViewNode,
   flattenToContentNodes,
+  owner,
   provideContextValue,
 } from '@sigcord/core';
 
@@ -39,10 +41,14 @@ export function createContext<T>(
   const context: Context<T | undefined> = {
     id: Symbol(options?.name ?? 'unnamed context'),
     default: defaultValue,
-    Provider: (props: ProviderProps<T | undefined>) =>
-      provideContextValue(context, props.value!, () =>
-        flattenToContentNodes(props.children),
-      ),
+    Provider: (props: ProviderProps<T | undefined>) => {
+      let result!: Array<ViewNode>;
+      owner(() => {
+        provideContextValue(context, props.value);
+        result = flattenToContentNodes(props.children);
+      });
+      return result;
+    },
   };
   return context;
 }

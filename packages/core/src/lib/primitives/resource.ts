@@ -6,7 +6,7 @@ import { signal } from './signal.js';
 import { computed } from './computed.js';
 import { read } from '../reactivity/core/read.js';
 import { batch } from '@preact/signals-core';
-import { getOpenOwner } from '../owners/owner.js';
+import { getOwner } from '../owners/owner.js';
 import { logger } from '../../util/Logger.js';
 
 const OPTIONS_DEFAULTS: Readonly<ResourceOptions<unknown, unknown>> = {
@@ -231,7 +231,7 @@ export function resource<T, SOURCE>(
       mutate: setData,
       refetch() {
         // resumeContext();
-        if (getOpenOwner()?.disposed) {
+        if (getOwner()?.disposed) {
           logger.debug('Refetch resource ignored as owner is disposed.');
           return;
         }

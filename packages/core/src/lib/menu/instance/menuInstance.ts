@@ -36,10 +36,14 @@ import { MenuContext } from './menuContext.js';
 import { assert, assertAndReturn } from '../../../util/Assertions.js';
 import type { ViewMessagePayload } from '../../views/viewFlavors.js';
 import { batch } from '@preact/signals-core';
-import { getOpenOwner } from '../../owners/owner.js';
+import { createRootOwner, getOwner, runWithOwner } from '../../owners/owner.js';
 import { AutoComponentId } from '../../components/autocomponents.js';
 import { TimeoutComponent, TimeoutEmbed } from '../../PrebuiltEmbeds.js';
-import { getAsyncStore, setCurrentSynapse } from '../../builtins/builtins.js';
+import {
+  getAsyncStore,
+  setCurrentSynapse,
+  SYNAPSE_CONTEXT,
+} from '../../builtins/builtins.js';
 import { untracked } from '../../reactivity/untracked.js';
 import { ComponentDefinition } from '../../components/componentDefinition.js';
 import {
@@ -91,6 +95,7 @@ export class MenuInstance<
   implements Synapse, MenuInstanceActions
 {
   private readonly logger = Logger.namespaced('MenuInstance');
+  private readonly rootOwner = createRootOwner();
 
   private readonly props: ClassViewProps & IntrinsicMenuProps;
 
@@ -105,7 +110,7 @@ export class MenuInstance<
   private readonly componentIdGenerator: NamedIdGenerator;
 
   private readonly modalTracker = new ModalTracker();
-  private readonly renderer = new RenderingEngine();
+  private readonly renderer = new RenderingEngine(this.rootOwner);
   private readonly listeners: Readonly<MenuControllerListeners> = {
     onRender: new Listener(),
     onEnd: new Listener(),
@@ -127,6 +132,7 @@ export class MenuInstance<
     initialProps: PropsBase,
     registeredViews: View<AllProps>[],
   ) {
+    this.rootOwner.context[SYNAPSE_CONTEXT] = this;
     this.views = new Map(registeredViews.map((v) => [v.id, v]));
     this.props = buildProps(
       this,
@@ -352,7 +358,7 @@ export class MenuInstance<
   }
 
   private routeComponentDisposalFn(id: string, disposal: DisposeFn): void {
-    const openOwner = getOpenOwner();
+    const openOwner = getOwner();
     if (openOwner) {
       openOwner.registerComponentDisposal(id, disposal);
     } else {
@@ -446,7 +452,9 @@ export class MenuInstance<
     await this.patcher.patch(payload, {});
   }
 
-  private async handleCollected(collected: CollectedMessageInteraction) {
+  private async handleCollected(
+    collected: CollectedMessageInteraction,
+  ): Promise<void> {
     if (await this.handlePrebuiltComponents(collected)) {
       return;
     }
@@ -468,7 +476,7 @@ export class MenuInstance<
     }
 
     try {
-      return void (await getAsyncStore().run(this, async () =>
+      return void (await runWithOwner(this.rootOwner, async () =>
         untracked(
           async () =>
             await batch(async () => await interactionCallback(collected)),
@@ -549,11 +557,15 @@ export class MenuInstance<
   ): Promise<void> {
     let modal: ModalBuilder;
     let options: ModalHandlingOptions | undefined;
-    if (modalOrOptions instanceof ModalBuilder) {
-      modal = modalOrOptions;
-    } else {
+    if (
+      typeof modalOrOptions === 'object' &&
+      'modal' in modalOrOptions &&
+      typeof modalOrOptions.onSubmit === 'function'
+    ) {
       modal = modalOrOptions.modal;
       options = modalOrOptions;
+    } else {
+      modal = modalOrOptions as ModalBuilder;
     }
 
     this.modalTracker.setModal(modal);
@@ -603,7 +615,9 @@ export class MenuInstance<
     setCurrentSynapse(this);
     let callbackResult;
     try {
-      callbackResult = batch(() => callback(response));
+      callbackResult = runWithOwner(this.rootOwner, () =>
+        batch(() => callback(response)),
+      );
     } catch (e) {
       this.logger.error('Error during onModalSubmit', {
         customId: response.customId,
@@ -725,7 +739,7 @@ export class MenuInstance<
       return dispose;
     };
 
-    const currentOwner = getOpenOwner();
+    const currentOwner = getOwner();
     const dispose = createEffect(menuEffect);
     if (currentOwner) {
       currentOwner.registerDisposal(dispose);
@@ -777,7 +791,7 @@ export class MenuInstance<
   }
 
   onSuspend(action: SuspendFn): void {
-    const owner = getOpenOwner();
+    const owner = getOwner();
     if (!owner) {
       throw new Error('onSuspend must be called in a reactive context.');
     }
@@ -785,7 +799,7 @@ export class MenuInstance<
   }
 
   onResume(action: ResumeFn): void {
-    const owner = getOpenOwner();
+    const owner = getOwner();
     if (!owner) {
       throw new Error('onResume must be called in a reactive context.');
     }
