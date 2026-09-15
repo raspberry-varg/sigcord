@@ -39,11 +39,7 @@ import { batch } from '@preact/signals-core';
 import { createRootOwner, getOwner, runWithOwner } from '../../owners/owner.js';
 import { AutoComponentId } from '../../components/autocomponents.js';
 import { TimeoutComponent, TimeoutEmbed } from '../../PrebuiltEmbeds.js';
-import {
-  getAsyncStore,
-  setCurrentSynapse,
-  SYNAPSE_CONTEXT,
-} from '../../builtins/builtins.js';
+import { SYNAPSE_CONTEXT_ID } from '../../builtins/builtins.js';
 import { untracked } from '../../reactivity/untracked.js';
 import { ComponentDefinition } from '../../components/componentDefinition.js';
 import {
@@ -132,7 +128,7 @@ export class MenuInstance<
     initialProps: PropsBase,
     registeredViews: View<AllProps>[],
   ) {
-    this.rootOwner.context[SYNAPSE_CONTEXT] = this;
+    this.rootOwner.context[SYNAPSE_CONTEXT_ID] = this;
     this.views = new Map(registeredViews.map((v) => [v.id, v]));
     this.props = buildProps(
       this,
@@ -612,7 +608,6 @@ export class MenuInstance<
       return;
     }
 
-    setCurrentSynapse(this);
     let callbackResult;
     try {
       callbackResult = runWithOwner(this.rootOwner, () =>
@@ -734,7 +729,7 @@ export class MenuInstance<
     patchTarget: PatchTarget = PatchTarget.None,
   ): DisposeFn {
     const menuEffect = (): void | DisposeFn => {
-      const dispose = getAsyncStore().run(this, fn);
+      const dispose = fn();
       this.addPatchTargets(patchTarget);
       return dispose;
     };

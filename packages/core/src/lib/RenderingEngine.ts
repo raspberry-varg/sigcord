@@ -23,7 +23,6 @@ import {
   type ReactiveViewInstance,
 } from './menu/instance/instantiateReactiveView.js';
 import { isReactiveViewDefinition } from './views/reactive/reactiveViewDefinition.js';
-import { setCurrentSynapse } from './builtins/builtins.js';
 import { batch } from '@preact/signals-core';
 import { type Owner, type Props, setCurrentOwner } from '../index.js';
 import { render } from './render/render.js';
@@ -435,9 +434,6 @@ export class RenderingEngine {
     if (isReactiveViewDefinition(viewDefinition)) {
       let reactiveInstance = this.reactiveViewInstance;
       if (!reactiveInstance || viewDefinition.id !== reactiveInstance.id) {
-        // rendering must be synchronous; built-ins rely on the single-threaded
-        // nature of JS
-        setCurrentSynapse(props.$);
         try {
           reactiveInstance = instantiateReactiveView(viewDefinition, props);
           this.reactiveViewInstance = reactiveInstance;
@@ -453,7 +449,7 @@ export class RenderingEngine {
       return reactiveInstance;
     }
 
-    // class based view
+    // class-based view
     let viewClassInstance = this.instances.get(viewDefinition.id);
     if (!viewClassInstance) {
       viewClassInstance = instantiateClassView(viewDefinition, props);

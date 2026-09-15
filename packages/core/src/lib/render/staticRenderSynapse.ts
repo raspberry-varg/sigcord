@@ -1,9 +1,8 @@
 import type { Synapse } from '../menu/instance/synapse.js';
-import { setCurrentSynapse } from '../builtins/builtins.js';
 import { createComputed, createSignal } from '../reactivity/core/signals.js';
 import { PatchTarget } from '../RenderingEngine.js';
 import type { DisposeFn } from './dispose.js';
-import { getOwner } from '../owners/owner.js';
+import { getOwner, runWithOwner } from '../owners/owner.js';
 
 const noop = (() => {}) as any;
 
@@ -64,20 +63,8 @@ function unsupported(feature: string, reason?: string) {
 }
 
 function staticEffect(fn: () => void | DisposeFn): DisposeFn {
-  function menuEffect(): void | DisposeFn {
-    let dispose;
-    const prevContext = setCurrentSynapse(STATIC_RENDER_SYNAPSE);
-    try {
-      dispose = fn();
-    } finally {
-      setCurrentSynapse(prevContext);
-    }
-
-    return dispose;
-  }
-
   const currentOwner = getOwner();
-  const dispose = menuEffect();
+  const dispose = runWithOwner(currentOwner, fn);
   if (dispose) {
     if (!currentOwner) {
       throw new Error(
