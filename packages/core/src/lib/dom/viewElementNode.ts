@@ -3,7 +3,9 @@ import { ViewNode } from './viewNode.js';
 import type { ViewNodeKind } from './viewNodeKind.js';
 import { removeManyInPlace } from '../../util/arrays/removeManyInPlace.js';
 
-export class ViewElementNode<T extends ViewNodeKind> extends ViewNode<T> {
+export class ViewElementNode<
+  T extends ViewNodeKind = ViewNodeKind,
+> extends ViewNode<T> {
   private readonly children_: ViewNode<T>[] = [];
   private readonly childrenSet: Set<ViewNode<T>> = new Set();
 

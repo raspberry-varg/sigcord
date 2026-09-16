@@ -15,12 +15,6 @@ export interface IntrinsicMenuProps extends IntrinsicViewProps {
    */
   renderAfterHandledInteraction: boolean | true;
   /**
-   * Make this menu render its views as a private message.
-   * @default false
-   * @deprecated Use {@link flags} instead
-   */
-  ephemeral: boolean | false;
-  /**
    * Existing message to listen for components from.
    */
   initialMessage?: Message;

@@ -4,20 +4,44 @@ export function microtaskQueuer(
   return new MicrotaskQueuer(cb);
 }
 
-export class MicrotaskQueuer {
-  private queued = false;
-
-  constructor(private readonly cb: () => void | Promise<void>) {}
-
-  set(): void {
-    if (this.queued) {
+export function simpleMicrotaskQueuer(
+  cb: () => void | Promise<void>,
+): () => void {
+  let queued = false;
+  return () => {
+    if (queued) {
       return;
     }
-    this.queued = true;
+    queued = true;
 
     queueMicrotask(async (): Promise<void> => {
-      this.queued = false;
-      await this.cb();
+      queued = false;
+      await cb();
     });
+  };
+}
+
+export class MicrotaskQueuer<T extends unknown[] = never[]> {
+  private queued = false;
+
+  constructor(
+    private readonly cb: (...args: T) => void | Promise<void>,
+    private readonly args?: T,
+  ) {}
+
+  private task = async (): Promise<void> => {
+    this.queued = false;
+    if (this.args) {
+      await this.cb(...this.args);
+    } else {
+      await (this.cb as () => void | Promise<void>)();
+    }
+  };
+
+  set(): void {
+    if (this.queued) return;
+
+    this.queued = true;
+    queueMicrotask(this.task);
   }
 }
