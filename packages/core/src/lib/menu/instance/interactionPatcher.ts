@@ -33,8 +33,8 @@ export class InteractionPatcher {
   bufferedPatch: BufferedPatch | null = null;
 
   constructor(
-    public interaction: RepliableInteraction,
-    private readonly props: Readonly<IntrinsicMenuProps>,
+    public interaction: RepliableInteraction | undefined,
+    private readonly props: Readonly<IntrinsicMenuProps> | undefined,
   ) {}
 
   mountInteraction(interaction: RepliableInteraction): void {
@@ -47,7 +47,7 @@ export class InteractionPatcher {
 
   deferUpdate(interaction: RepliableInteraction): void {
     this.logger.debug('InteractionPatcher.deferUpdate', interaction.id);
-    if (this.patching && this.interaction.id === interaction.id) {
+    if (this.patching && this.interaction?.id === interaction.id) {
       this.logger.debug(
         'Not deferring update since this interaction is already being patched.',
         interaction.id,
@@ -95,7 +95,7 @@ export class InteractionPatcher {
     modal: ModalComponentData | ModalBuilder,
   ): void {
     this.logger.debug('InteractionPatcher.showModal', interaction.id);
-    if (this.patching && this.interaction.id === interaction.id) {
+    if (this.patching && this.interaction?.id === interaction.id) {
       this.logger.debug(
         'Not showing a modal since this interaction is already being patched.',
         interaction.id,
@@ -135,6 +135,10 @@ export class InteractionPatcher {
     payload: ViewMessagePayload,
     options: Partial<RenderOptions>,
   ): Promise<BufferedPatchStatus> {
+    if (!this.interaction) {
+      throw new Error('No interaction was mounted, yet patch was requested.');
+    }
+
     this.logger.info(`Patch called with interaction.id=${this.interaction.id}`);
     if (this.patching) {
       this.cancelBufferedPatch();
@@ -188,6 +192,9 @@ export class InteractionPatcher {
 
   async stop(): Promise<void> {
     this.cancelBufferedPatch();
+    if (!this.interaction) {
+      return;
+    }
 
     try {
       const activeDeferUpdate = this.trackedActions.get(this.interaction.id);
@@ -211,6 +218,9 @@ export class InteractionPatcher {
 
   async delete(message?: Message) {
     this.cancelBufferedPatch();
+    if (!this.interaction) {
+      throw new Error('No interaction was mounted, yet delete was requested.');
+    }
 
     const activeDeferUpdate = this.trackedActions.get(this.interaction.id);
     if (activeDeferUpdate) {
