@@ -97,7 +97,7 @@ export interface IntrinsicViewProps {
   /**
    * @deprecated Use {@link flags} instead
    */
-  ephemeral: boolean | false;
+  ephemeral?: boolean | false;
   flags?: MessageFlags;
 }
 
