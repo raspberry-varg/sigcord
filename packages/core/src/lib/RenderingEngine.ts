@@ -24,7 +24,12 @@ import {
 } from './menu/instance/instantiateReactiveView.js';
 import { isReactiveViewDefinition } from './views/reactive/reactiveViewDefinition.js';
 import { batch } from '@preact/signals-core';
-import { type Owner, type Props, setCurrentOwner } from '../index.js';
+import {
+  type Owner,
+  type Props,
+  renderFragment,
+  runWithOwner,
+} from '../index.js';
 import { render } from './render/render.js';
 import { ViewElementNode } from './dom/viewElementNode.js';
 import { owner } from './owners/owner.js';
@@ -243,8 +248,7 @@ export class RenderingEngine {
         }
 
         if (isV2) {
-          const prevOwner = setCurrentOwner(this.menuRootOwner);
-          try {
+          runWithOwner(this.menuRootOwner, () => {
             payload.flags = (payload.flags ?? 0) | MessageFlags.IsComponentsV2;
             const patchTarget = PatchTarget.Components;
             if (this.isQueuedForClear(patchTarget)) {
@@ -252,13 +256,14 @@ export class RenderingEngine {
             } else {
               if (!instance.root) {
                 const root = new ViewElementNode();
-                [instance.dispose, instance.owner] = render(
-                  root,
-                  () => instance.factory() as ViewComponent,
-                  patchTarget,
-                );
-                instance.owner.debugName = 'V2_root';
+                const rootOwner = owner(() => {
+                  const children = renderFragment(instance.factory);
+                  root.setChildren(...children);
+                }, patchTarget);
+                rootOwner.debugName = 'V2_root';
                 instance.root = root;
+                instance.owner = rootOwner;
+                instance.dispose = rootOwner.dispose.bind(rootOwner);
               }
 
               const flattened = flatten(instance.root, instance.owner);
@@ -271,9 +276,7 @@ export class RenderingEngine {
                 );
               }
             }
-          } finally {
-            setCurrentOwner(prevOwner);
-          }
+          });
           return;
         }
 
