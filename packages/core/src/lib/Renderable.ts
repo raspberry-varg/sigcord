@@ -45,8 +45,7 @@ export class Renderable {
     return undefined;
   }
   protected components():
-    | ActionRowBuilder<MessageActionRowComponentBuilder>[]
-    | undefined {
+    ActionRowBuilder<MessageActionRowComponentBuilder>[] | undefined {
     return undefined;
   }
   protected async onLoad(): Promise<unknown> {
@@ -56,12 +55,9 @@ export class Renderable {
   public async render() {
     await this.triggerPreloads();
 
-    this.message = await safeRender(
-      this.interaction,
-      this.messagePayload(),
-      /* props= */ undefined,
-      /* preferReplyForComponent= */ this.options.replyToComponentOnFirstRender,
-    );
+    this.message = await safeRender(this.interaction, this.messagePayload(), {
+      preferReplyForComponent: this.options.replyToComponentOnFirstRender,
+    });
 
     this.options.replyToComponentOnFirstRender = false;
     return this.message;

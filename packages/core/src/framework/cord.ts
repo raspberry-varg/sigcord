@@ -5,7 +5,7 @@ import {
   MessageFlagsBitField,
   RepliableInteraction,
 } from 'discord.js';
-import { logger } from '../util/Logger.js';
+import { Logger, logger } from '../util/Logger.js';
 import {
   PatchTarget,
   type PatchTargetBitMask,
@@ -22,11 +22,7 @@ import { getActiveCords } from './registry.js';
 import { getConfig } from '../config.js';
 import type { ViewFactory } from './menuBuilder.js';
 import type { StrandFactory } from './strands/strandFactory.js';
-
-export enum DispatchMode {
-  Create,
-  Update,
-}
+import { InteractionPatcher, PatchType } from './interactionPatcher.js';
 
 export type BuiltInCloseReasons = 'MANUAL_CLOSE' | 'IDLE_TIMEOUT';
 
@@ -54,6 +50,7 @@ export interface MountFinish {
 }
 
 export class Cord implements CordAPI {
+  private readonly logger = Logger.namespaced('Cord');
   private readonly strands: Strand[] = [];
   private interactionPipeline: InteractionMiddleware[] = [];
   private updateQueued = false;
@@ -65,8 +62,8 @@ export class Cord implements CordAPI {
   ephemeral = false;
   private client?: Client;
   private nextComponentId = 0;
+  private interactionPatcher = new InteractionPatcher();
   private resolveMountPromise?: (value: MountFinish) => void;
-  private pendingClose?: MountFinish;
   protected latestInteraction?: RepliableInteraction;
 
   constructor(private readonly strandFactory: StrandFactory) {}
@@ -86,7 +83,6 @@ export class Cord implements CordAPI {
   markDirty(patchTargetMask: PatchTargetBitMask): void {
     if (patchTargetMask === PatchTarget.None) return;
     this.dirtyMask |= patchTargetMask;
-    this.queueUpdate();
   }
 
   private resetIdleTimer(): void {
@@ -111,7 +107,7 @@ export class Cord implements CordAPI {
       top.suspend?.();
     }
     this.strands.push(strand);
-    this.queueUpdate();
+    this.markDirty(PatchTarget.All);
   }
 
   popStrand(): void {
@@ -124,14 +120,13 @@ export class Cord implements CordAPI {
     if (top) {
       top.resume?.();
     }
-
-    this.queueUpdate();
+    this.markDirty(PatchTarget.All);
   }
 
   replaceStrand(strand: Strand): void {
     this.popStrand();
     this.pushStrand(strand);
-    this.queueUpdate();
+    this.markDirty(PatchTarget.All);
   }
 
   canGoBack(): boolean {
@@ -145,14 +140,13 @@ export class Cord implements CordAPI {
     if (this.resolveMountPromise) {
       throw new Error('Already mounted');
     }
-
     this.ephemeral = ephemeral;
+    this.interactionPatcher.mountInteraction(interaction);
     const currentStrand = this.currentStrand;
     if (!currentStrand) {
       throw new Error('No strand to mount');
     }
     const payload = currentStrand.render();
-    this.dirtyMask = PatchTarget.None;
     if (this.ephemeral) {
       if (payload.flags != null) {
         payload.flags = MessageFlagsBitField.resolve([
@@ -167,12 +161,10 @@ export class Cord implements CordAPI {
     this.resetIdleTimer();
     let response = await this.dispatchPayload(
       payload,
-      DispatchMode.Create,
+      PatchType.Create,
       interaction,
     );
-    if (response && 'resource' in response) {
-      response = response.resource?.message ?? undefined;
-    }
+    this.dirtyMask = PatchTarget.None;
     if (response) {
       this.client = response.client;
       this.messageId = response.id;
@@ -192,52 +184,43 @@ export class Cord implements CordAPI {
     reason: BuiltInCloseReasons | (string & {}) = 'MANUAL_CLOSE',
     data?: unknown,
   ) {
-    if (this.pendingClose) return;
-    this.pendingClose = { reason, data };
-    this.queueUpdate();
+    await this.flushClose(undefined, { reason, data });
   }
 
   private async flushClose(
     interaction: RepliableInteraction | undefined,
     mountFinish: MountFinish,
   ) {
+    if (this.disposed) return;
+    this.disposed = true;
+
     if (this.idleTimer) clearTimeout(this.idleTimer);
 
     if (this.messageId) {
       getActiveCords().delete(this.messageId);
     }
 
+    if (interaction) this.interactionPatcher.mountInteraction(interaction);
+    await this.interactionPatcher.delete(this.interactionPatcher.message);
+    this.interactionPatcher.dispose();
+
     while (this.strands.length) {
       this.strands.pop()?.destroy();
-    }
-
-    if (interaction) {
-      if (!interaction.deferred && !interaction.replied) {
-        await (
-          interaction.isMessageComponent() || interaction.isModalSubmit()
-            ? interaction.deferUpdate()
-            : interaction.deferReply()
-        ).catch(() => {});
-      }
-      await interaction.deleteReply().catch(() => {});
-    } else if (
-      !this.ephemeral &&
-      this.client &&
-      this.messageId &&
-      this.channelId
-    ) {
-      const channel = this.client.channels.cache.get(this.channelId);
-      if (channel?.isSendable()) {
-        await channel.messages.delete(this.messageId).catch(() => {});
-      }
     }
 
     this.resolveMountPromise?.(mountFinish);
   }
 
-  queueUpdate(interaction?: RepliableInteraction) {
+  queueUpdate(
+    interaction?: RepliableInteraction,
+    debugSource = 'external_caller',
+  ) {
+    this.logger.debug(
+      `queueUpdate(${interaction?.isMessageComponent() ? interaction.customId : (interaction?.id ?? 'none')}, ${debugSource})`,
+    );
     if (interaction) {
       this.latestInteraction = interaction;
+      this.interactionPatcher.mountInteraction(interaction);
     }
 
     if (this.updateQueued) return;
@@ -245,34 +228,19 @@ export class Cord implements CordAPI {
 
     queueMicrotask(async () => {
       this.updateQueued = false;
+      if (this.disposed) return;
 
-      const active = this.latestInteraction;
-      if (!active) {
+      this.logger.info('Update microtask has run');
+      if (this.disposed) {
+        this.logger.info('...but the Cord was disposed');
         return;
       }
 
-      try {
-        if (this.pendingClose) {
-          await this.flushClose(interaction, this.pendingClose);
-          return;
-        }
-
-        if (this.dirtyMask === PatchTarget.None) {
-          if (active.isMessageComponent() || active.isModalSubmit()) {
-            if (!active.deferred && !active.replied) {
-              await active.deferUpdate();
-              if (this.dirtyMask !== PatchTarget.None) {
-                this.queueUpdate();
-              }
-            }
-          }
-        } else {
-          console.log('flushing');
-          await this.flushUpdate(active);
-        }
-      } catch (error: unknown) {
-        console.error(error);
+      if (this.dirtyMask === PatchTarget.None) {
+        this.logger.info('...but the Cord has no dirty mask');
+        return;
       }
+      await this.flushUpdate(interaction);
     });
   }
 
@@ -281,12 +249,9 @@ export class Cord implements CordAPI {
    * @param interaction The interaction to defer.
    */
   deferUpdate(interaction?: RepliableInteraction) {
-    if (
-      interaction?.isMessageComponent() &&
-      !interaction.deferred &&
-      !interaction.replied
-    ) {
-      this.queueUpdate(interaction);
+    const toDefer = interaction ?? this.latestInteraction;
+    if (toDefer) {
+      this.interactionPatcher.deferUpdate(toDefer);
     }
   }
 
@@ -299,9 +264,12 @@ export class Cord implements CordAPI {
     interaction: RepliableInteraction | undefined,
   ): Promise<void> {
     const payload = this.currentStrand.render();
-    console.log('payload', JSON.stringify(payload, null, 2));
+    if (!payload) {
+      this.deferUpdate();
+      return;
+    }
     this.dirtyMask = PatchTarget.None;
-    await this.dispatchPayload(payload, DispatchMode.Update, interaction);
+    await this.dispatchPayload(payload, PatchType.Update, interaction);
   }
 
   /**
@@ -311,27 +279,29 @@ export class Cord implements CordAPI {
     customId: string,
     handler: CollectedInteractionHandlerData['handle'],
   ) {
-    if (this.currentStrand.componentHandlers.has(customId)) {
+    const strand = this.currentStrand;
+    if (strand.componentHandlers.has(customId)) {
       logger.warn(`[Cord] Overwriting existing handler for ${customId}`);
     }
 
-    this.currentStrand.componentHandlers.set(customId, {
+    strand.componentHandlers.set(customId, {
       handle: handler,
       owner: getOwner(),
     });
 
     return () => {
-      this.currentStrand.componentHandlers.delete(customId);
+      strand.componentHandlers.delete(customId);
     };
   }
 
   registerModal(id: string, handler: ModalInteractionHandlerData['handle']) {
-    this.currentStrand.modalHandlers.set(id, {
+    const strand = this.currentStrand;
+    strand.modalHandlers.set(id, {
       handle: handler,
       owner: getOwner(),
     });
     return () => {
-      this.currentStrand.modalHandlers.delete(id);
+      strand.modalHandlers.delete(id);
     };
   }
 
@@ -345,14 +315,18 @@ export class Cord implements CordAPI {
     // TODO: Modal components should map their *original* customId since we
     // clobbered it.
 
+    const strand = this.currentStrand;
     const dispatch = async (i: number): Promise<void> => {
       if (i <= index) throw new Error('next() called multiple times');
       index = i;
 
       const middleware = this.interactionPipeline[i];
       if (!middleware) {
-        await this.currentStrand.executeComponentHandler(interaction);
-        this.queueUpdate(interaction);
+        await strand.executeComponentHandler(interaction);
+        this.queueUpdate(
+          interaction,
+          'middleware_after_component_exec: ' + interaction.customId,
+        );
         return;
       }
 
@@ -360,67 +334,47 @@ export class Cord implements CordAPI {
     };
 
     this.resetIdleTimer();
-    this.queueUpdate(interaction);
+    this.queueUpdate(
+      interaction,
+      'middleware_before_component_exec: ' + interaction.customId,
+    );
 
     let owner: Owner | null = null;
     if (interaction.isMessageComponent()) {
-      owner =
-        this.currentStrand.componentHandlers.get(interaction.customId)?.owner ??
-        null;
+      owner = strand.componentHandlers.get(interaction.customId)?.owner ?? null;
     } else if (interaction.isModalSubmit()) {
-      owner =
-        this.currentStrand.modalHandlers.get(interaction.customId)?.owner ??
-        null;
+      owner = strand.modalHandlers.get(interaction.customId)?.owner ?? null;
     }
 
-    void runWithOwner(owner, () => dispatch(0));
+    await runWithOwner(owner, () => dispatch(0));
   }
 
   protected async dispatchPayload(
     payload: Payload,
-    mode: DispatchMode,
+    mode: PatchType,
     interaction: RepliableInteraction | undefined,
   ) {
     // Not gonna deal with the typing headache: any it is.
-    const options: any =
-      mode === DispatchMode.Create ? { ...payload, fetchReply: true } : payload;
+    interaction ??= this.interactionPatcher.interaction;
 
-    if (!interaction) {
-      // Fall back to dispatching to the channel instead.
-      if (this.client && this.channelId && this.messageId) {
-        const channel = this.client.channels.cache.get(this.channelId);
-        if (channel?.isSendable()) {
-          if (mode === DispatchMode.Create) {
-            return await channel.send(options);
-          } else {
-            await channel.messages.edit(this.messageId, options);
-          }
-        }
-      }
-      return;
+    if (interaction) {
+      this.interactionPatcher.mountInteraction(interaction);
+      await this.interactionPatcher.patch(payload, { type: mode });
+      return this.interactionPatcher.message;
     }
 
-    if (mode === DispatchMode.Create) {
-      return interaction.replied
-        ? await interaction.followUp(options)
-        : interaction.deferred
-          ? await interaction.editReply(options)
-          : await interaction.reply(options);
-    } else if (mode === DispatchMode.Update) {
-      console.log('mode === DispatchMode.Update');
-      if (!interaction.replied && !interaction.deferred) {
-        console.log('!interaction.replied && !interaction.deferred');
-        if (interaction.isMessageComponent()) {
-          console.log('interaction.isMessageComponent()');
-          await interaction.update(options);
-          return;
-        }
-        console.log('!interaction.isMessageComponent()');
-      }
-      console.log('interaction.editReply(options)');
-      await interaction.editReply(options);
+    // Fall back to dispatching to the channel instead.
+    if (!(this.client && this.channelId && this.messageId)) {
+      return;
+    }
+    const channel = this.client.channels.cache.get(this.channelId);
+    if (!channel?.isSendable()) {
+      return;
+    }
+    if (mode === PatchType.Create) {
+      return await channel.send(payload as any);
     } else {
-      throw new Error(mode satisfies never);
+      await channel.messages.edit(this.messageId, payload as any);
     }
   }
 }

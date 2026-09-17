@@ -5,22 +5,29 @@ import {
   type ModalComponentData,
   type RepliableInteraction,
 } from 'discord.js';
-import type { ViewMessagePayload } from '../../views/viewFlavors.js';
-import { safeRender } from '../../../util/RenderingUtil.js';
-import type { RenderOptions } from './menuInstance.js';
-import type { IntrinsicMenuProps } from '../defineMenu.js';
-import { Logger } from '../../../util/Logger.js';
-import type { ModalRepliableInteraction } from '../../interactivity/modalHandling.js';
+import { Logger } from '../util/Logger.js';
+import type { ModalRepliableInteraction } from '../lib/interactivity/modalHandling.js';
+import { safeRender } from '../util/RenderingUtil.js';
+import type { Payload } from './payload.js';
 
 export enum BufferedPatchStatus {
   Completed,
   Cancelled,
 }
 
+export enum PatchType {
+  Create,
+  Update,
+}
+
+interface PatchOptions {
+  type: PatchType;
+}
+
 export interface BufferedPatch {
   promiseResolve: (result: BufferedPatchStatus) => void;
-  payload: ViewMessagePayload;
-  options: Partial<RenderOptions>;
+  payload: Payload;
+  options: PatchOptions;
 }
 
 type TrackedAction = Promise<unknown>;
@@ -29,14 +36,12 @@ export class InteractionPatcher {
   private logger = Logger.namespaced('InteractionPatcher');
   private patching = false;
   private trackedActions = new Map<string, TrackedAction>();
-  private activePatchPromise: Promise<Message> | undefined;
+  private activePatchPromise: Promise<Message | undefined> | undefined;
   message?: Message;
   bufferedPatch: BufferedPatch | null = null;
+  disposed = false;
 
-  constructor(
-    public interaction: RepliableInteraction | undefined,
-    private readonly props: Readonly<IntrinsicMenuProps> | undefined,
-  ) {}
+  constructor(public interaction?: RepliableInteraction) {}
 
   mountInteraction(interaction: RepliableInteraction): void {
     this.interaction = interaction;
@@ -46,7 +51,9 @@ export class InteractionPatcher {
     return this.patching;
   }
 
-  deferUpdate(interaction: RepliableInteraction): void {
+  deferUpdate(interaction: RepliableInteraction): TrackedAction | undefined {
+    if (this.disposed) return;
+
     this.logger.debug('InteractionPatcher.deferUpdate', interaction.id);
     if (this.patching && this.interaction?.id === interaction.id) {
       this.logger.debug(
@@ -88,6 +95,7 @@ export class InteractionPatcher {
           });
       });
       this.trackedActions.set(id, tracked);
+      return tracked;
     }
   }
 
@@ -95,6 +103,8 @@ export class InteractionPatcher {
     interaction: ModalRepliableInteraction,
     modal: ModalComponentData | ModalBuilder,
   ): void {
+    if (this.disposed) return;
+
     this.logger.debug('InteractionPatcher.showModal', interaction.id);
     if (this.patching && this.interaction?.id === interaction.id) {
       this.logger.debug(
@@ -135,9 +145,10 @@ export class InteractionPatcher {
   }
 
   async patch(
-    payload: ViewMessagePayload,
-    options: Partial<RenderOptions>,
+    payload: Payload,
+    options: PatchOptions,
   ): Promise<BufferedPatchStatus> {
+    if (this.disposed) return new Promise(() => undefined);
     if (!this.interaction) {
       throw new Error('No interaction was mounted, yet patch was requested.');
     }
@@ -166,12 +177,16 @@ export class InteractionPatcher {
         await activeDeferUpdate;
         this.logger.debug('Resolved active defer.');
       }
-      this.message = await (this.activePatchPromise = safeRender(
-        this.interaction,
-        payload,
-        this.props,
-        options.forceReply,
-      ));
+      this.message =
+        (await (this.activePatchPromise = safeRender(
+          this.interaction,
+          payload,
+          {
+            retrieveMessage: options.type === PatchType.Create,
+            preferReplyForComponent: false,
+            initialMessage: this.message,
+          },
+        ))) ?? this.message;
     } catch (error: unknown) {
       this.logger.error('Error during patch', error);
       queueMicrotask(() => {
@@ -194,6 +209,7 @@ export class InteractionPatcher {
   }
 
   async stop(): Promise<void> {
+    if (this.disposed) return;
     this.cancelBufferedPatch();
     if (!this.interaction) {
       return;
@@ -219,7 +235,9 @@ export class InteractionPatcher {
     }
   }
 
-  async delete(message?: Message) {
+  async delete(message?: Message): Promise<void> {
+    if (this.disposed) return;
+
     this.cancelBufferedPatch();
     if (!this.interaction) {
       throw new Error('No interaction was mounted, yet delete was requested.');
@@ -230,7 +248,6 @@ export class InteractionPatcher {
       this.logger.debug('Delete encountered active defer.');
       try {
         await activeDeferUpdate;
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (_: unknown) {
         this.logger.verbose(
           'Error while delete was waiting for active defer update.',
@@ -243,15 +260,41 @@ export class InteractionPatcher {
       await this.activePatchPromise;
     }
 
+    if (!this.interaction.deferred && !this.interaction.replied) {
+      const tracked = this.deferUpdate(this.interaction);
+      if (!tracked) {
+        // Something went terribly wrong. Don't infinite recurse here.
+        return;
+      }
+      return this.delete(message);
+    }
+
     this.patching = true;
     try {
-      await this.interaction.deleteReply(message);
+      this.activePatchPromise = this.interaction
+        .deleteReply(message)
+        .then(() => undefined);
+      await this.activePatchPromise;
+      if (message === this.message) {
+        this.message = undefined;
+      }
     } catch (error: unknown) {
       this.logger.error('Error when deleting reply', error);
       throw error;
     } finally {
       this.patching = false;
     }
+  }
+
+  dispose() {
+    if (this.disposed) {
+      return;
+    }
+    this.disposed = true;
+
+    this.cancelBufferedPatch();
+    this.trackedActions.clear();
+    this.activePatchPromise?.then(() => undefined);
   }
 
   private cancelBufferedPatch() {

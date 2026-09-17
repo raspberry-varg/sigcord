@@ -146,9 +146,7 @@ class OwnerImpl implements Owner {
 const ownerStore = new AsyncLocalStorage<Owner | null>();
 
 export function getOwner(): Owner | null {
-  const currentOwner = ownerStore.getStore();
-  logger.verbose('getting current open owner', { currentOwner });
-  return currentOwner ?? null;
+  return ownerStore.getStore() ?? null;
 }
 
 export function getOwnerOrThrow(): Owner {
