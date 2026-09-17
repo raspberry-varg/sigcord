@@ -17,9 +17,9 @@ import { ClassViewProps } from '../../FunctionalMenuView.js';
 import type { IntrinsicMenuProps } from '../defineMenu.js';
 import type { DisposeFn, ResumeFn, SuspendFn } from '../../render/dispose.js';
 import {
-  BufferedPatchStatus,
-  InteractionPatcher,
-} from './interactionPatcher.js';
+  BufferedPatchStatusLegacy,
+  InteractionPatcherLegacy,
+} from './interactionPatcherLegacy.js';
 import { CollectorService } from './collectorService.js';
 import { Navigation } from '../../Navigation.js';
 import { PatchTracker } from './patchTracker.js';
@@ -99,7 +99,7 @@ export class MenuInstance<
   private readonly hangingComponentDisposals = new Map<string, DisposeFn>();
   private readonly views: Map<string, View<AllProps>>;
 
-  private readonly patcher: InteractionPatcher;
+  private readonly patcher: InteractionPatcherLegacy;
   private readonly collector: CollectorService;
   private readonly navigation: Navigation;
   private readonly patchTracker: PatchTracker;
@@ -136,7 +136,7 @@ export class MenuInstance<
       initialProps,
     );
 
-    this.patcher = new InteractionPatcher(interaction, this.props);
+    this.patcher = new InteractionPatcherLegacy(interaction, this.props);
 
     this.collector = new CollectorService(this.listeners);
     this.navigation = new Navigation(this.collector);
@@ -270,10 +270,10 @@ export class MenuInstance<
     try {
       const result = await this.patcher.patch(payload, {});
       switch (result) {
-        case BufferedPatchStatus.Cancelled:
+        case BufferedPatchStatusLegacy.Cancelled:
           this.logger.debug('Update cancelled');
           break;
-        case BufferedPatchStatus.Completed:
+        case BufferedPatchStatusLegacy.Completed:
           this.logger.debug('Update complete');
           break;
       }
@@ -298,10 +298,10 @@ export class MenuInstance<
       try {
         const result = await this.patcher.patch(payload, {});
         switch (result) {
-          case BufferedPatchStatus.Cancelled:
+          case BufferedPatchStatusLegacy.Cancelled:
             this.logger.debug('Initial render cancelled');
             break;
-          case BufferedPatchStatus.Completed:
+          case BufferedPatchStatusLegacy.Completed:
             this.logger.debug('Initial render complete');
             break;
         }

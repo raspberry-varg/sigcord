@@ -1,52 +1,44 @@
-import type { IntrinsicMenuProps } from '../lib/menu/defineMenu.js';
-import {
-  type IntrinsicViewProps,
-  ViewMessagePayload,
-} from '../lib/views/viewFlavors.js';
+import { ViewMessagePayload } from '../lib/views/viewFlavors.js';
 import { TimeoutEmbed } from '../lib/PrebuiltEmbeds.js';
 import {
   type InteractionEditReplyOptions,
   type InteractionReplyOptions,
   type InteractionUpdateOptions,
   type Message,
-  MessageFlags,
   RepliableInteraction,
 } from 'discord.js';
+import type { Payload } from '../framework/payload.js';
 
 export function appendTimeoutEmbed(payload: ViewMessagePayload) {
   payload.embeds = [...(payload.embeds ?? []).splice(0, 10), TimeoutEmbed];
   return payload;
 }
 
+export interface SafeRenderOptions {
+  preferReplyForComponent?: boolean;
+  initialMessage?: Message;
+  retrieveMessage?: boolean;
+}
+
 export async function safeRender(
   renderTarget: RepliableInteraction,
-  viewPayload: Readonly<ViewMessagePayload>,
-  props: (IntrinsicMenuProps & IntrinsicViewProps) | undefined,
-  preferReplyForComponent = false,
-): Promise<Message> {
-  let message: Message | null | undefined = undefined;
+  viewPayload: Readonly<Payload | ViewMessagePayload>,
+  options: SafeRenderOptions = {},
+): Promise<Message | undefined> {
+  let message: Message | undefined = undefined;
 
-  if (props?.initialMessage) {
-    (viewPayload as InteractionEditReplyOptions).message = props.initialMessage;
-    message = props.initialMessage;
+  if (options.initialMessage) {
+    (viewPayload as InteractionEditReplyOptions).message =
+      options.initialMessage;
+    message = options.initialMessage;
   }
 
-  let flags: MessageFlags | undefined = props?.flags;
-  if (viewPayload.flags) {
-    flags = (flags ?? 0) | viewPayload.flags;
-  }
-
-  if (viewPayload.ephemeral || props?.ephemeral) {
-    flags = (flags ?? 0) | MessageFlags.Ephemeral;
-    viewPayload = { ...viewPayload, ephemeral: undefined };
-  }
-
-  if (flags) {
-    viewPayload = { ...viewPayload, flags };
+  if (options.retrieveMessage) {
+    (viewPayload as InteractionReplyOptions).withResponse = true;
   }
 
   if (renderTarget.replied || renderTarget.deferred) {
-    if (preferReplyForComponent) {
+    if (options.preferReplyForComponent) {
       message = await renderTarget.followUp(
         viewPayload as InteractionReplyOptions,
       );
@@ -56,29 +48,26 @@ export async function safeRender(
       );
     }
   } else if (renderTarget.isMessageComponent()) {
-    if (preferReplyForComponent) {
+    if (options.preferReplyForComponent) {
       const response = await renderTarget.reply({
         ...viewPayload,
-        withResponse: true,
       } as InteractionReplyOptions & { withResponse: true });
-      message = response.resource?.message;
+      message = response.resource?.message ?? undefined;
     } else {
       const response = await renderTarget.update({
         ...viewPayload,
-        withResponse: true,
       } as InteractionUpdateOptions & { withResponse: true });
-      message = response.resource?.message;
+      message = response.resource?.message ?? undefined;
     }
   }
 
   // handle new replies
-  if (!message) {
+  if (!message && options.retrieveMessage) {
     const response = await renderTarget.reply({
       ...viewPayload,
-      withResponse: true,
     } as InteractionReplyOptions & { withResponse: true });
-    message = response.resource?.message;
+    message = response.resource?.message ?? undefined;
   }
 
-  return message!;
+  return message;
 }

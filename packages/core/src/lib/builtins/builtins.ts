@@ -35,9 +35,6 @@ export function getCurrentSynapse(): Synapse {
 
 export function getCurrentSynapseOrDefault(): Synapse | undefined {
   const owner = getOwner();
-  if (!owner) {
-    throw new Error('whaaaa');
-  }
   return owner?.context[SYNAPSE_CONTEXT_ID] as Synapse | undefined;
 }
 

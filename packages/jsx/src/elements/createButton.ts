@@ -104,7 +104,6 @@ export function createButton(
     effect(() => {
       for (const setter of reactiveSetters) {
         try {
-          console.log('running setter', setter.toString());
           setter();
         } catch (error: unknown) {
           console.error(error);
