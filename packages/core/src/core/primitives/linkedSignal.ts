@@ -1,7 +1,7 @@
-import type { Signal, SignalTuple } from '../reactivity/core/signals.js';
+import type { Signal, SignalTuple } from '../../lib/reactivity/core/signals.js';
+import { untracked } from '../../lib/reactivity/untracked.js';
 import { signal } from './signal.js';
-import { effect } from '../builtins/builtins.js';
-import { untracked } from '../reactivity/untracked.js';
+import { effect } from '../../framework/hooks/index.js';
 
 export type LinkedSignalComputeFunction<SOURCE, OUT> = (
   currentSource: SOURCE,

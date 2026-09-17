@@ -1,6 +1,6 @@
 import { logger } from '../../../util/Logger.js';
 import type { DisposeFn } from '../../render/dispose.js';
-import { getOwner, runWithOwner, setCurrentOwner } from '../../owners/owner.js';
+import { getOwner, runWithOwner } from '../../owners/owner.js';
 import type { PatchTarget } from '../../RenderingEngine.js';
 import * as core from '@preact/signals-core';
 
@@ -138,16 +138,7 @@ export function createUntracked<T>(signal: () => T): T {
 
 export function createComputed<T>(derived: () => T): Getter<T> {
   const capturedOwner = getOwner();
-  const computed = core.computed(() => {
-    const prevOwner = setCurrentOwner(capturedOwner);
-    let value;
-    try {
-      value = derived();
-    } finally {
-      setCurrentOwner(prevOwner);
-    }
-    return value;
-  });
+  const computed = core.computed(() => runWithOwner(capturedOwner, derived));
   return Object.assign(() => computed.value, { [GETTER_STAMP]: true });
 }
 

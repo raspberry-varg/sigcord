@@ -1,3 +1,11 @@
+export { configure } from './config.js';
+export { routeInteraction } from './framework/router.js';
+export { MenuBuilder } from './framework/menuBuilder.js';
+export * from './framework/hooks/index.js';
+export * from './framework/interactionMiddleware.js';
+
+export { CordAPI as Cord } from './framework/cord.js';
+
 export { IntrinsicMenuProps, defineMenu } from './lib/menu/defineMenu.js';
 export * from './lib/views/viewFlavors.js';
 export { View } from './lib/views/view.js';
@@ -29,7 +37,6 @@ export {
 } from './lib/reactivity/core/signals.js';
 export {
   component,
-  effect,
   patchEffect,
   goTo,
   goBack,
@@ -43,20 +50,13 @@ export {
   queueComponentsAtHead,
   setIdleMs,
   setIdleSec,
-  closeMenu,
   stopMenu,
   patch,
   useMenuInfo,
-  suspend,
-  asyncBoundary,
-  onSuspend,
-  onResume,
-  isSuspended,
   injectCurrentInteraction,
   injectLastCollectedInteraction,
-  update,
-  deferUpdate,
   getNextUniqueComponentId,
+  getCurrentSynapseOrDefault,
 } from './lib/builtins/builtins.js';
 export {
   defineView,
@@ -107,6 +107,8 @@ export {
 export { getViewNodeContent } from './lib/dom/getViewNodeContent.js';
 export { staticRender } from './lib/render/staticRender.js';
 export { render, renderRoot, renderFragment } from './lib/render/render.js';
-export * from './lib/primitives/index.js';
+export * from './core/primitives/index.js';
 export { untracked } from './lib/reactivity/untracked.js';
 export { read } from './lib/reactivity/core/read.js';
+export { isSuspended } from './framework/hooks/index.js';
+export { closeMenu } from './framework/hooks/index.js';

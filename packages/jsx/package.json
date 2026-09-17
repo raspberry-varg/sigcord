@@ -61,6 +61,10 @@
     "./flow": {
       "default": "./dist/controlFlow/index.js",
       "types": "./dist/controlFlow/index.d.ts"
+    },
+    "./legacy": {
+      "default": "./dist/legacy/index.js",
+      "types": "./dist/legacy/index.d.ts"
     }
   },
   "types": "./dist/index.d.ts",

@@ -1,5 +1,5 @@
-import type { Signal } from '../reactivity/core/signals.js';
-import { signal } from './signal.js';
+import type { Signal } from '../../lib/reactivity/core/signals.js';
+import { signal } from '../../lib/primitives/signal.js';
 
 /**
  * Create a signal with a trigger function.

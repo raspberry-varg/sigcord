@@ -35,7 +35,16 @@
     "prettier": "catalog:",
     "typescript": "catalog:"
   },
-  "exports": "./dist/index.js",
+  "exports": {
+    ".": {
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./legacy": {
+      "default": "./dist/legacy/index.js",
+      "types": "./dist/legacy/index.d.ts"
+    }
+  },
   "types": "./dist/index.d.ts",
   "nx": {},
   "publishConfig": {
