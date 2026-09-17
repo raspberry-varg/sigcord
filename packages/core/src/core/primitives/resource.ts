@@ -1,13 +1,13 @@
 import type { MaybePromise } from '../../util/TypesUtil.js';
-import { effect, update } from '../builtins/builtins.js';
-import { type Setter, type Signal } from '../reactivity/core/signals.js';
-import { untracked } from '../reactivity/untracked.js';
-import { signal } from './signal.js';
+import { type Setter, type Signal } from '../../lib/reactivity/core/signals.js';
+import { untracked } from '../../lib/reactivity/untracked.js';
+import { signal } from '../../lib/primitives/signal.js';
 import { computed } from './computed.js';
-import { read } from '../reactivity/core/read.js';
+import { read } from '../../lib/reactivity/core/read.js';
 import { batch } from '@preact/signals-core';
-import { getOwner } from '../owners/owner.js';
+import { getOwner } from '../../lib/owners/owner.js';
 import { logger } from '../../util/Logger.js';
+import { effect, update } from '../../framework/hooks/index.js';
 
 const OPTIONS_DEFAULTS: Readonly<ResourceOptions<unknown, unknown>> = {
   autoUpdate: true,

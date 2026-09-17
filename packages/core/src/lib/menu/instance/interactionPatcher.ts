@@ -1,4 +1,5 @@
 import {
+  InteractionCallbackResponse,
   type Message,
   type ModalBuilder,
   type ModalComponentData,
@@ -113,21 +114,23 @@ export class InteractionPatcher {
       return;
     }
 
-    const tracked: TrackedAction = new Promise<void>((resolve, reject) => {
-      interaction
-        .showModal(modal)
-        .then((res) => {
-          this.logger.verbose('Tracked showModal complete', id);
-          resolve(res);
-        })
-        .catch((e) => {
-          this.logger.error('Error in tracked showModal', e);
-          reject(e);
-        })
-        .finally(() => {
-          this.trackedActions.delete(id);
-        });
-    });
+    const tracked: TrackedAction = new Promise<InteractionCallbackResponse>(
+      (resolve, reject) => {
+        interaction
+          .showModal(modal)
+          .then((res) => {
+            this.logger.verbose('Tracked showModal complete', id);
+            resolve(res as any);
+          })
+          .catch((e) => {
+            this.logger.error('Error in tracked showModal', e);
+            reject(e);
+          })
+          .finally(() => {
+            this.trackedActions.delete(id);
+          });
+      },
+    );
     this.trackedActions.set(id, tracked);
   }
 

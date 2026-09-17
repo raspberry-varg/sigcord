@@ -164,7 +164,7 @@ export class MenuInstance<
         return t.collector.lastCollected;
       },
       get activeInteraction(): RepliableInteraction {
-        return t.patcher.interaction;
+        return t.patcher.interaction!;
       },
       get isActivelyPatching(): boolean {
         return t.patcher.isPatching();

@@ -1,6 +1,15 @@
 import {type APIButtonComponentWithCustomId, ButtonBuilder} from 'discord.js';
 
-import {type Signal, component, isSignal, patchEffect} from '@sigcord/core';
+import {
+  type Signal,
+  component,
+  createUniqueComponentId,
+  effect,
+  getCurrentSynapseOrDefault,
+  isSignal,
+  markDirty,
+  useComponentHandler,
+} from '@sigcord/core';
 
 import {JSX} from '../jsx-runtime.js';
 import {upgradeStringSequenceToReactive} from '../util/upgradeStringSequenceToReactive.js';
@@ -11,8 +20,16 @@ export function createButton(
   props: IntrinsicElements['button'],
 ): ButtonBuilder {
   const button = new ButtonBuilder();
-  if (props.id) {
-    button.setCustomId(props.id);
+  const id = props.id ?? createUniqueComponentId();
+  const onClick = props['on:click'];
+
+  button.setCustomId(id);
+  if (onClick && !getCurrentSynapseOrDefault()) {
+    useComponentHandler(id, (interaction) => {
+      if (interaction.isButton()) {
+        return onClick(interaction);
+      }
+    });
   }
 
   let label: string | Signal<string> = '';
@@ -84,24 +101,29 @@ export function createButton(
   }
 
   if (reactiveSetters) {
-    patchEffect(() => {
+    effect(() => {
       for (const setter of reactiveSetters) {
         try {
+          console.log('running setter', setter.toString());
           setter();
         } catch (error: unknown) {
           console.error(error);
         }
       }
+      markDirty();
     });
   }
 
-  if (!props['on:click']) {
+  const synapse = getCurrentSynapseOrDefault();
+  if (synapse) {
+    return onClick
+      ? component({
+          id,
+          component: button,
+          handler: onClick,
+        })
+      : button;
+  } else {
     return button;
   }
-
-  return component({
-    id: props.id,
-    component: button,
-    handler: props['on:click'],
-  });
 }

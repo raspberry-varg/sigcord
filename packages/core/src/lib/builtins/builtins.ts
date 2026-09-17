@@ -10,20 +10,19 @@ import { assert } from '../../util/Assertions.js';
 import type { EffectFn } from '../reactivity/core/signals.js';
 import type { DisposeFn } from '../render/dispose.js';
 import { getOwner, getOwnerOrThrow, setCurrentOwner } from '../owners/owner.js';
-import type { MaybePromise } from '../../util/TypesUtil.js';
 import type { MenuContext } from '../menu/instance/menuContext.js';
 import { STATIC_RENDER_SYNAPSE } from '../render/staticRenderSynapse.js';
 import {
   type CollectedMessageInteraction,
   type RepliableInteraction,
-  type MessageComponentInteraction,
 } from 'discord.js';
+import { effect } from '../../framework/hooks/index.js';
 
-export const SYNAPSE_CONTEXT_ID = Symbol('Synapse');
+export const SYNAPSE_CONTEXT_ID = Symbol.for('__sigcord.Synapse');
 
 export function getCurrentSynapse(): Synapse {
-  const owner = getOwner();
-  if (!owner?.context[SYNAPSE_CONTEXT_ID]) {
+  const synapse = getCurrentSynapseOrDefault();
+  if (!synapse) {
     throw new Error(
       'Attempted to use a hook outside of a reactive context. Was this called ' +
         'outside of a reactive view?\n\nClassic menu views should use the ' +
@@ -31,7 +30,15 @@ export function getCurrentSynapse(): Synapse {
         'Did you await within the body of a component function?',
     );
   }
-  return owner.context[SYNAPSE_CONTEXT_ID] as Synapse;
+  return synapse;
+}
+
+export function getCurrentSynapseOrDefault(): Synapse | undefined {
+  const owner = getOwner();
+  if (!owner) {
+    throw new Error('whaaaa');
+  }
+  return owner?.context[SYNAPSE_CONTEXT_ID] as Synapse | undefined;
 }
 
 /**
@@ -44,18 +51,8 @@ export function useMenuInfo(): Readonly<MenuContext> {
 // Signal effects
 
 /**
- * Create an effect that runs when signals referenced in the effect function
- * change.
+ * @deprecated Use {@link effect} in conjunction with {@link dirty}.
  *
- * @param fn The effect to run.
- * @param patchTarget {@link PatchTarget} bit mask to queue for rendering.
- *   Useful when mutating content objects like component or embed builders to
- *   have the change reflected to the user.
- */
-export const effect: Synapse['createEffect'] = (fn, patchTarget) =>
-  getCurrentSynapse().createEffect(fn, patchTarget);
-
-/**
  * Create an effect that runs when signals referenced in the effect function
  * change. This effect will automatically request an update to the user's UI
  * based on the current rendering context.
@@ -154,86 +151,16 @@ export function suspend(): ResumeCtxFn {
 }
 
 /**
- * @deprecated
- * Please use synchronous alternatives to handle typically-async tasks.
- * *   {@link deferUpdate} Asynchronously calls `deferUpdate` if necessary. When
- *     it comes time to update the menu, the interaction patcher waits until the
- *     tracked `deferUpdate` is resolved.
- * *   {@link resource} Signal with asynchronous fetching of data. All automatic
- *     updates (and manual {@link update} calls) are queued into a single
- *     microtask.
- *
- * @summary
- * Perform an asynchronous action within a component handler. The reactive hook
- * context will be automatically suspended and resumed when {@link fnOrPromise}
- * resolves.
- *
- * @example
- * ```ts
- * function onClick(buttonInteraction) {
- *   const user = await asyncBoundary(() => fetchUserFromDb());
- *   // reactive hook context restored, allowing hooks to safely resume their work
- *   goTo(UserInfoView, {user});
- * }
- * ```
- *
- * @returns Promise which resets the current reactive context when the provided
- *    action's promise resolves.
+ * @deprecated Will be replaced with a context of some sort.
  */
-export async function asyncBoundary<T>(
-  fnOrPromise: MaybePromise<T> | (() => MaybePromise<T>),
-): Promise<T> {
-  const resume = suspend();
-  let result;
-  try {
-    result = await (typeof fnOrPromise === 'function'
-      ? (fnOrPromise as CallableFunction)()
-      : fnOrPromise);
-  } finally {
-    resume();
-  }
-  return result;
-}
-
-/**
- * Defer an update if the provided interaction is a
- * {@link MessageComponentInteraction}. If no interaction is provided, it will
- * attempt to defer update of the latest interaction collected.
- *
- * If update deferral is possible, no scheduled updates to the interaction will
- * occur until the deferral is complete.
- *
- * Has no effect if already deferring with another call to this function.
- *
- * @example
- * ```ts
- * component({
- *   id: 'foo',
- *   handler: () => {
- *     // Implicitly defers this interaction as it was the last collected.
- *     deferUpdate();
- *   }
- * });
- *
- * component({
- *   id: 'foo',
- *   handler: (interaction) => {
- *     deferUpdate(interaction);
- *   }
- * });
- * ```
- *
- * @param interaction
- */
-export function deferUpdate(interaction?: RepliableInteraction): void {
-  getCurrentSynapse().deferUpdate(interaction);
-}
-
 export function injectLastCollectedInteraction():
   CollectedMessageInteraction | undefined {
   return useMenuInfo().lastCollectedInteraction;
 }
 
+/**
+ * @deprecated Will be replaced with a context of some sort.
+ */
 export function injectCurrentInteraction(): RepliableInteraction {
   return useMenuInfo().interaction;
 }
@@ -241,6 +168,8 @@ export function injectCurrentInteraction(): RepliableInteraction {
 // Component
 
 /**
+ * @deprecated Please use {@link useComponentHandler}.
+ *
  * Configures an interactive message component.
  *
  * - Passed component id is auto-formatted to `menuId:viewId:componentId`.
@@ -295,30 +224,35 @@ export const onSuspend: Synapse['onSuspend'] = (action) =>
 export const onResume: Synapse['onResume'] = (action) =>
   getCurrentSynapse().onResume(action);
 
-/**
- * Check if the current reactive view is suspended.
- *
- * @description
- * Views are marked as suspended when they are navigated away from with
- * {@link goTo()}.
- */
-export function isSuspended(): boolean {
-  return getOwnerOrThrow().suspended;
-}
-
 // Modals
 
+/**
+ * @deprecated Use {@link awaitModalSubmit}.
+ * @param interaction
+ * @param modalOrOptions
+ */
 export const showModal: Synapse['showModal'] = (interaction, modalOrOptions) =>
   getCurrentSynapse().showModal(
     interaction,
     modalOrOptions as Parameters<Synapse['showModal']>[1],
   );
 
+/**
+ * @deprecated Use {@link awaitModalSubmit}
+ * @param interaction
+ * @param options
+ */
 export const awaitModalSubmit: Synapse['awaitModalSubmit'] = (
   interaction,
   options,
 ) => getCurrentSynapse().awaitModalSubmit(interaction, options);
 
+/**
+ * @deprecated Use {@link awaitModalSubmit}
+ * @param interaction
+ * @param options
+ * @param callback
+ */
 export const onModalSubmit: Synapse['onModalSubmit'] = (
   interaction,
   options,
@@ -327,46 +261,58 @@ export const onModalSubmit: Synapse['onModalSubmit'] = (
 
 // Embed manipulation
 
+/**
+ * @deprecated Please use contexts with signals instead.
+ */
 export const queueEmbeds: Synapse['appendEmbeds'] = (...embeds) =>
   getCurrentSynapse().appendEmbeds(...embeds);
 
+/**
+ * @deprecated Please use contexts with signals instead.
+ */
 export const queueEmbedsAtHead: Synapse['prependEmbeds'] = (...embeds) =>
   getCurrentSynapse().prependEmbeds(...embeds);
 
+/**
+ * @deprecated Please use contexts with signals instead.
+ */
 export const queueComponents: Synapse['appendComponents'] = (...components) =>
   getCurrentSynapse().appendComponents(...components);
 
+/**
+ * @deprecated Please use contexts with signals instead.
+ */
 export const queueComponentsAtHead: Synapse['prependComponents'] = (
   ...components
 ) => getCurrentSynapse().prependComponents(...components);
 
 // Menu manipulation
 
+/**
+ * @deprecated Will be removed when legacy view definitions go away.
+ */
 export const setIdleMs: Synapse['setIdleMs'] = (idleMilliseconds) =>
   getCurrentSynapse().setIdleMs(idleMilliseconds);
 
+/**
+ * @deprecated Will be removed when legacy view definitions go away.
+ */
 export const setIdleSec: Synapse['setIdleSec'] = (idleSeconds) =>
   getCurrentSynapse().setIdleSec(idleSeconds);
 
-export const closeMenu: Synapse['close'] = () => getCurrentSynapse().close();
-
+/**
+ * @deprecated Use {@link close} instead.
+ * @param reason
+ */
 export const stopMenu: Synapse['stop'] = (reason) =>
   getCurrentSynapse().stop(reason);
 
 // Rendering
 
 /**
+ * @deprecated Use {@link markDirty} instead.
+ *
  * Manually queue patches for specific message parts.
  */
 export const patch: Synapse['addPatchTargets'] = (...targets) =>
   getCurrentSynapse().addPatchTargets(...targets);
-
-/**
- * Manually schedule an update to the current view in a microtask.
- *
- * Note: Updates are automatically scheduled after initial render and after interaction
- * handlers resolve.
- */
-export const update: Synapse['scheduleUpdate'] = () => {
-  return getCurrentSynapse().scheduleUpdate();
-};
