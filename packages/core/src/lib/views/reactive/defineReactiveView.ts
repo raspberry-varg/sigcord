@@ -11,6 +11,8 @@ import type {
 } from './reactiveViewFactory.js';
 import { REACTIVE_VIEW_SYMBOL } from './reactiveViewSymbol.js';
 import { instantiateMenu } from '../../menu/instance/instantiateMenu.js';
+import { MenuBuilder } from '../../../framework/menuBuilder.js';
+import { MessageFlags } from 'discord.js';
 
 /**
  * Define a reactive view instance.
@@ -48,7 +50,38 @@ export function defineViewV2<Props extends PropsBase = PropsBase>(
     [IS_V2]: true,
   };
   const menuFactory: MenuFactory<Props> = (interaction, props) => {
-    return instantiateMenu(id, id, [definition], interaction, props);
+    const template = new MenuBuilder().ephemeral(
+      props.ephemeral || ((props.flags ?? 0) & MessageFlags.Ephemeral) !== 0,
+    );
+    return {
+      async start(options) {
+        if (options?.forceReply) {
+          // TODO: Handle.
+        }
+        return void (await template.mount(interaction, () =>
+          definition.factory(props),
+        ));
+      },
+      onTimeout() {},
+      onEnd() {},
+      awaitEnd() {
+        return new Promise(() => {});
+      },
+      awaitRender() {
+        return new Promise(() => {});
+      },
+      awaitStop() {
+        return new Promise(() => {});
+      },
+      awaitTimeout() {
+        return new Promise(() => {});
+      },
+      onRender() {},
+      onStop() {},
+      async reply(options) {
+        await this.start(options);
+      },
+    };
   };
   return Object.assign(menuFactory, definition);
 }
