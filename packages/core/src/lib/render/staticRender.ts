@@ -1,11 +1,11 @@
 import type { ViewNodeKind, ViewNodeKindBase } from '../dom/viewNodeKind.js';
-import { render } from './render.js';
+import { renderFragment } from './render.js';
 import { flatten } from './flatten.js';
-import { SYNAPSE_CONTEXT_ID } from '../builtins/builtins.js';
 import { STATIC_RENDER_SYNAPSE } from './staticRenderSynapse.js';
 import { ViewElementNode } from '../dom/viewElementNode.js';
 import { createRootOwner, runWithOwner } from '../owners/owner.js';
-import { PatchTarget } from '../../framework/patchTarget.js';
+import { provideContextValue } from '../contexts/provideContext.js';
+import { SynapseContext } from '../menu/instance/synapse.js';
 
 type StaticRenderFn<T extends ViewNodeKindBase> = () => ViewNodeKind<T>;
 
@@ -20,13 +20,15 @@ export function staticRender<T extends ViewNodeKindBase>(
   renderFn: StaticRenderFn<ViewNodeKindBase>,
 ): T[] {
   const rootOwner = createRootOwner();
-  rootOwner.context[SYNAPSE_CONTEXT_ID] = STATIC_RENDER_SYNAPSE;
-  const [flattened, disposeFn] = runWithOwner(rootOwner, () => {
-    const root = new ViewElementNode();
-    const [dispose, owner] = render(root, renderFn, PatchTarget.None);
-    return [flatten(root, owner), dispose];
+  const nodes = runWithOwner(rootOwner, () => {
+    provideContextValue(SynapseContext, STATIC_RENDER_SYNAPSE);
+    return renderFragment(renderFn);
   });
 
-  disposeFn();
+  const root = new ViewElementNode();
+  root.setChildren(...nodes);
+  const flattened = flatten(root, rootOwner);
+
+  rootOwner.dispose();
   return flattened as T[];
 }

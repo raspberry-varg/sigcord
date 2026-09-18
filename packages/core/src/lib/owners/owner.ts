@@ -180,6 +180,15 @@ export function getOwnerOrThrow(): Owner {
   return owner;
 }
 
+export function useDisposeOwnerFn(): DisposeFn | undefined {
+  const owner = getOwner();
+  return owner?.dispose.bind(owner);
+}
+
+export function disposeOwner(owner: Owner | null) {
+  owner?.dispose();
+}
+
 export function setCurrentOwner(newOwner: Owner | null): Owner | null {
   const prev = ownerStore.getStore() ?? null;
   ownerStore.enterWith(newOwner);

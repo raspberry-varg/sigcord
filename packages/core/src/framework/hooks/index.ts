@@ -10,3 +10,4 @@ export * from './useComponentHandler.js';
 export * from './useCord.js';
 export * from './useCurrentRepliable.js';
 export { closeMenu } from './closeMenu.js';
+export { component } from './legacy/createComponent.js';
