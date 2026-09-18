@@ -1,13 +1,14 @@
 import { ViewElementNode } from '../dom/viewElementNode.js';
 import type { ViewNodeKind, ViewNodeKindBase } from '../dom/viewNodeKind.js';
-import type { PatchTarget } from '../RenderingEngine.js';
 import type { DisposeFn } from './dispose.js';
-import { type Owner, owner } from '../owners/owner.js';
+import { getOwnerOrThrow, type Owner, owner } from '../owners/owner.js';
 import { flattenToContentNodes } from './flattenToContentNodes.js';
 import type { Recursive } from '../recursive.js';
 import type { ViewNode } from '../dom/viewNode.js';
 import { untracked } from '../reactivity/untracked.js';
-import { getCurrentPatchTarget } from '../builtins/builtins.js';
+import { provideContextValue } from '../contexts/provideContext.js';
+import { PatchTargetContext } from '../../framework/hooks/usePatchTarget.js';
+import { PatchTarget } from '../../framework/patchTarget.js';
 
 export function render<T extends ViewNodeKindBase>(
   into: ViewElementNode<T>,
@@ -15,9 +16,13 @@ export function render<T extends ViewNodeKindBase>(
   patchTarget?: PatchTarget,
 ): [dispose: DisposeFn, owner: Owner] {
   const o = owner(() => {
+    if (patchTarget != null) {
+      provideContextValue(PatchTargetContext, patchTarget);
+    }
     into.setChildren(...renderFragment(renderFn));
-  }, patchTarget ?? getCurrentPatchTarget());
-  return [o.dispose.bind(o), o];
+    return getOwnerOrThrow();
+  });
+  return [() => o.dispose(), o];
 }
 
 export function renderFragment<T extends ViewNodeKindBase>(

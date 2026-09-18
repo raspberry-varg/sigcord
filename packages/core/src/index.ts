@@ -1,10 +1,17 @@
-export { configure } from './config.js';
+export { configure, getConfig } from './config.js';
 export { routeInteraction } from './framework/router.js';
 export { MenuBuilder } from './framework/menuBuilder.js';
 export * from './framework/hooks/index.js';
 export * from './framework/interactionMiddleware.js';
 
+export { patchEffect } from './framework/hooks/legacy/patchEffect.js';
+
 export { CordAPI as Cord } from './framework/cord.js';
+
+export {
+  createInternalLogger,
+  InternalLogger,
+} from './internal/internalLogger.js';
 
 export { IntrinsicMenuProps, defineMenu } from './lib/menu/defineMenu.js';
 export * from './lib/views/viewFlavors.js';
@@ -19,7 +26,6 @@ export * from './lib/SmartComponents.js';
 export * from './lib/PrebuiltEmbeds.js';
 export * from './lib/Renderable.js';
 export { ModalBundle, useValues } from './lib/ModalBundle.js';
-export { PatchTarget } from './lib/RenderingEngine.js';
 export {
   MaybeSignal,
   WritableSignal,
@@ -37,7 +43,6 @@ export {
 } from './lib/reactivity/core/signals.js';
 export {
   component,
-  patchEffect,
   goTo,
   goBack,
   canNavigateBack,
@@ -112,3 +117,4 @@ export { untracked } from './lib/reactivity/untracked.js';
 export { read } from './lib/reactivity/core/read.js';
 export { isSuspended } from './framework/hooks/index.js';
 export { closeMenu } from './framework/hooks/index.js';
+export { PatchTarget } from './framework/patchTarget.js';

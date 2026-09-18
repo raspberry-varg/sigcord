@@ -13,8 +13,7 @@ export type ReactiveViewBody<Props extends PropsBase = PropsBase> =
   ReactiveViewDefinition<Props>;
 
 export type ReactiveViewDefinition<Props extends PropsBase = PropsBase> =
-  | ReactiveViewDefinitionV1<Props>
-  | ReactiveViewDefinitionV2<Props>;
+  ReactiveViewDefinitionV1<Props> | ReactiveViewDefinitionV2<Props>;
 
 interface ReactiveViewDefinitionBase<Props extends PropsBase> {
   readonly id: string;
@@ -23,13 +22,15 @@ interface ReactiveViewDefinitionBase<Props extends PropsBase> {
   [REACTIVE_VIEW_SYMBOL]: true;
 }
 
-export interface ReactiveViewDefinitionV1<Props extends PropsBase>
-  extends ReactiveViewDefinitionBase<Props> {
+export interface ReactiveViewDefinitionV1<
+  Props extends PropsBase,
+> extends ReactiveViewDefinitionBase<Props> {
   factory: ReactiveViewFactoryV1<Props>;
 }
 
-export interface ReactiveViewDefinitionV2<Props extends PropsBase>
-  extends ReactiveViewDefinitionBase<Props> {
+export interface ReactiveViewDefinitionV2<
+  Props extends PropsBase,
+> extends ReactiveViewDefinitionBase<Props> {
   [IS_V2]: true;
   factory: ReactiveViewFactoryV2<Props>;
 }

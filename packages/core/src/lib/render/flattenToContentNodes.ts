@@ -1,17 +1,16 @@
 import { ViewContentNode } from '../dom/viewContentNode.js';
 import { ViewElementNode } from '../dom/viewElementNode.js';
 import { ViewNode } from '../dom/viewNode.js';
-import type { ViewNodeKindBase, ViewNodeKind } from '../dom/viewNodeKind.js';
-import { patchEffect } from '../builtins/builtins.js';
+import type { ViewNodeKind, ViewNodeKindBase } from '../dom/viewNodeKind.js';
 import {
   isStampedSignal,
   isWritableSignal,
 } from '../reactivity/core/signals.js';
 import type { Recursive } from '../recursive.js';
 import { isSlot, SlotImpl } from '../Slot.js';
-import { getOwner } from '../owners/owner.js';
 import { read } from '../reactivity/core/read.js';
 import { DeferredComponent } from './deferredComponent.js';
+import { effect, markDirty } from '../../framework/hooks/index.js';
 
 export function flattenToContentNodes<T extends ViewNodeKind>(
   content: T,
@@ -30,15 +29,14 @@ export function flattenToContentNodes<T extends ViewNodeKind>(
 
   if (isStampedSignal(content) || isWritableSignal(content)) {
     const fragment = new ViewElementNode<T>();
-    const dispose = patchEffect(() => {
-      // TODO: @raspberry-varg - Reuse nodes.
+    effect(() => {
       const value = read<T>(content);
       fragment.addChild(...flattenToContentNodes<T>(value));
+      markDirty();
       return () => {
         fragment.clear();
       };
     });
-    getOwner()?.registerDisposal(dispose);
     return [fragment];
   }
 

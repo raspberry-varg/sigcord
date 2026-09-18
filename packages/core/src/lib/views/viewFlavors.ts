@@ -14,7 +14,7 @@ import type { Signalish, WritableSignal } from '../reactivity/core/signals.js';
 import type { ViewElementNode } from '../dom/viewElementNode.js';
 import type { DisposeFn } from '../render/dispose.js';
 import type { Owner } from '../owners/owner.js';
-import type { ViewNodeKindBase, ViewNodeKind } from '../dom/viewNodeKind.js';
+import type { ViewNodeKind, ViewNodeKindBase } from '../dom/viewNodeKind.js';
 import type { Slot } from '../Slot.js';
 import type { ViewNode } from '../dom/viewNode.js';
 import type { DeferredComponent } from '../render/deferredComponent.js';

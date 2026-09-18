@@ -68,7 +68,11 @@
     }
   },
   "types": "./dist/index.d.ts",
-  "nx": {},
+  "nx": {
+    "targets": {
+      "yalc:push": {}
+    }
+  },
   "publishConfig": {
     "access": "public"
   }

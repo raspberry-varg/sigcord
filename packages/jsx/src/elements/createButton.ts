@@ -11,6 +11,7 @@ import {
   useComponentHandler,
 } from '@sigcord/core';
 
+import {jsxLog} from '../internal/jsxLog.js';
 import {JSX} from '../jsx-runtime.js';
 import {upgradeStringSequenceToReactive} from '../util/upgradeStringSequenceToReactive.js';
 
@@ -19,12 +20,14 @@ import IntrinsicElements = JSX.IntrinsicElements;
 export function createButton(
   props: IntrinsicElements['button'],
 ): ButtonBuilder {
-  const button = new ButtonBuilder();
   const id = props.id ?? createUniqueComponentId();
+
+  const button = new ButtonBuilder().setCustomId(id);
   const onClick = props['on:click'];
 
-  button.setCustomId(id);
-  if (onClick && !getCurrentSynapseOrDefault()) {
+  const legacy = !!getCurrentSynapseOrDefault();
+
+  if (!legacy && onClick) {
     useComponentHandler(id, (interaction) => {
       if (interaction.isButton()) {
         return onClick(interaction);
@@ -106,22 +109,22 @@ export function createButton(
         try {
           setter();
         } catch (error: unknown) {
-          console.error(error);
+          jsxLog.error('Error processing reactive setter for button', error, {
+            id,
+            setter,
+          });
         }
       }
       markDirty();
     });
   }
 
-  const synapse = getCurrentSynapseOrDefault();
-  if (synapse) {
-    return onClick
-      ? component({
-          id,
-          component: button,
-          handler: onClick,
-        })
-      : button;
+  if (onClick && legacy) {
+    return component({
+      id,
+      component: button,
+      handler: onClick,
+    });
   } else {
     return button;
   }

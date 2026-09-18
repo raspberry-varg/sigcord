@@ -6,12 +6,12 @@ import {
   type MessageComponentInteraction,
 } from 'discord.js';
 import type { Listener } from '../../../util/Listener.js';
-import { logger } from '../../../util/Logger.js';
 import type { MessageComponentCallback } from '../../views/viewFlavors.js';
 import {
   endReasonIsTimeout,
   type TimeoutEndReason,
 } from '../../../util/CollectorUtil.js';
+import { coreLog } from '../../../internal/coreLog.js';
 
 type ComponentId = string;
 export type ComponentCallbackMap = Map<
@@ -57,14 +57,14 @@ export class CollectorService {
     componentId: string,
     callback: MessageComponentCallback<T>,
   ): void {
-    logger.info('CollectorService: Subscribed to component', {
+    coreLog.info('CollectorService: Subscribed to component', {
       id: componentId,
     });
     this.componentCallbacks.set(componentId, callback);
   }
 
   unsubscribeTo(componentId: string): void {
-    logger.info('CollectorService: Unsubscribed from component', {
+    coreLog.info('CollectorService: Unsubscribed from component', {
       id: componentId,
     });
     this.componentCallbacks.delete(componentId);
@@ -113,7 +113,7 @@ export class CollectorService {
 
     collector.on('collect', async (collected) => {
       this.lastCollected = collected;
-      logger.info('CollectorService: Collected a new interaction.', {
+      coreLog.info('CollectorService: Collected a new interaction.', {
         id: collected.customId,
         type: ComponentType[collected.componentType],
       });
@@ -132,7 +132,7 @@ export class CollectorService {
         this.listeners.onStop?.fire(endReason);
       }
       this.listeners.onEnd?.fire(endReason);
-      logger.info(
+      coreLog.info(
         `Component listener successfully stopped due to reason: ` + endReason,
       );
     });

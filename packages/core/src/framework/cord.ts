@@ -5,11 +5,6 @@ import {
   MessageFlagsBitField,
   RepliableInteraction,
 } from 'discord.js';
-import { Logger, logger } from '../util/Logger.js';
-import {
-  PatchTarget,
-  type PatchTargetBitMask,
-} from '../lib/RenderingEngine.js';
 import { getOwner, type Owner, runWithOwner } from '../lib/owners/owner.js';
 import type { InteractionMiddleware } from './interactionMiddleware.js';
 import type { Payload } from './payload.js';
@@ -23,6 +18,8 @@ import { getConfig } from '../config.js';
 import type { ViewFactory } from './menuBuilder.js';
 import type { StrandFactory } from './strands/strandFactory.js';
 import { InteractionPatcher, PatchType } from './interactionPatcher.js';
+import { PatchTarget, type PatchTargetBitMask } from './patchTarget.js';
+import { coreLog } from '../internal/coreLog.js';
 
 export type BuiltInCloseReasons = 'MANUAL_CLOSE' | 'IDLE_TIMEOUT';
 
@@ -50,7 +47,7 @@ export interface MountFinish {
 }
 
 export class Cord implements CordAPI {
-  private readonly logger = Logger.namespaced('Cord');
+  private readonly logger = coreLog.namespaced('Cord');
   private readonly strands: Strand[] = [];
   private interactionPipeline: InteractionMiddleware[] = [];
   private updateQueued = false;
@@ -281,7 +278,7 @@ export class Cord implements CordAPI {
   ) {
     const strand = this.currentStrand;
     if (strand.componentHandlers.has(customId)) {
-      logger.warn(`[Cord] Overwriting existing handler for ${customId}`);
+      coreLog.warn(`[Cord] Overwriting existing handler for ${customId}`);
     }
 
     strand.componentHandlers.set(customId, {

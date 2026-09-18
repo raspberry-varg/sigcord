@@ -9,9 +9,7 @@ export type DefinedView<Props extends PropsBase = PropsBase> =
   MenuFactory<Props> & View<Props>;
 
 export type View<Props extends PropsBase = PropsBase> =
-  | ClassViewDefinition<Props>
-  | ReactiveViewDefinition<Props>;
+  ClassViewDefinition<Props> | ReactiveViewDefinition<Props>;
 
 export type ViewInstance =
-  | ClassicViewInstance<PropsBase>
-  | ReactiveViewInstance;
+  ClassicViewInstance<PropsBase> | ReactiveViewInstance;

@@ -9,6 +9,7 @@ import {
   ViewNode,
   flatten,
   flattenToContentNodes,
+  getOwnerOrThrow,
   owner,
 } from '@sigcord/core';
 
@@ -48,6 +49,7 @@ export function createRow(props: IntrinsicElementProps['row']) {
   let nodes!: readonly ViewNode[];
   const contentOwner = owner(() => {
     nodes = flattenToContentNodes(props.children);
+    return getOwnerOrThrow();
   });
   return new RowNode(contentOwner, nodes);
 }

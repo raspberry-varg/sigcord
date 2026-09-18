@@ -15,6 +15,7 @@ import {
   ViewNode,
   flatten,
   flattenToContentNodes,
+  getOwnerOrThrow,
   owner,
 } from '@sigcord/core';
 
@@ -148,11 +149,13 @@ export function createSection(props: IntrinsicElementProps['section']) {
   let accessoryNodes!: readonly ViewNode[];
   const accessoryOwner = owner(() => {
     accessoryNodes = flattenToContentNodes(accessory);
+    return getOwnerOrThrow();
   });
 
   let childrenNodes!: readonly ViewNode[];
   const childrenOwner = owner(() => {
     childrenNodes = flattenToContentNodes(children);
+    return getOwnerOrThrow();
   });
 
   return new SectionElement(

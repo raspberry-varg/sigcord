@@ -3,13 +3,9 @@ import {
   type EffectFn,
 } from '../../lib/reactivity/core/signals.js';
 import type { DisposeFn } from '../../lib/render/dispose.js';
-import { getOwnerOrThrow, runWithOwner } from '../../lib/owners/owner.js';
-import {
-  PatchTarget,
-  type PatchTargetBitMask,
-} from '../../lib/RenderingEngine.js';
-import { useCordInternal } from '../cordContext.js';
-import { getCurrentSynapse } from '../../lib/builtins/builtins.js';
+import { markDirty } from './markDirty.js';
+import { PatchTarget, type PatchTargetBitMask } from '../patchTarget.js';
+import { guardDeclarative } from '../../core/utils/guardDeclarative.js';
 
 /**
  * @deprecated Use a simple effect and manually call {@link markDirty}.
@@ -37,22 +33,14 @@ export function effect(
   fn: EffectFn,
   patchTarget?: PatchTargetBitMask,
 ): DisposeFn {
-  const cord = useCordInternal();
+  guardDeclarative('effect');
 
-  const capturedOwner = getOwnerOrThrow();
   if (patchTarget !== undefined && patchTarget !== PatchTarget.None) {
     return createEffect(() => {
-      const result = runWithOwner(capturedOwner, fn);
-
-      if (cord) {
-        cord.markDirty(patchTarget);
-      } else {
-        // Fallback to legacy behavior.
-        getCurrentSynapse().addPatchTargets(patchTarget);
-      }
-
+      const result = fn();
+      markDirty(patchTarget);
       return result;
     });
   }
-  return createEffect(() => runWithOwner(capturedOwner, fn));
+  return createEffect(fn);
 }

@@ -2,8 +2,8 @@ import { useContext } from '../../lib/contexts/useContext.js';
 import { CordContext } from '../cordContext.js';
 import { getCurrentSynapse } from '../../lib/builtins/builtins.js';
 import type {
-  RepliableInteraction,
   MessageComponentInteraction,
+  RepliableInteraction,
 } from 'discord.js';
 
 /**

@@ -6,8 +6,7 @@ import type {
 import type { PropsBase } from '../viewDefinitionBase.js';
 
 export type ReactiveViewFactory<Props extends PropsBase> =
-  | ReactiveViewFactoryV1<Props>
-  | ReactiveViewFactoryV2<Props>;
+  ReactiveViewFactoryV1<Props> | ReactiveViewFactoryV2<Props>;
 type ReactiveViewFactoryFn<
   Props extends PropsBase,
   Payload extends ReactiveViewPayload,

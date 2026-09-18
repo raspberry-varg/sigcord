@@ -1,15 +1,18 @@
-import { useCordInternal } from '../cordContext.js';
-import { patch } from '../../lib/builtins/builtins.js';
-import { PatchTarget } from '../../lib/RenderingEngine.js';
+import { useCordInternalOrThrow } from '../cordContext.js';
+import { getCurrentSynapseOrDefault } from '../../lib/builtins/builtins.js';
 
-export function markDirty(target?: PatchTarget): void {
-  const cord = useCordInternal();
-  if (!cord) {
-    // Legacy behavior.
-    return target != null ? patch(target) : patch();
+import { PatchTarget } from '../patchTarget.js';
+import { usePatchTarget } from './usePatchTarget.js';
+
+export function markDirty(target: PatchTarget = usePatchTarget()): void {
+  const legacy = getCurrentSynapseOrDefault();
+  if (legacy) {
+    if (target != null) {
+      legacy.addPatchTargets(target);
+    }
+    return;
   }
 
-  // TODO: Patch context should be pulled from the owner. Not really an issue
-  // with V2 components, this'll only matter with V1.
-  cord.markDirty(target ?? PatchTarget.All);
+  const cord = useCordInternalOrThrow();
+  cord.markDirty(target);
 }
