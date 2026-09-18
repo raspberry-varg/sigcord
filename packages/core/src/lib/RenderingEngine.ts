@@ -14,7 +14,6 @@ import {
   type ViewComponent,
   type ViewMessagePayload,
 } from './views/viewFlavors.js';
-import { logger } from '../util/Logger.js';
 import { createUntracked } from './reactivity/core/signals.js';
 import { type PropsBase } from './views/viewDefinitionBase.js';
 import type { NavigationPayload } from './Navigation.js';
@@ -25,29 +24,23 @@ import {
 import { isReactiveViewDefinition } from './views/reactive/reactiveViewDefinition.js';
 import { batch } from '@preact/signals-core';
 import {
+  getOwnerOrThrow,
   type Owner,
   type Props,
+  provideContextValue,
   renderFragment,
   runWithOwner,
 } from '../index.js';
-import { render } from './render/render.js';
 import { ViewElementNode } from './dom/viewElementNode.js';
 import { owner } from './owners/owner.js';
 import { flatten } from './render/flatten.js';
 import { read } from './reactivity/core/read.js';
-
-export type PatchTargetBitMask = number;
-
-/**
- * The portion of a {@link ViewMessagePayload message payload} to update.
- */
-export enum PatchTarget {
-  None = 0,
-  Embeds = 1,
-  Components = 2,
-  Content = 4,
-  All = Embeds | Components | Content,
-}
+import { PatchTargetContext } from '../framework/hooks/usePatchTarget.js';
+import {
+  PatchTarget,
+  type PatchTargetBitMask,
+} from '../framework/patchTarget.js';
+import { coreLog } from '../internal/coreLog.js';
 
 type QueuedView = {
   view: View;
@@ -156,7 +149,7 @@ export class RenderingEngine {
 
   queueViewSwap(view: View, args: unknown[]): void {
     if (view === this.queuedView?.view) {
-      logger.warn(
+      coreLog.warn(
         `Tried to queue the currently-active view with id=${view.id}: `,
         view,
       );
@@ -170,21 +163,21 @@ export class RenderingEngine {
   }
 
   dispose(): void {
-    logger.verbose('DisposingRenderingEngine');
+    coreLog.verbose('DisposingRenderingEngine');
     for (const instance of this.instances.values()) {
       const isReactive = isReactiveViewInstance(instance);
       const isV2 = isReactive && isRenderedReactiveViewV2(instance);
-      logger.debug(`Maybe disposing instance.id=${instance.id}`, {
+      coreLog.debug(`Maybe disposing instance.id=${instance.id}`, {
         isReactive,
         isV2,
       });
       if (isReactive) {
-        logger.debug('Calling disposal function', {
+        coreLog.debug('Calling disposal function', {
           dispose: instance.dispose,
         });
         instance.dispose?.();
       } else {
-        logger.debug('Not disposing: Not reactive.');
+        coreLog.debug('Not disposing: Not reactive.');
       }
     }
   }
@@ -194,7 +187,7 @@ export class RenderingEngine {
     targets: PatchTargetBitMask,
   ): ViewMessagePayload | Promise<ViewMessagePayload> {
     assert(this.viewDefinition, 'Internal error: View was not set.');
-    logger.debug('Patch requested', {
+    coreLog.debug('Patch requested', {
       targets,
       reactiveViewInstance: this.reactiveViewInstance?.id ?? '<none>',
       isV2: this.reactiveViewInstance && IS_V2 in this.reactiveViewInstance,
@@ -225,7 +218,7 @@ export class RenderingEngine {
   patchReactive(instance: ReactiveViewInstance, targets: PatchTargetBitMask) {
     targets |= this.queuedClears;
     const payload: ViewMessagePayload = {};
-    logger.debug('Patching reactive view', {
+    coreLog.debug('Patching reactive view', {
       targets,
       viewInstance: instance.id,
       isV2: IS_V2 in instance,
@@ -233,7 +226,7 @@ export class RenderingEngine {
     try {
       batch(() => {
         const isV2 = isRenderedReactiveViewV2(instance);
-        logger.debug(`Patching with V${isV2 ? 2 : 1} components.`);
+        coreLog.debug(`Patching with V${isV2 ? 2 : 1} components.`);
         if (!targets) {
           if (isV2) {
             if (!this.hasQueuedComponents()) {
@@ -256,14 +249,20 @@ export class RenderingEngine {
             } else {
               if (!instance.root) {
                 const root = new ViewElementNode();
-                const rootOwner = owner(() => {
-                  const children = renderFragment(instance.factory);
-                  root.setChildren(...children);
-                }, patchTarget);
-                rootOwner.debugName = 'V2_root';
+                const rootOwner = owner(
+                  () => {
+                    provideContextValue(PatchTargetContext, patchTarget);
+                    const children = renderFragment(instance.factory);
+                    root.setChildren(...children);
+                    return getOwnerOrThrow();
+                  },
+                  {
+                    debugName: 'V2_root',
+                  },
+                );
                 instance.root = root;
                 instance.owner = rootOwner;
-                instance.dispose = rootOwner.dispose.bind(rootOwner);
+                instance.dispose = () => rootOwner.dispose();
               }
 
               const flattened = flatten(instance.root, instance.owner);
@@ -281,36 +280,52 @@ export class RenderingEngine {
         }
 
         if (!instance.roots) {
-          const superOwner = owner(() => {
-            instance.roots = {};
-            const roots: ViewElementNode<EmbedComponent | ViewComponent>[] = [];
-            const result = (instance.lastRender = instance.factory());
-            if (result.embeds) {
-              const embedsRoot = new ViewElementNode<EmbedComponent>();
-              const [, owner] = render(
-                embedsRoot,
-                result.embeds as () => EmbedBuilder[],
-                PatchTarget.Embeds,
-              );
-              owner.debugName = 'V1_embeds_root';
-              instance.roots.embeds = embedsRoot;
-              roots.push(embedsRoot);
-            }
-            if (result.components) {
-              const componentsRoot = new ViewElementNode<ViewComponent>();
-              const [, owner] = render(
-                componentsRoot,
-                result.components as () => ViewComponent[],
-                PatchTarget.Components,
-              );
-              owner.debugName = 'V1_components_root';
-              instance.roots.components = componentsRoot;
-              roots.push(componentsRoot);
-            }
+          const superOwner = owner(
+            () => {
+              instance.roots = {};
+              const result = (instance.lastRender = instance.factory());
+              if (result.embeds) {
+                const embedsRoot = (instance.roots.embeds =
+                  new ViewElementNode<EmbedComponent>());
+                owner(
+                  () => {
+                    provideContextValue(PatchTargetContext, PatchTarget.Embeds);
+                    const children = renderFragment(
+                      result.embeds as () => EmbedBuilder[],
+                    );
+                    embedsRoot.setChildren(...children);
+                  },
+                  {
+                    debugName: 'V1_embeds_root',
+                  },
+                );
+              }
+              if (result.components) {
+                const componentsRoot = (instance.roots.components =
+                  new ViewElementNode<ViewComponent>());
+                owner(
+                  () => {
+                    provideContextValue(
+                      PatchTargetContext,
+                      PatchTarget.Components,
+                    );
+                    const children = renderFragment(
+                      result.components as () => ViewComponent[],
+                    );
+                    componentsRoot.setChildren(...children);
+                  },
+                  {
+                    debugName: 'V1_components_root',
+                  },
+                );
+              }
 
-            return roots;
-          });
-          superOwner.debugName = 'V1_super_root';
+              return getOwnerOrThrow();
+            },
+            {
+              debugName: 'V1_super_root',
+            },
+          );
 
           instance.dispose = () => superOwner.dispose();
           instance.owner = superOwner;
@@ -332,7 +347,7 @@ export class RenderingEngine {
           } else {
             const embedsRoot = roots.embeds;
             payload.embeds = flatten(embedsRoot, instance.owner);
-            logger.verbose('flattened embeds', payload.embeds);
+            coreLog.verbose('flattened embeds', payload.embeds);
           }
         }
         if (roots.components) {
@@ -341,7 +356,7 @@ export class RenderingEngine {
           } else {
             const componentsRoot = roots.components;
             payload.components = flatten(componentsRoot, instance.owner);
-            logger.verbose('flattened components', payload.components);
+            coreLog.verbose('flattened components', payload.components);
           }
         }
 
@@ -442,7 +457,7 @@ export class RenderingEngine {
           this.reactiveViewInstance = reactiveInstance;
           this.instances.set(reactiveInstance.id, reactiveInstance);
         } catch (e) {
-          logger.debug(
+          coreLog.error(
             'Encountered an error while rendering a reactive view:',
             e,
           );

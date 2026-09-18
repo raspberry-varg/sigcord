@@ -4,7 +4,13 @@ import type {
   BaseSelectMenuBuilder,
 } from 'discord.js';
 
-import {type MaybeSignal, type Signal, patchEffect, read} from '@sigcord/core';
+import {
+  type MaybeSignal,
+  type Signal,
+  effect,
+  markDirty,
+  read,
+} from '@sigcord/core';
 
 export interface BaseSelectMenuProps<
   Interaction extends AnySelectMenuInteraction,
@@ -37,11 +43,12 @@ export function applyPatchEffect(
   selectMenu: BaseSelectMenuBuilder<APISelectMenuComponent>,
   props: ApplyOptionsProps,
 ) {
-  patchEffect(() => {
+  effect(() => {
     selectMenu
       .setMinValues(read(props.min))
       .setMaxValues(read(props.max))
       .setPlaceholder(read(props.placeholder) ?? '')
       .setDisabled(!!read(props.disabled));
+    markDirty();
   });
 }

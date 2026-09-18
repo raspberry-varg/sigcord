@@ -1,9 +1,9 @@
 import {
-  MessageFlags,
   type ActionRowBuilder,
   type EmbedBuilder,
   type Message,
   type MessageActionRowComponentBuilder,
+  MessageFlags,
   type RepliableInteraction,
 } from 'discord.js';
 import { safeRender } from '../util/RenderingUtil.js';

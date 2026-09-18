@@ -1,8 +1,8 @@
-import { logger } from '../../../util/Logger.js';
 import type { DisposeFn } from '../../render/dispose.js';
 import { getOwner, runWithOwner } from '../../owners/owner.js';
-import type { PatchTarget } from '../../RenderingEngine.js';
 import * as core from '@preact/signals-core';
+import { PatchTarget } from '../../../framework/patchTarget.js';
+import { coreLog } from '../../../internal/coreLog.js';
 
 const WRITABLE_STAMP = Symbol('writable');
 const GETTER_STAMP = Symbol('getter');
@@ -152,14 +152,14 @@ let id = 1;
 
 export function createEffect(action: EffectFn): DisposeFn {
   const capturedId = id++;
-  logger.verbose(
-    `creating a new effect. action=${action}, effectId=${capturedId}`,
+  coreLog.verbose(
+    `creating a new effect{id=${capturedId},action=${action.toString().slice(0, 100)}`,
   );
   const capturedOwner = getOwner();
   return core.effect(() => {
     const dispose = runWithOwner(capturedOwner, action);
     return () => {
-      logger.debug(`disposing effectId=${capturedId}`);
+      coreLog.debug(`disposing effect{id=${capturedId}}`);
       dispose?.();
     };
   });

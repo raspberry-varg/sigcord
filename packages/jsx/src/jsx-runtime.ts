@@ -14,6 +14,7 @@ import type {
   ViewNodeKind,
 } from '@sigcord/core';
 
+
 import {elementFactory} from './jsx-runtime.js';
 
 import JSXNode = JSX.JSXNode;
@@ -111,8 +112,7 @@ interface ContainerAttributes {
 
 interface SectionAttributes {
   accessory:
-    | JSX.Element
-    | MaybeSignal<ButtonBuilder | boolean | null | undefined>;
+    JSX.Element | MaybeSignal<ButtonBuilder | boolean | null | undefined>;
   children: JSXNode | JSXNode[];
 }
 

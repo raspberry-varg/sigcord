@@ -1,7 +1,7 @@
-import { logger } from '../../util/Logger.js';
 import { ViewNode } from './viewNode.js';
 import type { ViewNodeKind } from './viewNodeKind.js';
 import { removeManyInPlace } from '../../util/arrays/removeManyInPlace.js';
+import { coreLog } from '../../internal/coreLog.js';
 
 export class ViewElementNode<
   T extends ViewNodeKind = ViewNodeKind,
@@ -93,7 +93,9 @@ export class ViewElementNode<
   }
 
   reset(): void {
-    logger.verbose('DisposingViewElementNode', { childCount: this.childCount });
+    coreLog.verbose('DisposingViewElementNode', {
+      childCount: this.childCount,
+    });
     for (let i = 0; i < this.children_.length; i++) {
       this.children_[i].dispose();
     }

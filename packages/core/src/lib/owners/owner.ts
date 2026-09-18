@@ -1,11 +1,14 @@
-import { logger } from '../../util/Logger.js';
-import { PatchTarget } from '../RenderingEngine.js';
 import type { DisposeFn, ResumeFn, SuspendFn } from '../render/dispose.js';
 import type { ContextNode } from '../contexts/contextNode.js';
 import { AsyncLocalStorage } from 'node:async_hooks';
+import { provideContextValue } from '../contexts/provideContext.js';
+import {
+  ImperativeLockContext,
+  ImperativeLockKind,
+} from '../../core/contexts/imperativeLock.js';
+import { coreLog } from '../../internal/coreLog.js';
 
 export interface Owner extends Disposable {
-  readonly patchTarget?: PatchTarget;
   readonly context: ContextNode;
   readonly parent: Owner | null;
   readonly childOwners: Set<Owner>;
@@ -35,7 +38,6 @@ export interface Owner extends Disposable {
 }
 
 class OwnerImpl implements Owner {
-  patchTarget?: PatchTarget;
   childOwners: Set<Owner> = new Set<Owner>();
   debugName?: string;
 
@@ -90,9 +92,7 @@ class OwnerImpl implements Owner {
     if (this.disposed || this.suspended) return;
     this.suspended_ = true;
 
-    for (let i = 0; i < this.onSuspendFns.length; i++) {
-      this.onSuspendFns[i]();
-    }
+    this.runCallbacksWithLock(ImperativeLockKind.Suspend, this.onSuspendFns);
 
     for (const child of this.childOwners) {
       child.suspend();
@@ -103,13 +103,28 @@ class OwnerImpl implements Owner {
     if (this.disposed || !this.suspended) return;
     this.suspended_ = false;
 
-    for (let i = 0; i < this.onResumeFns.length; i++) {
-      this.onResumeFns[i]();
-    }
-
+    this.runCallbacksWithLock(ImperativeLockKind.Resume, this.onResumeFns);
     for (const child of this.childOwners) {
       child.resume();
     }
+  }
+
+  private runCallbacksWithLock(
+    lock: ImperativeLockKind,
+    callbacks: ReadonlyArray<() => void>,
+  ) {
+    if (!callbacks.length) {
+      return;
+    }
+    runWithOwner(this, () => {
+      for (let i = 0; i < callbacks.length; i++) {
+        owner(() => {
+          provideContextValue(ImperativeLockContext, lock);
+          callbacks[i]();
+          return getOwnerOrThrow();
+        }).dispose();
+      }
+    });
   }
 
   dispose() {
@@ -119,7 +134,7 @@ class OwnerImpl implements Owner {
     this.childOwners.forEach((owner) => owner.dispose());
     this.childOwners.clear();
 
-    logger.verbose('DisposingOwner.', {
+    coreLog.verbose('DisposingOwner.', {
       debugName: this.debugName ?? '',
       toDispose: {
         disposalFns: this.disposals,
@@ -127,9 +142,17 @@ class OwnerImpl implements Owner {
       },
     });
 
-    this.disposals.forEach((dispose) => dispose());
+    // Since we're cleaning up, let's just lock it in its entirety.
+    this.context[ImperativeLockContext.id] = ImperativeLockKind.Cleanup;
+    while (this.disposals.length) {
+      const batch = this.disposals;
+      this.disposals = [];
+      for (let i = 0; i < batch.length; i++) {
+        runWithOwner(this, batch[i]);
+      }
+    }
     this.disposals.length = 0;
-    this.componentDisposals.forEach((dispose) => dispose());
+    this.componentDisposals.forEach((dispose) => runWithOwner(this, dispose));
     this.componentDisposals.clear();
 
     if (this.parent) {
@@ -163,15 +186,37 @@ export function setCurrentOwner(newOwner: Owner | null): Owner | null {
   return prev;
 }
 
-export function owner<T>(ownerFn: () => T, patchTarget?: PatchTarget): Owner {
-  logger.verbose(`creating a new owner with fn=${ownerFn}`);
-  const newOwner = new OwnerImpl(getOwner());
-  const prevOwner = setCurrentOwner(newOwner);
-  newOwner.patchTarget = prevOwner?.patchTarget ?? patchTarget;
-  prevOwner?.addChild(newOwner);
+interface OwnerOptions {
+  debugName?: string;
+  /**
+   * @default true
+   */
+  autoReparent?: boolean;
+}
 
-  runWithOwner(newOwner, ownerFn);
-  return newOwner;
+/**
+ * Run a function under a new owner.
+ * @param ownerFn
+ */
+export function owner<T>(ownerFn: () => T, options?: OwnerOptions): T {
+  coreLog.verbose(
+    `creating a new owner(${options?.debugName}) with fn=${ownerFn}`,
+  );
+  const newOwner = new OwnerImpl(
+    options?.autoReparent === false ? null : getOwner(),
+  );
+  if (options?.debugName) {
+    newOwner.debugName = options.debugName;
+  }
+
+  if (options?.autoReparent) {
+    const currentOwner = getOwner();
+    if (currentOwner) {
+      currentOwner.addChild(newOwner);
+    }
+  }
+
+  return runWithOwner(newOwner, ownerFn);
 }
 
 export function createRootOwner(): Owner {

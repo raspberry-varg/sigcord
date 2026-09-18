@@ -1,13 +1,13 @@
+import { type RenderingEngine } from '../../RenderingEngine.js';
+import type { CollectorService } from './collectorService.js';
 import {
   PatchTarget,
   type PatchTargetBitMask,
-  type RenderingEngine,
-} from '../../RenderingEngine.js';
-import { Logger } from '../../../util/Logger.js';
-import type { CollectorService } from './collectorService.js';
+} from '../../../framework/patchTarget.js';
+import { coreLog } from '../../../internal/coreLog.js';
 
 export class PatchTracker {
-  private logger = Logger.namespaced('PatchTracker');
+  private logger = coreLog.namespaced('PatchTracker');
   private manualPatchQueued: PatchTargetBitMask = 0;
 
   constructor(
@@ -24,13 +24,13 @@ export class PatchTracker {
   }
 
   collectTargets(): PatchTargetBitMask {
-    this.logger.debug({
+    this.logger.debug('collecting targets', () => ({
       collectorEnded: this.collector.hasEnded(),
       collectorInitialized: this.collector.isInitialized(),
       isCurrentViewReactive: this.renderer.isCurrentViewReactive(),
       rendererHasQueuedView: this.renderer.hasQueuedView(),
       manualPatchQueued: this.manualPatchQueued,
-    });
+    }));
 
     const manual = this.manualPatchQueued;
     this.manualPatchQueued = 0;
@@ -50,7 +50,9 @@ export class PatchTracker {
       if (this.renderer.hasQueuedNavigation()) {
         patchTargets |= PatchTarget.All;
       }
-      this.logger.debug({ patchTargetBitMask: patchTargets });
+      this.logger.debug('computed reactive patch targets', {
+        patchTargetBitMask: patchTargets,
+      });
       return patchTargets;
     }
     return PatchTarget.All;

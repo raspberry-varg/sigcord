@@ -21,8 +21,7 @@ import {
 const MIN_DEFAULT = 0;
 const MAX_DEFAULT = 1;
 
-interface ChannelSelectMenuProps
-  extends BaseSelectMenuProps<ChannelSelectMenuInteraction> {
+interface ChannelSelectMenuProps extends BaseSelectMenuProps<ChannelSelectMenuInteraction> {
   selected?: MaybeSignal<ReadonlyArray<MaybeSignal<string | null | undefined>>>;
   types?: MaybeSignal<
     ReadonlyArray<MaybeSignal<ChannelType | null | undefined>>

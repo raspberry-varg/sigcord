@@ -1,11 +1,11 @@
 import type { ViewNodeKind, ViewNodeKindBase } from '../dom/viewNodeKind.js';
-import { PatchTarget } from '../RenderingEngine.js';
 import { render } from './render.js';
 import { flatten } from './flatten.js';
 import { SYNAPSE_CONTEXT_ID } from '../builtins/builtins.js';
 import { STATIC_RENDER_SYNAPSE } from './staticRenderSynapse.js';
 import { ViewElementNode } from '../dom/viewElementNode.js';
 import { createRootOwner, runWithOwner } from '../owners/owner.js';
+import { PatchTarget } from '../../framework/patchTarget.js';
 
 type StaticRenderFn<T extends ViewNodeKindBase> = () => ViewNodeKind<T>;
 

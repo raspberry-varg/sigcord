@@ -6,8 +6,8 @@ import { computed } from './computed.js';
 import { read } from '../../lib/reactivity/core/read.js';
 import { batch } from '@preact/signals-core';
 import { getOwner } from '../../lib/owners/owner.js';
-import { logger } from '../../util/Logger.js';
 import { effect, update } from '../../framework/hooks/index.js';
+import { coreLog } from '../../internal/coreLog.js';
 
 const OPTIONS_DEFAULTS: Readonly<ResourceOptions<unknown, unknown>> = {
   autoUpdate: true,
@@ -232,7 +232,7 @@ export function resource<T, SOURCE>(
       refetch() {
         // resumeContext();
         if (getOwner()?.disposed) {
-          logger.debug('Refetch resource ignored as owner is disposed.');
+          coreLog.debug('Refetch resource ignored as owner is disposed.');
           return;
         }
 

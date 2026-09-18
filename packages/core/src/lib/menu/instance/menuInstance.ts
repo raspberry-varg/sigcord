@@ -12,7 +12,6 @@ import { type DefinedView, View } from '../../views/view.js';
 import type { PropsBase } from '../../views/viewDefinitionBase.js';
 import type { TimeoutEndReason } from '../../../util/CollectorUtil.js';
 import type { Synapse } from './synapse.js';
-import { Logger } from '../../../util/Logger.js';
 import { ClassViewProps } from '../../FunctionalMenuView.js';
 import type { IntrinsicMenuProps } from '../defineMenu.js';
 import type { DisposeFn, ResumeFn, SuspendFn } from '../../render/dispose.js';
@@ -25,11 +24,7 @@ import { Navigation } from '../../Navigation.js';
 import { PatchTracker } from './patchTracker.js';
 import { NamedIdGenerator } from '../../ids/namedIdGenerator.js';
 import { ModalTracker } from './modalTracker.js';
-import {
-  PatchTarget,
-  type PatchTargetBitMask,
-  RenderingEngine,
-} from '../../RenderingEngine.js';
+import { RenderingEngine } from '../../RenderingEngine.js';
 import { Listener } from '../../../util/Listener.js';
 import { microtaskQueuer, type MicrotaskQueuer } from './microtaskQueuer.js';
 import { MenuContext } from './menuContext.js';
@@ -57,6 +52,11 @@ import {
   WritableSignal,
 } from '../../reactivity/core/signals.js';
 import type { MenuInstanceActions } from './menuInstanceActions.js';
+import {
+  PatchTarget,
+  type PatchTargetBitMask,
+} from '../../../framework/patchTarget.js';
+import { coreLog } from '../../../internal/coreLog.js';
 
 const DEFAULT_IDLE = 60_000;
 const DefaultProperties: IntrinsicMenuProps = {
@@ -90,7 +90,7 @@ export class MenuInstance<
 >
   implements Synapse, MenuInstanceActions
 {
-  private readonly logger = Logger.namespaced('MenuInstance');
+  private readonly logger = coreLog.namespaced('MenuInstance');
   private readonly rootOwner = createRootOwner();
 
   private readonly props: ClassViewProps & IntrinsicMenuProps;
@@ -248,7 +248,7 @@ export class MenuInstance<
     let payload: ViewMessagePayload | null = null;
     try {
       const targets = this.patchTracker.collectTargets();
-      this.logger.debug('targets in render microtask ->', targets);
+      this.logger.debug('targets in render microtask ->', { targets });
       payload = await this.render(targets);
     } catch (error: unknown) {
       this.logger.error('Error during update microtask', error);
@@ -579,9 +579,8 @@ export class MenuInstance<
     let response;
     try {
       response = await interaction.awaitModalSubmit(options);
-    } catch (e) {
-      this.logger.info('Modal ended without receiving a response.');
-      this.logger.verbose(e);
+    } catch (e: unknown) {
+      this.logger.error('Modal ended without receiving a response.', e);
       this.modalTracker.flush();
       return null;
     }

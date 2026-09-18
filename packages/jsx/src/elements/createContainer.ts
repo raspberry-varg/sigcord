@@ -10,6 +10,7 @@ import {
   type ViewNode,
   flatten,
   flattenToContentNodes,
+  getOwnerOrThrow,
   owner,
   patchEffect,
   read,
@@ -84,6 +85,7 @@ export function createContainer(
     }
 
     nodes = flattenToContentNodes(props.children);
+    return getOwnerOrThrow();
   });
 
   return new ContainerElement(container, containerOwner, nodes);

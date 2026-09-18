@@ -15,7 +15,6 @@ import type {
   SignalTuple,
   WritableSignal,
 } from '../../reactivity/core/signals.js';
-import type { PatchTarget } from '../../RenderingEngine.js';
 import type { PropsBase } from '../../views/viewDefinitionBase.js';
 import type { UnionToIntersection } from '../../../util/TypesUtil.js';
 import type { DisposeFn, ResumeFn, SuspendFn } from '../../render/dispose.js';
@@ -27,6 +26,7 @@ import type {
 import type { ComponentDefinition } from '../../components/componentDefinition.js';
 import type { Context } from '../../contexts/context.js';
 import { STATIC_RENDER_SYNAPSE } from '../../render/staticRenderSynapse.js';
+import { PatchTarget } from '../../../framework/patchTarget.js';
 
 export const SynapseContext: Context<Readonly<Synapse>> = Object.freeze({
   id: Symbol('MenuContext'),

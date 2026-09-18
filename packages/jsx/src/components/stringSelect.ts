@@ -16,10 +16,13 @@ import {
   computed,
   flatten,
   flattenToContentNodes,
+  getCurrentSynapseOrDefault,
   getNextUniqueComponentId,
+  getOwnerOrThrow,
   owner,
   read,
   signal,
+  useComponentHandler,
 } from '@sigcord/core';
 
 import type {JSXElement} from '../index.js';
@@ -53,6 +56,7 @@ export function StringSelect(props: StringSelectProps) {
   let nodes!: readonly ViewNode[];
   const contentOwner = owner(() => {
     nodes = flattenToContentNodes(props.children);
+    return getOwnerOrThrow();
   });
 
   return new StringSelectNode(props, contentOwner, nodes);
@@ -71,11 +75,22 @@ class StringSelectNode extends ViewManualComputedElementNode<StringSelectMenuBui
   ) {
     super();
     this.id = props.id || getNextUniqueComponentId();
-    this.stringSelect = component({
-      id: this.id,
-      component: new StringSelectMenuBuilder(),
-      handler: props['on:select'],
-    });
+
+    this.stringSelect = new StringSelectMenuBuilder().setCustomId(this.id);
+    const legacy = getCurrentSynapseOrDefault();
+    if (legacy) {
+      this.stringSelect = component({
+        id: this.id,
+        component: this.stringSelect,
+        handler: props['on:select'],
+      });
+    } else {
+      useComponentHandler(this.id, (select) => {
+        if (select.isStringSelectMenu()) {
+          return props['on:select'](select);
+        }
+      });
+    }
 
     [this.length, this.setLength] = signal(0);
     const min = computed(() => {

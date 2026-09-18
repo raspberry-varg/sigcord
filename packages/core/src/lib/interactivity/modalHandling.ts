@@ -1,21 +1,19 @@
 import type {
+  AwaitModalSubmitOptions,
   CommandInteraction,
   MessageComponentInteraction,
-  ModalSubmitInteraction,
-  AwaitModalSubmitOptions,
   ModalBuilder,
+  ModalSubmitInteraction,
 } from 'discord.js';
 
 export type ModalRepliableInteraction =
-  | CommandInteraction
-  | MessageComponentInteraction;
+  CommandInteraction | MessageComponentInteraction;
 
 export type ModalOnSubmitHandler = (
   modal: ModalSubmitInteraction,
 ) => void | Promise<void>;
 
-export interface ModalHandlingOptions
-  extends AwaitModalSubmitOptions<ModalSubmitInteraction> {
+export interface ModalHandlingOptions extends AwaitModalSubmitOptions<ModalSubmitInteraction> {
   modal: ModalBuilder;
   onSubmit: ModalOnSubmitHandler;
 }

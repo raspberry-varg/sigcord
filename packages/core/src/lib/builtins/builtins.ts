@@ -5,18 +5,15 @@
  */
 
 import { Synapse } from '../menu/instance/synapse.js';
-import { PatchTarget } from '../RenderingEngine.js';
-import { assert } from '../../util/Assertions.js';
-import type { EffectFn } from '../reactivity/core/signals.js';
-import type { DisposeFn } from '../render/dispose.js';
-import { getOwner, getOwnerOrThrow, setCurrentOwner } from '../owners/owner.js';
+import { getOwner } from '../owners/owner.js';
 import type { MenuContext } from '../menu/instance/menuContext.js';
-import { STATIC_RENDER_SYNAPSE } from '../render/staticRenderSynapse.js';
 import {
   type CollectedMessageInteraction,
   type RepliableInteraction,
 } from 'discord.js';
-import { effect } from '../../framework/hooks/index.js';
+import { usePatchTarget } from '../../framework/hooks/usePatchTarget.js';
+import { PatchTarget } from '../../framework/patchTarget.js';
+import { createUniqueComponentId } from '../../framework/hooks/index.js';
 
 export const SYNAPSE_CONTEXT_ID = Symbol.for('__sigcord.Synapse');
 
@@ -48,103 +45,10 @@ export function useMenuInfo(): Readonly<MenuContext> {
 // Signal effects
 
 /**
- * @deprecated Use {@link effect} in conjunction with {@link dirty}.
- *
- * Create an effect that runs when signals referenced in the effect function
- * change. This effect will automatically request an update to the user's UI
- * based on the current rendering context.
- *
- * Useful for mutating state of content objects like component or embed builders
- * and having the change reflected to the user.
- *
- * Note: This is not required if you use a {@link computed} embed or component.
- *
- * @example
- * ```ts
- * function CountingButton() {
- *   const [clicks, setClicks] = signal(0);
- *    const button = new ButtonBuilder().setStyle(ButtonStyle.Primary);
- *    patchEffect(() => {
- *      // effect runs each time setClicks mutates the value
- *      button.setLabel(`You have clicked me ${clicks()} times.`);
- *    });
- *    // register component handler; the `button` variable is returned directly
- *    return component({
- *      component: button,
- *      handler: () => setClicks((prev) => prev + 1),
- *    });
- * }
- *
- * // components V2: anywhere within the top-level view call
- * const viewV2 = defineViewV2('my-view', () => {
- *   return [
- *     new ActionRowBuilder<ButtonBuilder>().setComponents(
- *       CountingButton(),
- *     ),
- *   ];
- * });
- *
- * // components V1: within the function passed to ReactiveViewPayloadV1#components.
- * const viewV1 = defineView('my-view', () => {
- *   return {
- *     components: () => [
- *       new ActionRowBuilder<ButtonBuilder>().setComponents(
- *         CountingButton(),
- *       ),
- *     ];
- *   };
- * });
- * ```
- *
- * @param effectFn Effect function that mutates content in the current
- *   {@link PatchTarget} context.
+ * @deprecated Will be replaced with {@link usePatchTarget}.
  */
-export function patchEffect(effectFn: EffectFn): DisposeFn {
-  const target = getCurrentPatchTarget();
-  const isValidTarget = target !== PatchTarget.None;
-  assert(
-    target != null &&
-      (isValidTarget || getCurrentSynapse() === STATIC_RENDER_SYNAPSE),
-    'patchEffect() was called outside of the embed or component render ' +
-      'lifecycle. If effects that mutate content in the embed or component ' +
-      'must be set up in the body of the view, use patch() with the ' +
-      'appropriate PatchTarget bit mask instead.',
-  );
-  return effect(effectFn, target);
-}
-
 export function getCurrentPatchTarget(): PatchTarget | undefined {
-  return getOwnerOrThrow().patchTarget;
-}
-
-// Asynchronous escape-hatches. Pretty much unnecessary with AsyncLocalStore.
-
-/**
- * Resumes a reactive hook context to the value before an `await` expression.
- */
-type ResumeCtxFn = () => void;
-
-/**
- * __Here be dragons__ _(see {@link asyncBoundary})_.
- *
- * Suspend the current reactive hook context. Returns a function to resume the
- * context.
- *
- * @returns Function to resume the current reactive hook context, allowing hooks
- *   to continue to be used after an `await`.
- */
-export function suspend(): ResumeCtxFn {
-  const capturedOwner = getOwner();
-  assert(
-    capturedOwner,
-    'Attempted to suspend the current reactive context, but none was found. ' +
-      'Did you forget to use the returned resume() function from a previous ' +
-      'call to suspend()? If in an async boundary, nested awaits must also ' +
-      'be pulled into their own async boundary.',
-  );
-  return function resumeSuspendedContext() {
-    setCurrentOwner(capturedOwner);
-  };
+  return usePatchTarget();
 }
 
 /**
@@ -179,7 +83,7 @@ export const component: Synapse['component'] = (definition) =>
   getCurrentSynapse().component(definition);
 
 export const getNextUniqueComponentId: Synapse['getNextUniqueComponentId'] =
-  () => getCurrentSynapse().getNextUniqueComponentId();
+  () => createUniqueComponentId();
 
 // Navigation
 

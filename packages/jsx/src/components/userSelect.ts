@@ -19,8 +19,7 @@ import {
 const MIN_DEFAULT = 0;
 const MAX_DEFAULT = 1;
 
-interface UserSelectProps
-  extends BaseSelectMenuProps<UserSelectMenuInteraction> {
+interface UserSelectProps extends BaseSelectMenuProps<UserSelectMenuInteraction> {
   selected?: MaybeSignal<ReadonlyArray<MaybeSignal<string | null | undefined>>>;
 }
 
