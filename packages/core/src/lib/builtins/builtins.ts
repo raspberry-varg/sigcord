@@ -68,20 +68,6 @@ export function injectCurrentInteraction(): RepliableInteraction {
 
 // Component
 
-/**
- * @deprecated Please use {@link useComponentHandler}.
- *
- * Configures an interactive message component.
- *
- * - Passed component id is auto-formatted to `menuId:viewId:componentId`.
- *   - `viewId:viewId:componentId` if standalone.
- * - Calls the passed component builder's `setCustomId` with the provided id.
- * - Binds a given handler to a component via its id.
- * @returns The provided component builder.
- */
-export const component: Synapse['component'] = (definition) =>
-  getCurrentSynapse().component(definition);
-
 export const getNextUniqueComponentId: Synapse['getNextUniqueComponentId'] =
   () => createUniqueComponentId();
 

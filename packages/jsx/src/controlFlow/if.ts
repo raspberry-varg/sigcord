@@ -4,11 +4,14 @@ import {
   ViewElementNode,
   type ViewNodeKind,
   computed,
+  effect,
   isSignal,
-  patchEffect,
+  markDirty,
+  owner,
   read,
-  render,
+  renderFragment,
   untracked,
+  useDisposeOwnerFn,
 } from '@sigcord/core';
 
 type Then<Condition, T_TRUE> = (
@@ -57,7 +60,7 @@ export function If<Condition, T_TRUE, T_FALSE>(
 
   const node = new ViewElementNode();
   const truthy = computed(() => !!read<Condition>(cond as Condition));
-  patchEffect(() => {
+  effect(() => {
     let renderFn: () => ViewNodeKind;
     const res = truthy();
     if (res) {
@@ -68,8 +71,18 @@ export function If<Condition, T_TRUE, T_FALSE>(
     } else {
       renderFn = () => null;
     }
-    const [dispose, o] = render(node, renderFn, /* patchTarget= */ undefined);
-    o.debugName = `[If_${res ? 'True' : 'False'}_Branch]${props.debugName ?? '%'}`;
+
+    const dispose = owner(
+      () => {
+        const nodes = renderFragment(renderFn);
+        node.setChildren(...nodes);
+        return useDisposeOwnerFn();
+      },
+      {
+        debugName: `[If_${res ? 'True' : 'False'}_Branch]${props.debugName ?? '%'}`,
+      },
+    );
+    markDirty();
     return dispose;
   });
 

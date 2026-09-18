@@ -6,12 +6,15 @@ import {
   ViewNode,
   type ViewNodeKind,
   batch,
+  effect,
   isSignal,
+  markDirty,
   onCleanup,
-  patchEffect,
-  render,
+  owner,
+  renderFragment,
   signal,
   untracked,
+  useDisposeOwnerFn,
 } from '@sigcord/core';
 
 interface IndexProps<
@@ -74,18 +77,22 @@ export function Index<
       nextNodes[i] = prevNodes[i];
     }
 
-    const intermediateRoot = new ViewElementNode();
     for (let i = existingMin; i < nextItems.length; i++) {
       const [get, set] = signal(nextItems[i] as Each[keyof Each]);
       nextSetters[i] = set;
 
-      const [dispose, o] = render(intermediateRoot, () =>
-        props.children(get as any, i),
+      let nodes;
+      const dispose = owner(
+        () => {
+          nodes = renderFragment(() => props.children(get as any, i));
+          return useDisposeOwnerFn();
+        },
+        {
+          debugName: `[Loop_Index_${i}]${props.debugName ?? '%'}`,
+        },
       );
-      o.debugName = `[Loop_Index_${i}]${props.debugName ?? '%'}`;
-      nextNodes[i] = [...intermediateRoot.children];
+      nextNodes[i] = nodes!;
       node.addChild(...nextNodes[i]);
-
       nextDisposeFns[i] = dispose;
     }
 
@@ -99,7 +106,10 @@ export function Index<
     prevSetters = nextSetters;
     prevNodes = nextNodes;
   };
-  patchEffect(() => batch(effectFn));
+  effect(() => {
+    batch(effectFn);
+    markDirty();
+  });
 
   return node;
 }

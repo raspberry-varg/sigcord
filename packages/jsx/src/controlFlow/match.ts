@@ -1,14 +1,16 @@
 import {
   DeferredComponent,
   type DisposeFn,
-  type Owner,
   type Signal,
   ViewElementNode,
   type ViewNodeKind,
   type ViewNodeKindBase,
+  effect,
+  markDirty,
   onCleanup,
-  patchEffect,
-  render,
+  owner,
+  renderFragment,
+  useDisposeOwnerFn,
 } from '@sigcord/core';
 
 import {type JSXElement, type JSXNode} from '../index.js';
@@ -65,7 +67,7 @@ export function Match(
     return child as unknown as Case;
   });
 
-  patchEffect(() => {
+  effect(() => {
     let i = 0;
     let activeCaseIndex = -1;
     let defaultIndex = -1;
@@ -99,13 +101,20 @@ export function Match(
       finalIndex = defaultIndex;
     }
 
-    let o: Owner;
-    [dispose, o] = render(
-      node,
-      cases[finalIndex].content as () => ViewNodeKindBase,
-      /* patchTarget= */ undefined,
+    dispose = owner(
+      () => {
+        const nodes = renderFragment(
+          cases[finalIndex].content as () => ViewNodeKindBase,
+        );
+        node.setChildren(...nodes);
+        return useDisposeOwnerFn();
+      },
+      {
+        debugName: `[Match_${finalIndex === defaultIndex ? 'Default' : finalIndex}_Branch]%`,
+      },
     );
-    o.debugName = `[Match_${finalIndex === defaultIndex ? 'Default' : finalIndex}_Branch]%`;
+
+    markDirty();
   });
 
   onCleanup(() => {

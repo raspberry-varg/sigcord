@@ -42,7 +42,6 @@ export {
   EffectFn,
 } from './lib/reactivity/core/signals.js';
 export {
-  component,
   goTo,
   goBack,
   canNavigateBack,
@@ -82,6 +81,8 @@ export {
   getOwner,
   getOwnerOrThrow,
   setCurrentOwner,
+  useDisposeOwnerFn,
+  disposeOwner,
 } from './lib/owners/owner.js';
 export { Context } from './lib/contexts/context.js';
 export { provideContextValue } from './lib/contexts/provideContext.js';
@@ -111,10 +112,11 @@ export {
 } from './lib/dom/viewComputedElementNode.js';
 export { getViewNodeContent } from './lib/dom/getViewNodeContent.js';
 export { staticRender } from './lib/render/staticRender.js';
-export { render, renderRoot, renderFragment } from './lib/render/render.js';
+export { render, renderFragment } from './lib/render/render.js';
 export * from './core/primitives/index.js';
 export { untracked } from './lib/reactivity/untracked.js';
 export { read } from './lib/reactivity/core/read.js';
 export { isSuspended } from './framework/hooks/index.js';
 export { closeMenu } from './framework/hooks/index.js';
 export { PatchTarget } from './framework/patchTarget.js';
+export { component } from './framework/hooks/index.js';
