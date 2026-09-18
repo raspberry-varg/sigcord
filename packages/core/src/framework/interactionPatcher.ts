@@ -149,7 +149,9 @@ export class InteractionPatcher {
       throw new Error('No interaction was mounted, yet patch was requested.');
     }
 
-    this.logger.info(`Patch called with interaction.id=${this.interaction.id}`);
+    this.logger.debug(
+      `Patch called with interaction.id=${this.interaction.id}`,
+    );
     if (this.patching) {
       this.cancelBufferedPatch();
       let promiseResolve!: (result: BufferedPatchStatus) => void;
@@ -164,7 +166,7 @@ export class InteractionPatcher {
       return promise;
     }
 
-    this.logger.info('No patch was buffered, begin patch.');
+    this.logger.debug('No patch was buffered, begin patch.');
     this.patching = true;
     try {
       const activeDeferUpdate = this.trackedActions.get(this.interaction.id);
@@ -254,7 +256,7 @@ export class InteractionPatcher {
     if (!this.interaction.deferred && !this.interaction.replied) {
       const tracked = this.deferUpdate(this.interaction);
       if (!tracked) {
-        // Something went terribly wrong. Don't infinite recurse here.
+        // Something went terribly wrong. Prevent infinite recursion.
         return;
       }
       return this.delete(message);
@@ -290,7 +292,7 @@ export class InteractionPatcher {
 
   private cancelBufferedPatch() {
     if (this.bufferedPatch) {
-      this.logger.info('Cancelling buffered patch.');
+      this.logger.debug('Cancelling buffered patch.');
       this.bufferedPatch.promiseResolve(BufferedPatchStatus.Cancelled);
     }
   }

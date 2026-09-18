@@ -227,14 +227,14 @@ export class Cord implements CordAPI {
       this.updateQueued = false;
       if (this.disposed) return;
 
-      this.logger.info('Update microtask has run');
+      this.logger.debug('Update microtask has run');
       if (this.disposed) {
-        this.logger.info('...but the Cord was disposed');
+        this.logger.debug('...but the Cord was disposed');
         return;
       }
 
       if (this.dirtyMask === PatchTarget.None) {
-        this.logger.info('...but the Cord has no dirty mask');
+        this.logger.debug('...but the Cord has no dirty mask');
         return;
       }
       await this.flushUpdate(interaction);

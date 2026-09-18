@@ -138,7 +138,9 @@ export class InteractionPatcherLegacy {
       throw new Error('No interaction was mounted, yet patch was requested.');
     }
 
-    this.logger.info(`Patch called with interaction.id=${this.interaction.id}`);
+    this.logger.debug(
+      `Patch called with interaction.id=${this.interaction.id}`,
+    );
     if (this.patching) {
       this.cancelBufferedPatch();
       let promiseResolve!: (result: BufferedPatchStatusLegacy) => void;
@@ -153,7 +155,7 @@ export class InteractionPatcherLegacy {
       return promise;
     }
 
-    this.logger.info('No patch was buffered, begin patch.');
+    this.logger.debug('No patch was buffered, begin patch.');
     this.patching = true;
     try {
       const activeDeferUpdate = this.trackedActions.get(this.interaction.id);
@@ -256,7 +258,7 @@ export class InteractionPatcherLegacy {
 
   private cancelBufferedPatch() {
     if (this.bufferedPatch) {
-      this.logger.info('Cancelling buffered patch.');
+      this.logger.debug('Cancelling buffered patch.');
       this.bufferedPatch.promiseResolve(BufferedPatchStatusLegacy.Cancelled);
     }
   }
