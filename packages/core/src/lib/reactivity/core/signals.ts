@@ -1,13 +1,14 @@
-import * as core from "@preact/signals-core";
+import * as core from '@preact/signals-core';
 
-import { coreLog } from "../../../internal/coreLog.js";
-import { getOwner, runWithOwner } from "../../owners/owner.js";
-import type { DisposeFn } from "../../render/dispose.js";
+import { coreLog } from '../../../internal/coreLog.js';
+import { getOwner, runWithOwner } from '../../owners/owner.js';
 
-const WRITABLE_STAMP = Symbol("writable");
-const GETTER_STAMP = Symbol("getter");
-const SETTER_STAMP = Symbol("setter");
-const FROM_SIGNAL = Symbol("signal source instance");
+import type { DisposeFn } from '../../render/dispose.js';
+
+const WRITABLE_STAMP = Symbol('writable');
+const GETTER_STAMP = Symbol('getter');
+const SETTER_STAMP = Symbol('setter');
+const FROM_SIGNAL = Symbol('signal source instance');
 
 /**
  * @deprecated Writable signals will be removed or heavily reduced in v1.3
@@ -24,11 +25,9 @@ export type UnwrapSignalish<T> = T extends Signalish<infer S> ? S : T;
 
 export type MaybeSignal<T> = T | Signal<T>;
 export function isSignal<T>(value?: T | Signalish<T>): value is Signal<T> {
-  return typeof value === "function";
+  return typeof value === 'function';
 }
-export function isStampedSignal<T>(
-  value?: T | Signalish<T>,
-): value is Signal<T> {
+export function isStampedSignal<T>(value?: T | Signalish<T>): value is Signal<T> {
   return isSignal(value) && GETTER_STAMP in value;
 }
 
@@ -39,19 +38,15 @@ export type MaybeWritableSignal<T> = T | Signalish<T>;
 /**
  * @deprecated Writable signals will be removed or heavily reduced in v1.3
  */
-export function isWritableSignal<T>(
-  value?: T | Signalish<T>,
-): value is WritableSignal<T> {
+export function isWritableSignal<T>(value?: T | Signalish<T>): value is WritableSignal<T> {
   return HasWritableSignalStamp(value);
 }
 
 /**
  * @deprecated Writable signals will be removed or heavily reduced in v1.3
  */
-export function HasWritableSignalStamp<T>(
-  value?: T,
-): value is T & { [WRITABLE_STAMP]: true } {
-  return value != null && typeof value === "object" && WRITABLE_STAMP in value;
+export function HasWritableSignalStamp<T>(value?: T): value is T & { [WRITABLE_STAMP]: true } {
+  return value != null && typeof value === 'object' && WRITABLE_STAMP in value;
 }
 
 export interface Signal<T> {
@@ -85,19 +80,11 @@ export interface Setter<T> {
 
 export type Updater<T> = (updater: UpdateFn<T>) => void;
 
-export type SignalTuple<T> = [
-  getter: Getter<T>,
-  setter: Setter<T>,
-  WritableSignal<T>,
-];
+export type SignalTuple<T> = [getter: Getter<T>, setter: Setter<T>, WritableSignal<T>];
 
 export function createSignal<T>(initialVal: T): WritableSignal<T>;
-export function createSignal<T>(
-  initialVal: T | undefined,
-): WritableSignal<T | undefined>;
-export function createSignal<T>(
-  initialVal: T | undefined,
-): WritableSignal<T | undefined> {
+export function createSignal<T>(initialVal: T | undefined): WritableSignal<T | undefined>;
+export function createSignal<T>(initialVal: T | undefined): WritableSignal<T | undefined> {
   const s = core.signal(initialVal);
   const w = s as WritableSignalInternal<T | undefined>;
   (w as any)[WRITABLE_STAMP] = true;
@@ -105,9 +92,7 @@ export function createSignal<T>(
   w.get = () => s.value;
   (w.get as any)[FROM_SIGNAL] = s;
   (w.get as any)[GETTER_STAMP] = true;
-  w.set = (v) =>
-    (s.value =
-      typeof v === "function" ? (v as UpdateFn<T | undefined>)(w.peek()) : v);
+  w.set = (v) => (s.value = typeof v === 'function' ? (v as UpdateFn<T | undefined>)(w.peek()) : v);
   (w.set as any)[FROM_SIGNAL] = s;
   (w.set as any)[SETTER_STAMP] = s;
   w.update = (updater) => {

@@ -1,19 +1,18 @@
-import { MessageFlags } from "discord.js";
+import { MessageFlags } from 'discord.js';
 
-import { MenuBuilder } from "../../../framework/menuBuilder.js";
-import type { IntrinsicMenuProps, MenuFactory } from "../../menu/defineMenu.js";
-import { instantiateMenu } from "../../menu/instance/instantiateMenu.js";
-import type { PropsBase } from "../viewDefinitionBase.js";
-import { IS_V2 } from "../viewFlavors.js";
+import { MenuBuilder } from '../../../framework/menuBuilder.js';
+import { instantiateMenu } from '../../menu/instance/instantiateMenu.js';
+import { IS_V2 } from '../viewFlavors.js';
+
+import { REACTIVE_VIEW_SYMBOL } from './reactiveViewSymbol.js';
+
+import type { IntrinsicMenuProps, MenuFactory } from '../../menu/defineMenu.js';
+import type { PropsBase } from '../viewDefinitionBase.js';
 import type {
   ReactiveViewDefinitionV1,
   ReactiveViewDefinitionV2,
-} from "./reactiveViewDefinition.js";
-import type {
-  ReactiveViewFactoryV1,
-  ReactiveViewFactoryV2,
-} from "./reactiveViewFactory.js";
-import { REACTIVE_VIEW_SYMBOL } from "./reactiveViewSymbol.js";
+} from './reactiveViewDefinition.js';
+import type { ReactiveViewFactoryV1, ReactiveViewFactoryV2 } from './reactiveViewFactory.js';
 
 /**
  * Define a reactive view instance.
@@ -59,9 +58,7 @@ export function defineViewV2<Props extends PropsBase = PropsBase>(
         if (options?.forceReply) {
           // TODO: Handle.
         }
-        return void (await template.mount(interaction, () =>
-          definition.factory(props),
-        ));
+        return void (await template.mount(interaction, () => definition.factory(props)));
       },
       onTimeout() {},
       onEnd() {},

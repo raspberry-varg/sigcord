@@ -4,24 +4,17 @@ import {
   type Interaction,
   type Message,
   type MessageComponentInteraction,
-} from "discord.js";
+} from 'discord.js';
 
-import { coreLog } from "../../../internal/coreLog.js";
-import {
-  type TimeoutEndReason,
-  endReasonIsTimeout,
-} from "../../../util/CollectorUtil.js";
-import type { Listener } from "../../../util/Listener.js";
-import type { MessageComponentCallback } from "../../views/viewFlavors.js";
+import { coreLog } from '../../../internal/coreLog.js';
+import { type TimeoutEndReason, endReasonIsTimeout } from '../../../util/CollectorUtil.js';
+
+import type { Listener } from '../../../util/Listener.js';
+import type { MessageComponentCallback } from '../../views/viewFlavors.js';
 
 type ComponentId = string;
-export type ComponentCallbackMap = Map<
-  ComponentId,
-  MessageComponentCallback<any>
->;
-type OnCollectCallback = (
-  collected: CollectedMessageInteraction,
-) => void | Promise<void>;
+export type ComponentCallbackMap = Map<ComponentId, MessageComponentCallback<any>>;
+type OnCollectCallback = (collected: CollectedMessageInteraction) => void | Promise<void>;
 
 interface CollectorOptions {
   onTimeout: () => void;
@@ -39,7 +32,7 @@ interface Listeners {
 
 export class CollectorService {
   lastCollected?: CollectedMessageInteraction;
-  private collector?: ReturnType<Message["createMessageComponentCollector"]>;
+  private collector?: ReturnType<Message['createMessageComponentCollector']>;
   private componentCallbacks: ComponentCallbackMap = new Map();
 
   constructor(private listeners: Partial<Readonly<Listeners>>) {}
@@ -58,14 +51,14 @@ export class CollectorService {
     componentId: string,
     callback: MessageComponentCallback<T>,
   ): void {
-    coreLog.info("CollectorService: Subscribed to component", {
+    coreLog.info('CollectorService: Subscribed to component', {
       id: componentId,
     });
     this.componentCallbacks.set(componentId, callback);
   }
 
   unsubscribeTo(componentId: string): void {
-    coreLog.info("CollectorService: Unsubscribed from component", {
+    coreLog.info('CollectorService: Unsubscribed from component', {
       id: componentId,
     });
     this.componentCallbacks.delete(componentId);
@@ -98,30 +91,22 @@ export class CollectorService {
     return !!this.collector;
   }
 
-  init({
-    message,
-    idle,
-    filter,
-    onTimeout,
-    onCollect,
-  }: CollectorOptions): void {
-    const collector = (this.collector = message.createMessageComponentCollector(
-      {
-        filter,
-        idle,
-      },
-    ));
+  init({ message, idle, filter, onTimeout, onCollect }: CollectorOptions): void {
+    const collector = (this.collector = message.createMessageComponentCollector({
+      filter,
+      idle,
+    }));
 
-    collector.on("collect", async (collected) => {
+    collector.on('collect', async (collected) => {
       this.lastCollected = collected;
-      coreLog.info("CollectorService: Collected a new interaction.", {
+      coreLog.info('CollectorService: Collected a new interaction.', {
         id: collected.customId,
         type: ComponentType[collected.componentType],
       });
       await onCollect?.(collected);
     });
 
-    collector.on("end", async () => {
+    collector.on('end', async () => {
       if (!collector) {
         return;
       }
@@ -133,9 +118,7 @@ export class CollectorService {
         this.listeners.onStop?.fire(endReason);
       }
       this.listeners.onEnd?.fire(endReason);
-      coreLog.info(
-        `Component listener successfully stopped due to reason: ` + endReason,
-      );
+      coreLog.info(`Component listener successfully stopped due to reason: ` + endReason);
     });
   }
 }

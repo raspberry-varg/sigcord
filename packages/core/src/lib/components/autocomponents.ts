@@ -1,14 +1,10 @@
-import {
-  ButtonBuilder,
-  ButtonStyle,
-  type MessageActionRowComponentBuilder,
-} from "discord.js";
+import { ButtonBuilder, ButtonStyle, type MessageActionRowComponentBuilder } from 'discord.js';
 
 /**
  * Special id attached to one of the pre-configured {@link AutoComponents}.
  */
 export enum AutoComponentId {
-  CloseMenuButton = "%%RSRV%%_CloseMenuButton",
+  CloseMenuButton = '%%RSRV%%_CloseMenuButton',
 }
 
 /**
@@ -25,26 +21,19 @@ const COMPONENT_FACTORIES = {
   [AutoComponentId.CloseMenuButton]: () =>
     new ButtonBuilder({
       style: ButtonStyle.Secondary,
-      label: "Close",
+      label: 'Close',
     }),
 } as const;
 
 type Factories = typeof COMPONENT_FACTORIES;
 
-type ComponentMutator<T extends MessageActionRowComponentBuilder> = (
-  component: T,
-) => void;
+type ComponentMutator<T extends MessageActionRowComponentBuilder> = (component: T) => void;
 
 type BuilderDef<T extends AutoComponentId> = ReturnType<Factories[T]>;
 
-const configurations = new Map<
-  AutoComponentId,
-  ComponentMutator<BuilderDef<AutoComponentId>>
->();
+const configurations = new Map<AutoComponentId, ComponentMutator<BuilderDef<AutoComponentId>>>();
 
-function withConfiguration<T extends AutoComponentId>(
-  componentId: T,
-): ReturnType<Factories[T]> {
+function withConfiguration<T extends AutoComponentId>(componentId: T): ReturnType<Factories[T]> {
   const factory = COMPONENT_FACTORIES[componentId];
   const instance = factory();
 

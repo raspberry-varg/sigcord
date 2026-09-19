@@ -1,3 +1,4 @@
+import { batch } from '@preact/signals-core';
 import {
   AwaitModalSubmitOptions,
   CollectedMessageInteraction,
@@ -7,32 +8,25 @@ import {
   ModalBuilder,
   ModalSubmitInteraction,
   type RepliableInteraction,
-} from "discord.js";
+} from 'discord.js';
 
-import { batch } from "@preact/signals-core";
-
-import {
-  PatchTarget,
-  type PatchTargetBitMask,
-} from "../../../framework/patchTarget.js";
-import { coreLog } from "../../../internal/coreLog.js";
-import { assert, assertAndReturn } from "../../../util/Assertions.js";
-import type { TimeoutEndReason } from "../../../util/CollectorUtil.js";
-import { Listener } from "../../../util/Listener.js";
-import { ClassViewProps } from "../../FunctionalMenuView.js";
-import { Navigation } from "../../Navigation.js";
-import { TimeoutComponent, TimeoutEmbed } from "../../PrebuiltEmbeds.js";
-import { RenderingEngine } from "../../RenderingEngine.js";
-import { SYNAPSE_CONTEXT_ID } from "../../builtins/builtins.js";
-import { AutoComponentId } from "../../components/autocomponents.js";
-import { ComponentDefinition } from "../../components/componentDefinition.js";
-import { NamedIdGenerator } from "../../ids/namedIdGenerator.js";
+import { PatchTarget, type PatchTargetBitMask } from '../../../framework/patchTarget.js';
+import { coreLog } from '../../../internal/coreLog.js';
+import { assert, assertAndReturn } from '../../../util/Assertions.js';
+import { Listener } from '../../../util/Listener.js';
+import { SYNAPSE_CONTEXT_ID } from '../../builtins/builtins.js';
+import { AutoComponentId } from '../../components/autocomponents.js';
+import { ComponentDefinition } from '../../components/componentDefinition.js';
+import { ClassViewProps } from '../../FunctionalMenuView.js';
+import { NamedIdGenerator } from '../../ids/namedIdGenerator.js';
 import {
   ModalHandlingOptions,
   ModalOnSubmitHandler,
   ModalRepliableInteraction,
-} from "../../interactivity/modalHandling.js";
-import { createRootOwner, getOwner, runWithOwner } from "../../owners/owner.js";
+} from '../../interactivity/modalHandling.js';
+import { Navigation } from '../../Navigation.js';
+import { createRootOwner, getOwner, runWithOwner } from '../../owners/owner.js';
+import { TimeoutComponent, TimeoutEmbed } from '../../PrebuiltEmbeds.js';
 import {
   EffectFn,
   Signal,
@@ -41,24 +35,25 @@ import {
   createComputed,
   createEffect,
   createSignal,
-} from "../../reactivity/core/signals.js";
-import { untracked } from "../../reactivity/untracked.js";
-import type { DisposeFn, ResumeFn, SuspendFn } from "../../render/dispose.js";
-import { type DefinedView, View } from "../../views/view.js";
-import type { PropsBase } from "../../views/viewDefinitionBase.js";
-import type { ViewMessagePayload } from "../../views/viewFlavors.js";
-import type { IntrinsicMenuProps } from "../defineMenu.js";
-import { CollectorService } from "./collectorService.js";
-import {
-  BufferedPatchStatusLegacy,
-  InteractionPatcherLegacy,
-} from "./interactionPatcherLegacy.js";
-import { MenuContext } from "./menuContext.js";
-import type { MenuInstanceActions } from "./menuInstanceActions.js";
-import { type MicrotaskQueuer, microtaskQueuer } from "./microtaskQueuer.js";
-import { ModalTracker } from "./modalTracker.js";
-import { PatchTracker } from "./patchTracker.js";
-import type { Synapse } from "./synapse.js";
+} from '../../reactivity/core/signals.js';
+import { untracked } from '../../reactivity/untracked.js';
+import { RenderingEngine } from '../../RenderingEngine.js';
+import { type DefinedView, View } from '../../views/view.js';
+
+import { CollectorService } from './collectorService.js';
+import { BufferedPatchStatusLegacy, InteractionPatcherLegacy } from './interactionPatcherLegacy.js';
+import { MenuContext } from './menuContext.js';
+import { type MicrotaskQueuer, microtaskQueuer } from './microtaskQueuer.js';
+import { ModalTracker } from './modalTracker.js';
+import { PatchTracker } from './patchTracker.js';
+
+import type { TimeoutEndReason } from '../../../util/CollectorUtil.js';
+import type { DisposeFn, ResumeFn, SuspendFn } from '../../render/dispose.js';
+import type { PropsBase } from '../../views/viewDefinitionBase.js';
+import type { ViewMessagePayload } from '../../views/viewFlavors.js';
+import type { IntrinsicMenuProps } from '../defineMenu.js';
+import type { MenuInstanceActions } from './menuInstanceActions.js';
+import type { Synapse } from './synapse.js';
 
 const DEFAULT_IDLE = 60_000;
 const DefaultProperties: IntrinsicMenuProps = {
@@ -86,13 +81,10 @@ export interface RenderOptions<ViewIds extends string = string> {
   view?: ViewIds;
 }
 
-export class MenuInstance<
-  ViewId extends string = string,
-  AllProps extends PropsBase = PropsBase,
->
+export class MenuInstance<ViewId extends string = string, AllProps extends PropsBase = PropsBase>
   implements Synapse, MenuInstanceActions
 {
-  private readonly logger = coreLog.namespaced("MenuInstance");
+  private readonly logger = coreLog.namespaced('MenuInstance');
   private readonly rootOwner = createRootOwner();
 
   private readonly props: ClassViewProps & IntrinsicMenuProps;
@@ -132,18 +124,14 @@ export class MenuInstance<
   ) {
     this.rootOwner.context[SYNAPSE_CONTEXT_ID] = this;
     this.views = new Map(registeredViews.map((v) => [v.id, v]));
-    this.props = buildProps(
-      this,
-      this.getView(initialViewId).defaults,
-      initialProps,
-    );
+    this.props = buildProps(this, this.getView(initialViewId).defaults, initialProps);
 
     this.patcher = new InteractionPatcherLegacy(interaction, this.props);
 
     this.collector = new CollectorService(this.listeners);
     this.navigation = new Navigation(this.collector);
     this.patchTracker = new PatchTracker(this.renderer, this.collector);
-    this.componentIdGenerator = new NamedIdGenerator("component", menuId);
+    this.componentIdGenerator = new NamedIdGenerator('component', menuId);
 
     this.idle =
       this.props.idleTimeMs === undefined
@@ -184,7 +172,7 @@ export class MenuInstance<
    * Render API
    */
 
-  async reply(options: Omit<Partial<RenderOptions<ViewId>>, "forceReply">) {
+  async reply(options: Omit<Partial<RenderOptions<ViewId>>, 'forceReply'>) {
     return await this.start({ ...options, forceReply: true });
   }
 
@@ -202,9 +190,7 @@ export class MenuInstance<
     this.listeners.onRender.do(callback, once);
   }
 
-  onEnd(
-    callback: (endReason: TimeoutEndReason | (string & {}) | null) => unknown,
-  ): void {
+  onEnd(callback: (endReason: TimeoutEndReason | (string & {}) | null) => unknown): void {
     this.listeners.onEnd.do(callback);
   }
 
@@ -241,19 +227,19 @@ export class MenuInstance<
   // ==========================
 
   private async doUpdateMicrotask(): Promise<void> {
-    this.logger.info("Update microtask has run");
+    this.logger.info('Update microtask has run');
     if (this.disposed) {
-      this.logger.info("...but the menu was disposed");
+      this.logger.info('...but the menu was disposed');
       return;
     }
 
     let payload: ViewMessagePayload | null = null;
     try {
       const targets = this.patchTracker.collectTargets();
-      this.logger.debug("targets in render microtask ->", { targets });
+      this.logger.debug('targets in render microtask ->', { targets });
       payload = await this.render(targets);
     } catch (error: unknown) {
-      this.logger.error("Error during update microtask", error);
+      this.logger.error('Error during update microtask', error);
       throw error;
     }
 
@@ -273,14 +259,14 @@ export class MenuInstance<
       const result = await this.patcher.patch(payload, {});
       switch (result) {
         case BufferedPatchStatusLegacy.Cancelled:
-          this.logger.debug("Update cancelled");
+          this.logger.debug('Update cancelled');
           break;
         case BufferedPatchStatusLegacy.Completed:
-          this.logger.debug("Update complete");
+          this.logger.debug('Update complete');
           break;
       }
     } catch (error: unknown) {
-      this.logger.error("Error while patching update.", error);
+      this.logger.error('Error while patching update.', error);
       throw error;
     }
   }
@@ -288,9 +274,8 @@ export class MenuInstance<
   private async initialRender(options: Partial<RenderOptions>) {
     const initialView = this.getView(options.view ?? this.initialViewId);
     assert(
-      !("isSubView" in initialView) || !initialView.isSubView,
-      `Tried to render subview "${initialView.id}" directly. ` +
-        "Subviews must be swapped into.",
+      !('isSubView' in initialView) || !initialView.isSubView,
+      `Tried to render subview "${initialView.id}" directly. ` + 'Subviews must be swapped into.',
     );
     this.renderer.queueViewSwap(initialView as View, []);
     this.patcher.mountInteraction(this.getInteractionToPatch());
@@ -301,14 +286,14 @@ export class MenuInstance<
         const result = await this.patcher.patch(payload, {});
         switch (result) {
           case BufferedPatchStatusLegacy.Cancelled:
-            this.logger.debug("Initial render cancelled");
+            this.logger.debug('Initial render cancelled');
             break;
           case BufferedPatchStatusLegacy.Completed:
-            this.logger.debug("Initial render complete");
+            this.logger.debug('Initial render complete');
             break;
         }
       } catch (error: unknown) {
-        this.logger.error("Error while patching initial render.", error);
+        this.logger.error('Error while patching initial render.', error);
         throw error;
       }
     }
@@ -330,7 +315,7 @@ export class MenuInstance<
       );
     } catch (error: unknown) {
       this.logger.error(
-        `Error while creating a ${patchTargets === undefined ? "payload" : "patched payload"}`,
+        `Error while creating a ${patchTargets === undefined ? 'payload' : 'patched payload'}`,
         error,
       );
       throw error;
@@ -343,10 +328,7 @@ export class MenuInstance<
       try {
         payload = await payload;
       } catch (error: unknown) {
-        this.logger.error(
-          "Error while resolving a promise returned from renderer",
-          error,
-        );
+        this.logger.error('Error while resolving a promise returned from renderer', error);
         payload = null;
         throw error;
       }
@@ -377,8 +359,7 @@ export class MenuInstance<
   }
 
   private getInteractionToPatch(): RepliableInteraction {
-    return this.props.renderAfterHandledInteraction &&
-      this.collector.lastCollected
+    return this.props.renderAfterHandledInteraction && this.collector.lastCollected
       ? this.collector.lastCollected
       : this.interaction;
   }
@@ -390,10 +371,8 @@ export class MenuInstance<
 
   private dispose(): void {
     this.disposed = true;
-    this.logger.verbose("Disposing menu instance", { menuId: this.menuId });
-    this.logger.debug(
-      `Disposing ${this.hangingDisposals.length} hanging effect disposal(s)`,
-    );
+    this.logger.verbose('Disposing menu instance', { menuId: this.menuId });
+    this.logger.debug(`Disposing ${this.hangingDisposals.length} hanging effect disposal(s)`);
     for (const dispose of this.hangingDisposals) {
       dispose();
     }
@@ -413,19 +392,16 @@ export class MenuInstance<
       onTimeout: () => this.handleTimeout(),
       onCollect: (collected) => this.handleCollected(collected),
       filter: (i) =>
-        i.user.id === this.interaction.user.id &&
-        i.channelId === this.interaction.channelId,
+        i.user.id === this.interaction.user.id && i.channelId === this.interaction.channelId,
     });
   }
 
-  private async handlePrebuiltComponents(
-    collected: CollectedMessageInteraction,
-  ) {
+  private async handlePrebuiltComponents(collected: CollectedMessageInteraction) {
     const id = collected.customId;
     if (collected.isButton()) {
       switch (id as AutoComponentId) {
         case AutoComponentId.CloseMenuButton: {
-          this.logger.debug("Closing Menu via official CloseMenuButton");
+          this.logger.debug('Closing Menu via official CloseMenuButton');
           await this.close();
           return true;
         }
@@ -450,9 +426,7 @@ export class MenuInstance<
     await this.patcher.patch(payload, {});
   }
 
-  private async handleCollected(
-    collected: CollectedMessageInteraction,
-  ): Promise<void> {
+  private async handleCollected(collected: CollectedMessageInteraction): Promise<void> {
     if (await this.handlePrebuiltComponents(collected)) {
       return;
     }
@@ -462,26 +436,19 @@ export class MenuInstance<
     }
 
     // route to registered handler
-    const interactionCallback = this.collector.getComponentCallback(
-      collected.customId,
-    );
+    const interactionCallback = this.collector.getComponentCallback(collected.customId);
 
     if (!interactionCallback) {
-      this.logger.warn(
-        `MenuView: No handler defined for ${collected.customId}`,
-      );
+      this.logger.warn(`MenuView: No handler defined for ${collected.customId}`);
       return;
     }
 
     try {
       return void (await runWithOwner(this.rootOwner, async () =>
-        untracked(
-          async () =>
-            await batch(async () => await interactionCallback(collected)),
-        ),
+        untracked(async () => await batch(async () => await interactionCallback(collected))),
       ));
     } catch (e) {
-      this.logger.error("Error during component interaction handle", {
+      this.logger.error('Error during component interaction handle', {
         customId: collected.customId,
       });
       throw e;
@@ -513,7 +480,7 @@ export class MenuInstance<
   swap(idOrView: string | View, ...args: unknown[] | [PropsBase]): void {
     this.clearViewArtifacts();
 
-    const incomingIsView = typeof idOrView !== "string";
+    const incomingIsView = typeof idOrView !== 'string';
     const view = incomingIsView ? idOrView : this.getView(idOrView);
     if (incomingIsView) {
       this.renderer.queueViewSwapWithProps(view as View, args[0] as PropsBase);
@@ -521,13 +488,10 @@ export class MenuInstance<
       this.renderer.queueViewSwap(view as View, args);
     }
   }
-  component<
-    Builder extends MessageActionRowComponentBuilder,
-    Cached extends boolean = boolean,
-  >(definition: ComponentDefinition<Builder, Cached>): Builder {
-    const componentId = this.createComponentId(
-      definition.id || this.getNextUniqueComponentId(),
-    );
+  component<Builder extends MessageActionRowComponentBuilder, Cached extends boolean = boolean>(
+    definition: ComponentDefinition<Builder, Cached>,
+  ): Builder {
+    const componentId = this.createComponentId(definition.id || this.getNextUniqueComponentId());
 
     definition.component.setCustomId(componentId);
 
@@ -541,14 +505,8 @@ export class MenuInstance<
     return definition.component;
   }
 
-  showModal(
-    interaction: ModalRepliableInteraction,
-    modal: ModalBuilder,
-  ): Promise<void>;
-  showModal(
-    interaction: ModalRepliableInteraction,
-    options: ModalHandlingOptions,
-  ): Promise<void>;
+  showModal(interaction: ModalRepliableInteraction, modal: ModalBuilder): Promise<void>;
+  showModal(interaction: ModalRepliableInteraction, options: ModalHandlingOptions): Promise<void>;
   async showModal(
     interaction: ModalRepliableInteraction,
     modalOrOptions: ModalBuilder | ModalHandlingOptions,
@@ -556,9 +514,9 @@ export class MenuInstance<
     let modal: ModalBuilder;
     let options: ModalHandlingOptions | undefined;
     if (
-      typeof modalOrOptions === "object" &&
-      "modal" in modalOrOptions &&
-      typeof modalOrOptions.onSubmit === "function"
+      typeof modalOrOptions === 'object' &&
+      'modal' in modalOrOptions &&
+      typeof modalOrOptions.onSubmit === 'function'
     ) {
       modal = modalOrOptions.modal;
       options = modalOrOptions;
@@ -576,13 +534,13 @@ export class MenuInstance<
   async awaitModalSubmit(
     interaction: ModalRepliableInteraction,
     options: AwaitModalSubmitOptions<ModalSubmitInteraction>,
-  ): Promise<ModalSubmitInteraction<import("discord.js").CacheType> | null> {
+  ): Promise<ModalSubmitInteraction<import('discord.js').CacheType> | null> {
     this.modalTracker.setInteraction(interaction);
     let response;
     try {
       response = await interaction.awaitModalSubmit(options);
     } catch (e: unknown) {
-      this.logger.error("Modal ended without receiving a response.", e);
+      this.logger.error('Modal ended without receiving a response.', e);
       this.modalTracker.flush();
       return null;
     }
@@ -611,11 +569,9 @@ export class MenuInstance<
 
     let callbackResult;
     try {
-      callbackResult = runWithOwner(this.rootOwner, () =>
-        batch(() => callback(response)),
-      );
+      callbackResult = runWithOwner(this.rootOwner, () => batch(() => callback(response)));
     } catch (e) {
-      this.logger.error("Error during onModalSubmit", {
+      this.logger.error('Error during onModalSubmit', {
         customId: response.customId,
       });
       throw e;
@@ -649,10 +605,7 @@ export class MenuInstance<
   }
 
   setIdleSec(idleSeconds: number): void {
-    assert(
-      idleSeconds > 0,
-      `Idle time must be greater than 0 seconds, got [${idleSeconds}].`,
-    );
+    assert(idleSeconds > 0, `Idle time must be greater than 0 seconds, got [${idleSeconds}].`);
     this.setIdleMs(idleSeconds * 1_000);
   }
 
@@ -660,7 +613,7 @@ export class MenuInstance<
     this.dispose();
     this.patcher.mountInteraction(this.interaction);
     await this.patcher.delete(this.props.initialMessage);
-    this.collector.stop("close");
+    this.collector.stop('close');
   }
 
   async stop(reason?: string): Promise<void> {
@@ -678,7 +631,7 @@ export class MenuInstance<
 
   scheduleUpdate(): void {
     if (this.disposed) {
-      this.logger.debug("Scheduled on a disposed object, ignoring");
+      this.logger.debug('Scheduled on a disposed object, ignoring');
       return;
     }
     this.updateMicrotask.set();
@@ -701,9 +654,7 @@ export class MenuInstance<
   }
 
   createWritableSignal<T>(): WritableSignal<T | undefined>;
-  createWritableSignal<T>(
-    initialValue: undefined,
-  ): WritableSignal<T | undefined>;
+  createWritableSignal<T>(initialValue: undefined): WritableSignal<T | undefined>;
   createWritableSignal<T>(initialValue: T): WritableSignal<T>;
   createWritableSignal<T>(
     initialValue: T | undefined = undefined,
@@ -715,10 +666,7 @@ export class MenuInstance<
     return createComputed(fn);
   }
 
-  createEffect(
-    fn: EffectFn,
-    patchTarget: PatchTarget = PatchTarget.None,
-  ): DisposeFn {
+  createEffect(fn: EffectFn, patchTarget: PatchTarget = PatchTarget.None): DisposeFn {
     const menuEffect = (): void | DisposeFn => {
       const dispose = fn();
       this.addPatchTargets(patchTarget);
@@ -740,32 +688,22 @@ export class MenuInstance<
     Props extends (ViewDef extends DefinedView<infer P> ? P : never),
   >(view: ViewDef, props: Props): void {
     const currentView = this.renderer.getCurrentView();
-    assert(
-      currentView,
-      "Tried to navigate before initial render in a reactive view.",
-    );
+    assert(currentView, 'Tried to navigate before initial render in a reactive view.');
     if (this.renderer.isCurrentViewReactive()) {
       const reactivePayload = this.renderer.getReactivePayload();
-      assert(
-        reactivePayload,
-        "Tried to navigate before initial render in a reactive view.",
-      );
+      assert(reactivePayload, 'Tried to navigate before initial render in a reactive view.');
       reactivePayload.owner?.suspend();
       this.navigation.push(currentView, reactivePayload);
     } else {
       this.navigation.push(currentView);
     }
-    this.renderer.queueViewSwapWithProps(
-      view as View,
-      props,
-      /** skipCache= */ true,
-    );
+    this.renderer.queueViewSwapWithProps(view as View, props, /** skipCache= */ true);
   }
 
   goBack(): void {
     assert(
       !this.navigation.empty(),
-      "Tried to navigate backwards without a parent view. Have you called goTo() in the parent view?",
+      'Tried to navigate backwards without a parent view. Have you called goTo() in the parent view?',
     );
     const payload = this.navigation.pop();
     payload.reactiveInstance?.owner?.resume();
@@ -779,7 +717,7 @@ export class MenuInstance<
   onSuspend(action: SuspendFn): void {
     const owner = getOwner();
     if (!owner) {
-      throw new Error("onSuspend must be called in a reactive context.");
+      throw new Error('onSuspend must be called in a reactive context.');
     }
     owner.registerOnSuspend(action);
   }
@@ -787,7 +725,7 @@ export class MenuInstance<
   onResume(action: ResumeFn): void {
     const owner = getOwner();
     if (!owner) {
-      throw new Error("onResume must be called in a reactive context.");
+      throw new Error('onResume must be called in a reactive context.');
     }
     owner.registerOnResume(action);
   }

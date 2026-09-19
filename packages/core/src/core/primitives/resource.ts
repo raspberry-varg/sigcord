@@ -1,14 +1,16 @@
-import { batch } from "@preact/signals-core";
+import { batch } from '@preact/signals-core';
 
-import { effect, update } from "../../framework/hooks/index.js";
-import { coreLog } from "../../internal/coreLog.js";
-import { getOwner } from "../../lib/owners/owner.js";
-import { signal } from "../../lib/primitives/signal.js";
-import { read } from "../../lib/reactivity/core/read.js";
-import { type Setter, type Signal } from "../../lib/reactivity/core/signals.js";
-import { untracked } from "../../lib/reactivity/untracked.js";
-import type { MaybePromise } from "../../util/TypesUtil.js";
-import { computed } from "./computed.js";
+import { effect, update } from '../../framework/hooks/index.js';
+import { coreLog } from '../../internal/coreLog.js';
+import { getOwner } from '../../lib/owners/owner.js';
+import { signal } from '../../lib/primitives/signal.js';
+import { read } from '../../lib/reactivity/core/read.js';
+import { type Setter, type Signal } from '../../lib/reactivity/core/signals.js';
+import { untracked } from '../../lib/reactivity/untracked.js';
+
+import { computed } from './computed.js';
+
+import type { MaybePromise } from '../../util/TypesUtil.js';
 
 const OPTIONS_DEFAULTS: Readonly<ResourceOptions<unknown, unknown>> = {
   autoUpdate: true,
@@ -91,13 +93,9 @@ export interface ResourceOptions<T, SOURCE> {
   onError?: (error: unknown, source: NonNullable<SOURCE>) => void;
 }
 
-export type ResourceFetcher<T, SOURCE> = (
-  source: NonNullable<SOURCE>,
-) => MaybePromise<T>;
+export type ResourceFetcher<T, SOURCE> = (source: NonNullable<SOURCE>) => MaybePromise<T>;
 
-export function resource<T>(
-  fetcher: ResourceFetcher<T, true>,
-): ResourceTuple<T | undefined>;
+export function resource<T>(fetcher: ResourceFetcher<T, true>): ResourceTuple<T | undefined>;
 export function resource<T, SOURCE>(
   options: Readonly<ResourceOptions<T, SOURCE>>,
   fetcher: ResourceFetcher<T, SOURCE>,
@@ -125,21 +123,20 @@ export function resource<T, SOURCE>(
  * function that reruns the provided task.
  */
 export function resource<T, SOURCE>(
-  fetcherOrOptions:
-    ResourceFetcher<T, SOURCE> | Readonly<ResourceOptions<T, SOURCE>>,
+  fetcherOrOptions: ResourceFetcher<T, SOURCE> | Readonly<ResourceOptions<T, SOURCE>>,
   fetcherOrUndefined?: ResourceFetcher<T, SOURCE>,
 ): ResourceTuple<T | undefined> {
   let options: Readonly<ResourceOptions<T, SOURCE>>;
   let fetcher: ResourceFetcher<T, SOURCE>;
 
   if (fetcherOrUndefined !== undefined) {
-    options = typeof fetcherOrOptions === "object" ? fetcherOrOptions : {};
+    options = typeof fetcherOrOptions === 'object' ? fetcherOrOptions : {};
     fetcher = fetcherOrUndefined;
-  } else if (typeof fetcherOrOptions !== "object") {
+  } else if (typeof fetcherOrOptions !== 'object') {
     options = {};
     fetcher = fetcherOrOptions;
   } else {
-    throw new Error("Invalid override.");
+    throw new Error('Invalid override.');
   }
 
   const [backingSignal, setData] = signal<T | undefined>(options.initialValue);
@@ -233,7 +230,7 @@ export function resource<T, SOURCE>(
       refetch() {
         // resumeContext();
         if (getOwner()?.disposed) {
-          coreLog.debug("Refetch resource ignored as owner is disposed.");
+          coreLog.debug('Refetch resource ignored as owner is disposed.');
           return;
         }
 

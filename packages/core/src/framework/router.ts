@@ -1,9 +1,10 @@
-import type { Interaction } from "discord.js";
+import { coreLog } from '../internal/coreLog.js';
 
-import { coreLog } from "../internal/coreLog.js";
-import { getActiveCords } from "./registry.js";
+import { getActiveCords } from './registry.js';
 
-const nsLogger = coreLog.namespaced("router");
+import type { Interaction } from 'discord.js';
+
+const nsLogger = coreLog.namespaced('router');
 
 /**
  * Attempts to route an incoming interaction to the appropriate {@link Cord} if
@@ -13,17 +14,15 @@ const nsLogger = coreLog.namespaced("router");
  *
  * @returns Whether the interaction was routed to a {@link Cord}.
  */
-export async function routeInteraction(
-  interaction: Interaction,
-): Promise<boolean> {
+export async function routeInteraction(interaction: Interaction): Promise<boolean> {
   if (!interaction.isMessageComponent() && !interaction.isModalSubmit()) {
-    nsLogger.info("Received interaction with no component or modal");
+    nsLogger.info('Received interaction with no component or modal');
     return false;
   }
 
   const messageId = interaction.message?.id;
   if (!messageId) {
-    nsLogger.warn("Received interaction with no message id");
+    nsLogger.warn('Received interaction with no message id');
     return false;
   }
 

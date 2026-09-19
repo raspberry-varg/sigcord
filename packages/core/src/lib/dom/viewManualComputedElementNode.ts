@@ -1,5 +1,6 @@
-import { ViewNode } from "./viewNode.js";
-import type { ViewNodeKindBase } from "./viewNodeKind.js";
+import { ViewNode } from './viewNode.js';
+
+import type { ViewNodeKindBase } from './viewNodeKind.js';
 
 export abstract class ViewManualComputedElementNode<
   T extends ViewNodeKindBase,

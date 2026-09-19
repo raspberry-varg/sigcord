@@ -1,5 +1,6 @@
-import { getCurrentSynapse } from "../../lib/builtins/builtins.js";
-import type { Synapse } from "../../lib/menu/instance/synapse.js";
+import { getCurrentSynapse } from '../../lib/builtins/builtins.js';
+
+import type { Synapse } from '../../lib/menu/instance/synapse.js';
 
 /**
  * Create an object to modify and read from a single signal. Capable of being
@@ -8,6 +9,6 @@ import type { Synapse } from "../../lib/menu/instance/synapse.js";
  *    later.
  * @returns Object containing signal read and mutators.
  */
-export const writable: Synapse["createWritableSignal"] = <T>(
+export const writable: Synapse['createWritableSignal'] = <T>(
   initialValue: T | undefined = undefined,
 ) => getCurrentSynapse().createWritableSignal(initialValue);

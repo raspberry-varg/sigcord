@@ -60,8 +60,6 @@
   "devDependencies": {
     "@types/bun": "catalog:",
     "discord.js": "catalog:",
-    "nx": "22.0.3",
-    "prettier": "catalog:",
     "typescript": "catalog:"
   },
   "peerDependencies": {

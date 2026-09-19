@@ -1,7 +1,9 @@
-import { effect } from "../../framework/hooks/index.js";
-import type { Signal, SignalTuple } from "../../lib/reactivity/core/signals.js";
-import { untracked } from "../../lib/reactivity/untracked.js";
-import { signal } from "./signal.js";
+import { effect } from '../../framework/hooks/index.js';
+import { untracked } from '../../lib/reactivity/untracked.js';
+
+import { signal } from './signal.js';
+
+import type { Signal, SignalTuple } from '../../lib/reactivity/core/signals.js';
 
 export type LinkedSignalComputeFunction<SOURCE, OUT> = (
   currentSource: SOURCE,
@@ -24,9 +26,7 @@ export function linkedSignal<SOURCE, OUT>(
     const previousValue = untracked(backingSignal[0]);
     const currentSource = source();
 
-    const computedValue = untracked(() =>
-      compute(currentSource, previousValue),
-    );
+    const computedValue = untracked(() => compute(currentSource, previousValue));
     backingSignal[1](computedValue);
   });
 

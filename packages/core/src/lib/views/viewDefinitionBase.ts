@@ -1,4 +1,4 @@
-import type { IntrinsicMenuProps } from "../menu/defineMenu.js";
+import type { IntrinsicMenuProps } from '../menu/defineMenu.js';
 
 export type PropsBase = NonNullable<unknown>;
 export interface ViewDefinitionBase {

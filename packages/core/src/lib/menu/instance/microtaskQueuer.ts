@@ -1,12 +1,8 @@
-export function microtaskQueuer(
-  cb: () => void | Promise<void>,
-): MicrotaskQueuer {
+export function microtaskQueuer(cb: () => void | Promise<void>): MicrotaskQueuer {
   return new MicrotaskQueuer(cb);
 }
 
-export function simpleMicrotaskQueuer(
-  cb: () => void | Promise<void>,
-): () => void {
+export function simpleMicrotaskQueuer(cb: () => void | Promise<void>): () => void {
   let queued = false;
   return () => {
     if (queued) {

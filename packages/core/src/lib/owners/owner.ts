@@ -1,13 +1,11 @@
-import { AsyncLocalStorage } from "node:async_hooks";
+import { AsyncLocalStorage } from 'node:async_hooks';
 
-import {
-  ImperativeLockContext,
-  ImperativeLockKind,
-} from "../../core/contexts/imperativeLock.js";
-import { coreLog } from "../../internal/coreLog.js";
-import type { ContextNode } from "../contexts/contextNode.js";
-import { provideContextValue } from "../contexts/provideContext.js";
-import type { DisposeFn, ResumeFn, SuspendFn } from "../render/dispose.js";
+import { ImperativeLockContext, ImperativeLockKind } from '../../core/contexts/imperativeLock.js';
+import { coreLog } from '../../internal/coreLog.js';
+import { provideContextValue } from '../contexts/provideContext.js';
+
+import type { ContextNode } from '../contexts/contextNode.js';
+import type { DisposeFn, ResumeFn, SuspendFn } from '../render/dispose.js';
 
 export interface Owner extends Disposable {
   readonly context: ContextNode;
@@ -110,10 +108,7 @@ class OwnerImpl implements Owner {
     }
   }
 
-  private runCallbacksWithLock(
-    lock: ImperativeLockKind,
-    callbacks: ReadonlyArray<() => void>,
-  ) {
+  private runCallbacksWithLock(lock: ImperativeLockKind, callbacks: ReadonlyArray<() => void>) {
     if (!callbacks.length) {
       return;
     }
@@ -135,8 +130,8 @@ class OwnerImpl implements Owner {
     this.childOwners.forEach(disposeOwner);
     this.childOwners.clear();
 
-    coreLog.verbose("DisposingOwner.", {
-      debugName: this.debugName ?? "",
+    coreLog.verbose('DisposingOwner.', {
+      debugName: this.debugName ?? '',
       toDispose: {
         disposalFns: this.disposals,
         childOwners: this.childOwners,
@@ -176,7 +171,7 @@ export function getOwner(): Owner | null {
 export function getOwnerOrThrow(): Owner {
   const openOwner = getOwner();
   if (!openOwner) {
-    throw new Error("No current owner. Were we called outside a menu context?");
+    throw new Error('No current owner. Were we called outside a menu context?');
   }
   return openOwner;
 }
@@ -209,12 +204,8 @@ interface OwnerOptions {
  * @param ownerFn
  */
 export function owner<T>(ownerFn: () => T, options?: OwnerOptions): T {
-  coreLog.verbose(
-    `creating a new owner(${options?.debugName}) with fn=${ownerFn}`,
-  );
-  const newOwner = new OwnerImpl(
-    options?.autoReparent === false ? null : getOwner(),
-  );
+  coreLog.verbose(`creating a new owner(${options?.debugName}) with fn=${ownerFn}`);
+  const newOwner = new OwnerImpl(options?.autoReparent === false ? null : getOwner());
   if (options?.debugName) {
     newOwner.debugName = options.debugName;
   }

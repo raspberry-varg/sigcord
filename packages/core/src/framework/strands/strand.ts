@@ -1,27 +1,22 @@
-import { CollectedInteraction } from "discord.js";
+import { CollectedInteraction } from 'discord.js';
 
-import { CurrentRepliableContext } from "../../core/contexts/currentRepliableContext.js";
-import {
-  ImperativeLockContext,
-  ImperativeLockKind,
-} from "../../core/contexts/imperativeLock.js";
-import { provideContextValue } from "../../lib/contexts/provideContext.js";
-import { getOwnerOrThrow, owner } from "../../lib/owners/owner.js";
-import type { Cord } from "../cord.js";
+import { CurrentRepliableContext } from '../../core/contexts/currentRepliableContext.js';
+import { ImperativeLockContext, ImperativeLockKind } from '../../core/contexts/imperativeLock.js';
+import { provideContextValue } from '../../lib/contexts/provideContext.js';
+import { getOwnerOrThrow, owner } from '../../lib/owners/owner.js';
+
+import type { Cord } from '../cord.js';
 import type {
   CollectedInteractionHandlerData,
   ModalInteractionHandlerData,
-} from "../interactionHandlerData.js";
-import type { Payload } from "../payload.js";
+} from '../interactionHandlerData.js';
+import type { Payload } from '../payload.js';
 
 /**
  * An active view for a given {@link Cord}.
  */
 export abstract class Strand {
-  readonly componentHandlers = new Map<
-    string,
-    CollectedInteractionHandlerData
-  >();
+  readonly componentHandlers = new Map<string, CollectedInteractionHandlerData>();
   readonly modalHandlers = new Map<string, ModalInteractionHandlerData>();
 
   protected constructor(protected readonly cord: Cord) {}
@@ -56,10 +51,7 @@ export abstract class Strand {
   ) {
     const handlerOwner = await owner(async () => {
       provideContextValue(CurrentRepliableContext, interaction);
-      provideContextValue(
-        ImperativeLockContext,
-        ImperativeLockKind.InteractionHandler,
-      );
+      provideContextValue(ImperativeLockContext, ImperativeLockKind.InteractionHandler);
 
       const promise = handler.handle(interaction);
       if (promise instanceof Promise) {

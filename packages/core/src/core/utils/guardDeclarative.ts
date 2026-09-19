@@ -1,16 +1,12 @@
-import { coreLog } from "../../internal/coreLog.js";
-import { useContext } from "../../lib/contexts/useContext.js";
-import {
-  ImperativeLockContext,
-  ImperativeLockKind,
-} from "../contexts/imperativeLock.js";
+import { coreLog } from '../../internal/coreLog.js';
+import { useContext } from '../../lib/contexts/useContext.js';
+import { ImperativeLockContext, ImperativeLockKind } from '../contexts/imperativeLock.js';
 
 const LOCK_DESCRIPTIONS: Record<ImperativeLockKind, string> = {
-  [ImperativeLockKind.InteractionHandler]:
-    "an interaction handler (e.g., inside a button click)",
-  [ImperativeLockKind.Cleanup]: "an onCleanup block",
-  [ImperativeLockKind.Suspend]: "a suspend hook",
-  [ImperativeLockKind.Resume]: "a resume hook",
+  [ImperativeLockKind.InteractionHandler]: 'an interaction handler (e.g., inside a button click)',
+  [ImperativeLockKind.Cleanup]: 'an onCleanup block',
+  [ImperativeLockKind.Suspend]: 'a suspend hook',
+  [ImperativeLockKind.Resume]: 'a resume hook',
 };
 
 export function guardDeclarative(functionName: string): void {

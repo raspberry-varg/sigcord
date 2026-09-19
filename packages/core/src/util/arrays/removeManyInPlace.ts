@@ -1,7 +1,4 @@
-export function removeManyInPlace<T>(
-  array: T[],
-  toRemove: ReadonlySet<T>,
-): void {
+export function removeManyInPlace<T>(array: T[], toRemove: ReadonlySet<T>): void {
   let writeSlot = 0;
   for (let i = 0; i < array.length; i++) {
     const item = array[i];
