@@ -141,7 +141,7 @@ class StringSelectNode extends ViewManualComputedElementNode<StringSelectMenuBui
 
   override dispose(): void {
     if (this.disposed) return;
-    this.disposed_ = true;
+    this._disposed = true;
 
     this.contentOwner?.dispose();
     for (let i = 0; i < this.nodes.length; i++) {

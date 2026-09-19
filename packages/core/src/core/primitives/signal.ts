@@ -37,5 +37,5 @@ export function signal<T>(initialValue?: T): SignalTuple<T | undefined> {
     // Route to legacy behavior.
     return synapse.createSignal(initialValue);
   }
-  return createSignal(initialValue, 0).split();
+  return createSignal(initialValue).split();
 }

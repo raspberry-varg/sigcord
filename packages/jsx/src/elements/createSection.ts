@@ -38,7 +38,7 @@ class SectionElement extends ViewManualComputedElementNode<
 
   override dispose(): void {
     if (this.disposed) return;
-    this.disposed_ = true;
+    this._disposed = true;
     this.accessoryOwner.dispose();
     this.textOwner.dispose();
   }

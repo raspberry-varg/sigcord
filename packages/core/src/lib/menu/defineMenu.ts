@@ -50,13 +50,13 @@ export function defineMenu<
   const idToClass = new Map<string, View>();
   // convert array to map of id to view class
   for (const view of views as Views) {
-    const id = view.id;
-    if (idToClass.has(id)) {
+    const viewId = view.id;
+    if (idToClass.has(viewId)) {
       throw new InteractiveMenuError(
-        `Id '${id}' already exists in this interactive menu.`,
+        `Id '${viewId}' already exists in this interactive menu.`,
       );
     }
-    idToClass.set(id, view);
+    idToClass.set(viewId, view);
   }
   if (!idToClass.has(initialView)) {
     throw new InteractiveMenuError(
@@ -80,8 +80,4 @@ export type MenuFactory<Props extends PropsBase> = (
   props: Props & Partial<IntrinsicMenuProps>,
 ) => MenuInstanceActions;
 
-class InteractiveMenuError extends Error {
-  constructor(message: string) {
-    super(message);
-  }
-}
+class InteractiveMenuError extends Error {}

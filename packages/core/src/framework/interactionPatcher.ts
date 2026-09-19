@@ -192,9 +192,9 @@ export class InteractionPatcher {
 
     if (this.bufferedPatch) {
       this.logger.debug('Patch complete, but another was buffered...');
-      const { payload, options } = this.bufferedPatch;
+      const buffered = this.bufferedPatch;
       this.bufferedPatch = null;
-      return await this.patch(payload, options);
+      return await this.patch(buffered.payload, buffered.options);
     } else {
       this.logger.debug('Patch complete.');
       return BufferedPatchStatus.Completed;
@@ -241,9 +241,10 @@ export class InteractionPatcher {
       this.logger.debug('Delete encountered active defer.');
       try {
         await activeDeferUpdate;
-      } catch (_: unknown) {
+      } catch (error: unknown) {
         this.logger.verbose(
           'Error while delete was waiting for active defer update.',
+          { error },
         );
       }
       this.logger.debug('Delete resolved active defer.');

@@ -51,8 +51,8 @@ class ContainerElement extends ViewManualComputedElementNode<ContainerBuilder> {
   }
 
   override dispose(): void {
-    if (this.disposed_) return;
-    this.disposed_ = true;
+    if (this._disposed) return;
+    this._disposed = true;
 
     this.containerOwner.dispose();
     for (let i = 0; i < this.nodes.length; i++) {
