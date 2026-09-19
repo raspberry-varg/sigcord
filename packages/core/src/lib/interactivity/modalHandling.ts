@@ -4,7 +4,7 @@ import type {
   MessageComponentInteraction,
   ModalBuilder,
   ModalSubmitInteraction,
-} from 'discord.js';
+} from "discord.js";
 
 export type ModalRepliableInteraction =
   CommandInteraction | MessageComponentInteraction;

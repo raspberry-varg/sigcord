@@ -1,3 +1,3 @@
-import {type InternalLogger, createInternalLogger} from '@sigcord/core';
+import { type InternalLogger, createInternalLogger } from "@sigcord/core";
 
-export const jsxLog: InternalLogger = createInternalLogger('sigcord:jsx');
+export const jsxLog: InternalLogger = createInternalLogger("sigcord:jsx");

@@ -1,1 +1,1 @@
-export * from '@sigcord/jsx/flow';
+export * from "@sigcord/jsx/flow";

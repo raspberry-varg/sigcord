@@ -1,13 +1,13 @@
-import type {ModalBuilder} from 'discord.js';
+import type { ModalBuilder } from "discord.js";
 
-import type {ModalRepliableInteraction} from '../../interactivity/modalHandling.js';
+import type { ModalRepliableInteraction } from "../../interactivity/modalHandling.js";
 
 export class ModalTracker {
-  private latestInteractionId = '';
-  private latestCustomId = '';
+  private latestInteractionId = "";
+  private latestCustomId = "";
 
   setModal(modal: ModalBuilder): void {
-    this.latestCustomId = modal.data.custom_id ?? '';
+    this.latestCustomId = modal.data.custom_id ?? "";
   }
 
   setInteraction(interaction: ModalRepliableInteraction): void {
@@ -15,8 +15,8 @@ export class ModalTracker {
   }
 
   flush(): void {
-    this.latestInteractionId = '';
-    this.latestCustomId = '';
+    this.latestInteractionId = "";
+    this.latestCustomId = "";
   }
 
   isCustomId(id: string): boolean {

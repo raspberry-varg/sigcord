@@ -1,12 +1,12 @@
-import {ViewComputedElementNode} from '../dom/viewComputedElementNode.js';
-import {ViewContentNode} from '../dom/viewContentNode.js';
-import {ViewElementNode} from '../dom/viewElementNode.js';
-import {ViewManualComputedElementNode} from '../dom/viewManualComputedElementNode.js';
-import {ViewNode} from '../dom/viewNode.js';
-import type {ViewNodeKindBase} from '../dom/viewNodeKind.js';
-import {type Owner, setCurrentOwner} from '../owners/owner.js';
-import type {ReadonlyRecursive} from '../recursive.js';
-import type {ViewComponent} from '../views/viewFlavors.js';
+import { ViewComputedElementNode } from "../dom/viewComputedElementNode.js";
+import { ViewContentNode } from "../dom/viewContentNode.js";
+import { ViewElementNode } from "../dom/viewElementNode.js";
+import { ViewManualComputedElementNode } from "../dom/viewManualComputedElementNode.js";
+import { ViewNode } from "../dom/viewNode.js";
+import type { ViewNodeKindBase } from "../dom/viewNodeKind.js";
+import { type Owner, setCurrentOwner } from "../owners/owner.js";
+import type { ReadonlyRecursive } from "../recursive.js";
+import type { ViewComponent } from "../views/viewFlavors.js";
 
 type ExcludeEmptyTypes<T> = NonNullable<Exclude<T, boolean>>;
 

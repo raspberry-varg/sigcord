@@ -1,10 +1,10 @@
-import {assert} from '../util/Assertions.js';
+import { assert } from "../util/Assertions.js";
 import {
   CollectorService,
   type ComponentCallbackMap,
-} from './menu/instance/collectorService.js';
-import type {View} from './views/view.js';
-import type {RenderedReactiveView} from './views/viewFlavors.js';
+} from "./menu/instance/collectorService.js";
+import type { View } from "./views/view.js";
+import type { RenderedReactiveView } from "./views/viewFlavors.js";
 
 export interface NavigationPayload {
   view: View;

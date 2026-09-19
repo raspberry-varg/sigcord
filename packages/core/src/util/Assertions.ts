@@ -12,11 +12,11 @@ export function assertAndReturn<T>(
   condition: (condition: T) => boolean,
   msg?: string | ((value: T) => string),
 ): T {
-  assert(condition(value), typeof msg === 'string' ? msg : msg?.(value));
+  assert(condition(value), typeof msg === "string" ? msg : msg?.(value));
   return value;
 }
 
 export function assertNotNull<T>(value: T | null | undefined): NonNullable<T> {
-  assert(value != null, 'Expected value to not be null.');
+  assert(value != null, "Expected value to not be null.");
   return value!;
 }

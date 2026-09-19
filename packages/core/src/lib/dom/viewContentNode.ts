@@ -1,6 +1,6 @@
-import {coreLog} from '../../internal/coreLog.js';
-import {ViewNode} from './viewNode.js';
-import type {ViewNodeKind} from './viewNodeKind.js';
+import { coreLog } from "../../internal/coreLog.js";
+import { ViewNode } from "./viewNode.js";
+import type { ViewNodeKind } from "./viewNodeKind.js";
 
 export class ViewContentNode<T extends ViewNodeKind> extends ViewNode<T> {
   private content?: T;
@@ -21,7 +21,7 @@ export class ViewContentNode<T extends ViewNodeKind> extends ViewNode<T> {
   override dispose(): void {
     if (this.disposed) return;
 
-    coreLog.verbose('DisposingViewContentNode', {content: this.content});
+    coreLog.verbose("DisposingViewContentNode", { content: this.content });
     this.content = undefined;
   }
 }

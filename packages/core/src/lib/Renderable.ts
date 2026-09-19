@@ -5,10 +5,10 @@ import {
   type MessageActionRowComponentBuilder,
   MessageFlags,
   type RepliableInteraction,
-} from 'discord.js';
+} from "discord.js";
 
-import {safeRender} from '../util/RenderingUtil.js';
-import {ViewMessagePayload} from './views/viewFlavors.js';
+import { safeRender } from "../util/RenderingUtil.js";
+import { ViewMessagePayload } from "./views/viewFlavors.js";
 
 interface RenderOptions {
   flags?: MessageFlags;

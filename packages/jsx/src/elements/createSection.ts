@@ -6,7 +6,7 @@ import {
   SectionBuilder,
   TextDisplayBuilder,
   ThumbnailBuilder,
-} from 'discord.js';
+} from "discord.js";
 
 import {
   type Owner,
@@ -17,12 +17,12 @@ import {
   flattenToContentNodes,
   getOwnerOrThrow,
   owner,
-} from '@sigcord/core';
+} from "@sigcord/core";
 
-import type {IntrinsicElementProps} from '../index.js';
-import {isButtonData} from '../util/isButtonData.js';
-import {isTextDisplayData} from '../util/isTextDisplayData.js';
-import {isThumbnailData} from '../util/isThumbnailData.js';
+import type { IntrinsicElementProps } from "../index.js";
+import { isButtonData } from "../util/isButtonData.js";
+import { isTextDisplayData } from "../util/isTextDisplayData.js";
+import { isThumbnailData } from "../util/isThumbnailData.js";
 
 class SectionElement extends ViewManualComputedElementNode<
   SectionBuilder | TextDisplayBuilder
@@ -47,16 +47,16 @@ class SectionElement extends ViewManualComputedElementNode<
     const accessory = this.resolveAccessory();
     const text = flatten(this.textNodes, this.textOwner);
     const textBuilders: TextDisplayBuilder[] = [];
-    let currentString: Signal<string> | string = '';
+    let currentString: Signal<string> | string = "";
     for (let t of text) {
       if (!t) {
         continue;
       }
 
       if (
-        typeof t === 'string' ||
-        typeof t === 'number' ||
-        typeof t === 'boolean'
+        typeof t === "string" ||
+        typeof t === "number" ||
+        typeof t === "boolean"
       ) {
         currentString += t;
         continue;
@@ -64,7 +64,7 @@ class SectionElement extends ViewManualComputedElementNode<
 
       if (currentString) {
         textBuilders.push(new TextDisplayBuilder().setContent(currentString));
-        currentString = '';
+        currentString = "";
       }
 
       if (isTextDisplayData(t)) {
@@ -78,7 +78,7 @@ class SectionElement extends ViewManualComputedElementNode<
       }
 
       throw new Error(
-        'Invalid child type for <section>. ' +
+        "Invalid child type for <section>. " +
           `Expected TextDisplay kind, got: ${t}`,
       );
     }
@@ -139,7 +139,7 @@ class SectionElement extends ViewManualComputedElementNode<
   }
 }
 
-export function createSection(props: IntrinsicElementProps['section']) {
+export function createSection(props: IntrinsicElementProps["section"]) {
   const accessory = props.accessory;
   const children = props.children;
   if (!accessory) {

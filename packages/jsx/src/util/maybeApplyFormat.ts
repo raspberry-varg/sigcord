@@ -9,5 +9,5 @@ export function maybeApplyFormat(
   if (!appendNewline) {
     return formatter(str);
   }
-  return formatter(str) + '\n';
+  return formatter(str) + "\n";
 }

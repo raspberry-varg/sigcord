@@ -1,4 +1,4 @@
-export const TIMEOUT_END_REASONS = ['idle', 'timeout', 'time'] as const;
+export const TIMEOUT_END_REASONS = ["idle", "timeout", "time"] as const;
 export type TimeoutEndReason = (typeof TIMEOUT_END_REASONS)[number];
 
 export function endReasonIsTimeout(

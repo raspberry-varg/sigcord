@@ -4,11 +4,11 @@ import {
   type InteractionUpdateOptions,
   type Message,
   RepliableInteraction,
-} from 'discord.js';
+} from "discord.js";
 
-import type {Payload} from '../framework/payload.js';
-import {TimeoutEmbed} from '../lib/PrebuiltEmbeds.js';
-import {ViewMessagePayload} from '../lib/views/viewFlavors.js';
+import type { Payload } from "../framework/payload.js";
+import { TimeoutEmbed } from "../lib/PrebuiltEmbeds.js";
+import { ViewMessagePayload } from "../lib/views/viewFlavors.js";
 
 export function appendTimeoutEmbed(payload: ViewMessagePayload) {
   payload.embeds = [...(payload.embeds ?? []).splice(0, 10), TimeoutEmbed];
@@ -52,12 +52,12 @@ export async function safeRender(
     if (options.preferReplyForComponent) {
       const response = await renderTarget.reply({
         ...viewPayload,
-      } as InteractionReplyOptions & {withResponse: true});
+      } as InteractionReplyOptions & { withResponse: true });
       message = response.resource?.message ?? undefined;
     } else {
       const response = await renderTarget.update({
         ...viewPayload,
-      } as InteractionUpdateOptions & {withResponse: true});
+      } as InteractionUpdateOptions & { withResponse: true });
       message = response.resource?.message ?? undefined;
     }
   }
@@ -66,7 +66,7 @@ export async function safeRender(
   if (!message && options.retrieveMessage) {
     const response = await renderTarget.reply({
       ...viewPayload,
-    } as InteractionReplyOptions & {withResponse: true});
+    } as InteractionReplyOptions & { withResponse: true });
     message = response.resource?.message ?? undefined;
   }
 

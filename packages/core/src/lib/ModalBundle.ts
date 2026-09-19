@@ -4,7 +4,7 @@ import {
   ModalBuilder,
   ModalSubmitInteraction,
   type TextInputModalData,
-} from 'discord.js';
+} from "discord.js";
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 export type ModalBundle<Props = {}> = (props: Props) => ModalBundleBlueprint;
@@ -33,7 +33,7 @@ function extractModalSubmitValues<Values extends {}>(
         (e): e is [(typeof e)[0], TextInputModalData] =>
           e[1].type === ComponentType.TextInput,
       ),
-    ([key, {value}]) => {
+    ([key, { value }]) => {
       return [key, value];
     },
   );

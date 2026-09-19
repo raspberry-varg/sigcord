@@ -1,4 +1,4 @@
-import type {Context} from '../../lib/contexts/context.js';
+import type { Context } from "../../lib/contexts/context.js";
 
 export function createInternalContext<T>(
   id: string,

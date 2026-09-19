@@ -6,25 +6,25 @@
 import {
   type CollectedMessageInteraction,
   type RepliableInteraction,
-} from 'discord.js';
+} from "discord.js";
 
-import {createUniqueComponentId} from '../../framework/hooks/index.js';
-import {usePatchTarget} from '../../framework/hooks/usePatchTarget.js';
-import {PatchTarget} from '../../framework/patchTarget.js';
-import type {MenuContext} from '../menu/instance/menuContext.js';
-import {Synapse} from '../menu/instance/synapse.js';
-import {getOwner} from '../owners/owner.js';
+import { createUniqueComponentId } from "../../framework/hooks/index.js";
+import { usePatchTarget } from "../../framework/hooks/usePatchTarget.js";
+import { PatchTarget } from "../../framework/patchTarget.js";
+import type { MenuContext } from "../menu/instance/menuContext.js";
+import { Synapse } from "../menu/instance/synapse.js";
+import { getOwner } from "../owners/owner.js";
 
-export const SYNAPSE_CONTEXT_ID = Symbol.for('__sigcord.Synapse');
+export const SYNAPSE_CONTEXT_ID = Symbol.for("__sigcord.Synapse");
 
 export function getCurrentSynapse(): Synapse {
   const synapse = getCurrentSynapseOrDefault();
   if (!synapse) {
     throw new Error(
-      'Attempted to use a hook outside of a reactive context. Was this called ' +
-        'outside of a reactive view?\n\nClassic menu views should use the ' +
-        'Synapse parameter directly ($).\n\n' +
-        'Did you await within the body of a component function?',
+      "Attempted to use a hook outside of a reactive context. Was this called " +
+        "outside of a reactive view?\n\nClassic menu views should use the " +
+        "Synapse parameter directly ($).\n\n" +
+        "Did you await within the body of a component function?",
     );
   }
   return synapse;
@@ -68,7 +68,7 @@ export function injectCurrentInteraction(): RepliableInteraction {
 
 // Component
 
-export const getNextUniqueComponentId: Synapse['getNextUniqueComponentId'] =
+export const getNextUniqueComponentId: Synapse["getNextUniqueComponentId"] =
   () => createUniqueComponentId();
 
 // Navigation
@@ -78,7 +78,7 @@ export const getNextUniqueComponentId: Synapse['getNextUniqueComponentId'] =
  *
  * - Can navigate back out of the view using {@link goBack}
  */
-export const goTo: Synapse['goTo'] = (view, props) =>
+export const goTo: Synapse["goTo"] = (view, props) =>
   getCurrentSynapse().goTo(view, props);
 
 /**
@@ -86,13 +86,13 @@ export const goTo: Synapse['goTo'] = (view, props) =>
  *
  * @throws If not navigated to using {@link goTo}
  */
-export const goBack: Synapse['goBack'] = () => getCurrentSynapse().goBack();
+export const goBack: Synapse["goBack"] = () => getCurrentSynapse().goBack();
 
 /**
  * Returns true if this view was navigated to using {@link goTo}. Safely allows
  * the use of {@link goBack} since the previous menu is on the navigation stack.
  */
-export const canNavigateBack: Synapse['canGoBack'] = () =>
+export const canNavigateBack: Synapse["canGoBack"] = () =>
   getCurrentSynapse().canGoBack();
 
 /**
@@ -100,7 +100,7 @@ export const canNavigateBack: Synapse['canGoBack'] = () =>
  *
  * @param action Action to perform when this view suspends.
  */
-export const onSuspend: Synapse['onSuspend'] = (action) =>
+export const onSuspend: Synapse["onSuspend"] = (action) =>
   getCurrentSynapse().onSuspend(action);
 
 /**
@@ -108,7 +108,7 @@ export const onSuspend: Synapse['onSuspend'] = (action) =>
  *
  * @param action Action to perform when this menu is navigated back to.
  */
-export const onResume: Synapse['onResume'] = (action) =>
+export const onResume: Synapse["onResume"] = (action) =>
   getCurrentSynapse().onResume(action);
 
 // Modals
@@ -118,10 +118,10 @@ export const onResume: Synapse['onResume'] = (action) =>
  * @param interaction
  * @param modalOrOptions
  */
-export const showModal: Synapse['showModal'] = (interaction, modalOrOptions) =>
+export const showModal: Synapse["showModal"] = (interaction, modalOrOptions) =>
   getCurrentSynapse().showModal(
     interaction,
-    modalOrOptions as Parameters<Synapse['showModal']>[1],
+    modalOrOptions as Parameters<Synapse["showModal"]>[1],
   );
 
 /**
@@ -129,7 +129,7 @@ export const showModal: Synapse['showModal'] = (interaction, modalOrOptions) =>
  * @param interaction
  * @param options
  */
-export const awaitModalSubmit: Synapse['awaitModalSubmit'] = (
+export const awaitModalSubmit: Synapse["awaitModalSubmit"] = (
   interaction,
   options,
 ) => getCurrentSynapse().awaitModalSubmit(interaction, options);
@@ -140,7 +140,7 @@ export const awaitModalSubmit: Synapse['awaitModalSubmit'] = (
  * @param options
  * @param callback
  */
-export const onModalSubmit: Synapse['onModalSubmit'] = (
+export const onModalSubmit: Synapse["onModalSubmit"] = (
   interaction,
   options,
   callback,
@@ -151,25 +151,25 @@ export const onModalSubmit: Synapse['onModalSubmit'] = (
 /**
  * @deprecated Please use contexts with signals instead.
  */
-export const queueEmbeds: Synapse['appendEmbeds'] = (...embeds) =>
+export const queueEmbeds: Synapse["appendEmbeds"] = (...embeds) =>
   getCurrentSynapse().appendEmbeds(...embeds);
 
 /**
  * @deprecated Please use contexts with signals instead.
  */
-export const queueEmbedsAtHead: Synapse['prependEmbeds'] = (...embeds) =>
+export const queueEmbedsAtHead: Synapse["prependEmbeds"] = (...embeds) =>
   getCurrentSynapse().prependEmbeds(...embeds);
 
 /**
  * @deprecated Please use contexts with signals instead.
  */
-export const queueComponents: Synapse['appendComponents'] = (...components) =>
+export const queueComponents: Synapse["appendComponents"] = (...components) =>
   getCurrentSynapse().appendComponents(...components);
 
 /**
  * @deprecated Please use contexts with signals instead.
  */
-export const queueComponentsAtHead: Synapse['prependComponents'] = (
+export const queueComponentsAtHead: Synapse["prependComponents"] = (
   ...components
 ) => getCurrentSynapse().prependComponents(...components);
 
@@ -178,20 +178,20 @@ export const queueComponentsAtHead: Synapse['prependComponents'] = (
 /**
  * @deprecated Will be removed when legacy view definitions go away.
  */
-export const setIdleMs: Synapse['setIdleMs'] = (idleMilliseconds) =>
+export const setIdleMs: Synapse["setIdleMs"] = (idleMilliseconds) =>
   getCurrentSynapse().setIdleMs(idleMilliseconds);
 
 /**
  * @deprecated Will be removed when legacy view definitions go away.
  */
-export const setIdleSec: Synapse['setIdleSec'] = (idleSeconds) =>
+export const setIdleSec: Synapse["setIdleSec"] = (idleSeconds) =>
   getCurrentSynapse().setIdleSec(idleSeconds);
 
 /**
  * @deprecated Use {@link close} instead.
  * @param reason
  */
-export const stopMenu: Synapse['stop'] = (reason) =>
+export const stopMenu: Synapse["stop"] = (reason) =>
   getCurrentSynapse().stop(reason);
 
 // Rendering
@@ -201,5 +201,5 @@ export const stopMenu: Synapse['stop'] = (reason) =>
  *
  * Manually queue patches for specific message parts.
  */
-export const patch: Synapse['addPatchTargets'] = (...targets) =>
+export const patch: Synapse["addPatchTargets"] = (...targets) =>
   getCurrentSynapse().addPatchTargets(...targets);

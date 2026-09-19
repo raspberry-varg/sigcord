@@ -1,12 +1,12 @@
-import {TextDisplayBuilder} from 'discord.js';
+import { TextDisplayBuilder } from "discord.js";
 
-import {ViewContentNode, patchEffect} from '@sigcord/core';
+import { ViewContentNode, patchEffect } from "@sigcord/core";
 
-import type {IntrinsicElementProps} from '../index.js';
-import {parseChildrenToString} from '../util/parseChildrenToString.js';
+import type { IntrinsicElementProps } from "../index.js";
+import { parseChildrenToString } from "../util/parseChildrenToString.js";
 
 export function createTextDisplay(
-  props: IntrinsicElementProps['text'],
+  props: IntrinsicElementProps["text"],
 ): TextDisplayBuilder | ViewContentNode<TextDisplayBuilder> | null {
   const children = props.children;
   if (children == null || children === false) {
@@ -14,14 +14,14 @@ export function createTextDisplay(
   }
 
   const textDisplay = new TextDisplayBuilder();
-  if (typeof children === 'string') {
+  if (typeof children === "string") {
     textDisplay.setContent(children);
     return textDisplay;
   }
 
   const finalString = parseChildrenToString(children);
 
-  if (typeof finalString === 'string') {
+  if (typeof finalString === "string") {
     if (!finalString) {
       return null;
     }

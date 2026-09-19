@@ -3,7 +3,7 @@ import {
   type LogLevelString,
   type SigcordLoggerMeta,
   getConfig,
-} from '../config.js';
+} from "../config.js";
 
 export function shouldLog(level: (typeof LogLevel)[LogLevelString]): boolean {
   return LogLevel[getConfig().logLevel] >= level;
@@ -15,7 +15,7 @@ export function shouldLog(level: (typeof LogLevel)[LogLevelString]): boolean {
 export class InternalLogger {
   constructor(
     private readonly scope: string,
-    private readonly ns: string = '',
+    private readonly ns: string = "",
   ) {}
 
   namespaced(ns: string): InternalLogger {
@@ -42,7 +42,7 @@ export class InternalLogger {
   ) {
     if (shouldLog(LogLevel.debug)) {
       const meta =
-        typeof maybeLazyMeta === 'function' ? maybeLazyMeta() : maybeLazyMeta;
+        typeof maybeLazyMeta === "function" ? maybeLazyMeta() : maybeLazyMeta;
       getConfig().logger.debug?.(this.fmtMsg(msg), meta);
     }
   }

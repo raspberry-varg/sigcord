@@ -1,5 +1,5 @@
-import {getCurrentSynapse} from '../../lib/builtins/builtins.js';
-import {useCordInternal} from '../cordContext.js';
+import { getCurrentSynapse } from "../../lib/builtins/builtins.js";
+import { useCordInternal } from "../cordContext.js";
 
 export const closeMenu = () => {
   const cord = useCordInternal();

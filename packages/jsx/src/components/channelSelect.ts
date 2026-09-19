@@ -2,7 +2,7 @@ import {
   ChannelSelectMenuBuilder,
   type ChannelSelectMenuInteraction,
   type ChannelType,
-} from 'discord.js';
+} from "discord.js";
 
 import {
   type MaybeSignal,
@@ -10,13 +10,13 @@ import {
   getNextUniqueComponentId,
   patchEffect,
   read,
-} from '@sigcord/core';
+} from "@sigcord/core";
 
-import {isNonNullable} from '../util/guards/isNonNullable.js';
+import { isNonNullable } from "../util/guards/isNonNullable.js";
 import {
   type BaseSelectMenuProps,
   applyPatchEffect as applySelectMenuSignals,
-} from './baseSelectMenuProps.js';
+} from "./baseSelectMenuProps.js";
 
 const MIN_DEFAULT = 0;
 const MAX_DEFAULT = 1;
@@ -63,6 +63,6 @@ export function ChannelSelect(props: ChannelSelectMenuProps) {
   return component({
     id,
     component: selectMenu,
-    handler: props['on:select'],
+    handler: props["on:select"],
   });
 }

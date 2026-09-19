@@ -1,7 +1,7 @@
-import {createInternalContext} from './createInternalContext.js';
+import { createInternalContext } from "./createInternalContext.js";
 
 export const ImperativeLockContext = createInternalContext<ImperativeLockKind>(
-  'ImperativeLockContext',
+  "ImperativeLockContext",
 );
 
 export enum ImperativeLockKind {

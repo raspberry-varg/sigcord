@@ -1,7 +1,7 @@
 import {
   ActionRowBuilder,
   type MessageActionRowComponentBuilder,
-} from 'discord.js';
+} from "discord.js";
 
 import {
   type Owner,
@@ -11,9 +11,9 @@ import {
   flattenToContentNodes,
   getOwnerOrThrow,
   owner,
-} from '@sigcord/core';
+} from "@sigcord/core";
 
-import type {IntrinsicElementProps} from '../index.js';
+import type { IntrinsicElementProps } from "../index.js";
 
 class RowNode extends ViewManualComputedElementNode<ActionRowBuilder | null> {
   private readonly actionRow = new ActionRowBuilder();
@@ -45,7 +45,7 @@ class RowNode extends ViewManualComputedElementNode<ActionRowBuilder | null> {
   }
 }
 
-export function createRow(props: IntrinsicElementProps['row']) {
+export function createRow(props: IntrinsicElementProps["row"]) {
   let nodes!: readonly ViewNode[];
   const contentOwner = owner(() => {
     nodes = flattenToContentNodes(props.children);

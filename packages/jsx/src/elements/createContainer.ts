@@ -2,7 +2,7 @@ import {
   ContainerBuilder,
   type ContainerComponentBuilder,
   TextDisplayBuilder,
-} from 'discord.js';
+} from "discord.js";
 
 import {
   type Owner,
@@ -14,9 +14,9 @@ import {
   owner,
   patchEffect,
   read,
-} from '@sigcord/core';
+} from "@sigcord/core";
 
-import type {IntrinsicElementProps} from '../index.js';
+import type { IntrinsicElementProps } from "../index.js";
 
 class ContainerElement extends ViewManualComputedElementNode<ContainerBuilder> {
   constructor(
@@ -32,9 +32,9 @@ class ContainerElement extends ViewManualComputedElementNode<ContainerBuilder> {
     const content: ContainerComponentBuilder[] = [];
     for (const item of flattened) {
       if (
-        typeof item === 'boolean' ||
-        typeof item === 'number' ||
-        typeof item === 'string'
+        typeof item === "boolean" ||
+        typeof item === "number" ||
+        typeof item === "string"
       ) {
         content.push(new TextDisplayBuilder().setContent(String(item)));
         continue;
@@ -62,7 +62,7 @@ class ContainerElement extends ViewManualComputedElementNode<ContainerBuilder> {
 }
 
 export function createContainer(
-  props: IntrinsicElementProps['container'],
+  props: IntrinsicElementProps["container"],
 ): ViewNode<ContainerBuilder> {
   // Render content immediately
   let nodes!: readonly ViewNode[];

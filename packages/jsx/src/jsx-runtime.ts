@@ -4,7 +4,7 @@ import type {
   ComponentEmojiResolvable,
   SeparatorSpacingSize,
   TimestampStylesString,
-} from 'discord.js';
+} from "discord.js";
 
 import type {
   DeferredComponent,
@@ -12,9 +12,9 @@ import type {
   MessageComponentCallbackFor,
   Signal,
   ViewNodeKind,
-} from '@sigcord/core';
+} from "@sigcord/core";
 
-import {elementFactory} from './jsx-runtime.js';
+import { elementFactory } from "./jsx-runtime.js";
 
 import JSXNode = JSX.JSXNode;
 
@@ -24,7 +24,7 @@ export type FunctionalComponent = (
 
 export type Attributes = Record<string, JSX.JSXNode | undefined> & JSXChildren;
 
-export {elementFactory} from './elementFactory.js';
+export { elementFactory } from "./elementFactory.js";
 
 export const fragmentFactory = (props: JSXChildren): JSXNode[] => {
   if (!props.children) {
@@ -77,7 +77,7 @@ interface ButtonAttributesBase {
   children?: string | Signal<string>;
   disabled?: boolean | Signal<boolean>;
   style: unknown;
-  'on:click'?: MessageComponentCallbackFor<'button'>;
+  "on:click"?: MessageComponentCallbackFor<"button">;
 }
 
 interface InteractionButton extends ButtonAttributesBase {

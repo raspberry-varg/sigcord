@@ -1,6 +1,6 @@
-import {type MaybeSignal, type Signal, computed, read} from '@sigcord/core';
+import { type MaybeSignal, type Signal, computed, read } from "@sigcord/core";
 
-import {JSX} from '../jsx-runtime.js';
+import { JSX } from "../jsx-runtime.js";
 
 export function upgradeStringSequenceToReactive(
   partialString: string,

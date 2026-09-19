@@ -4,25 +4,25 @@ import {
   MessageFlags,
   MessageFlagsBitField,
   RepliableInteraction,
-} from 'discord.js';
+} from "discord.js";
 
-import {getConfig} from '../config.js';
-import {coreLog} from '../internal/coreLog.js';
-import {type Owner, getOwner, runWithOwner} from '../lib/owners/owner.js';
+import { getConfig } from "../config.js";
+import { coreLog } from "../internal/coreLog.js";
+import { type Owner, getOwner, runWithOwner } from "../lib/owners/owner.js";
 import type {
   CollectedInteractionHandlerData,
   ModalInteractionHandlerData,
-} from './interactionHandlerData.js';
-import type {InteractionMiddleware} from './interactionMiddleware.js';
-import {InteractionPatcher, PatchType} from './interactionPatcher.js';
-import type {ViewFactory} from './menuBuilder.js';
-import {PatchTarget, type PatchTargetBitMask} from './patchTarget.js';
-import type {Payload} from './payload.js';
-import {getActiveCords} from './registry.js';
-import type {Strand} from './strands/strand.js';
-import type {StrandFactory} from './strands/strandFactory.js';
+} from "./interactionHandlerData.js";
+import type { InteractionMiddleware } from "./interactionMiddleware.js";
+import { InteractionPatcher, PatchType } from "./interactionPatcher.js";
+import type { ViewFactory } from "./menuBuilder.js";
+import { PatchTarget, type PatchTargetBitMask } from "./patchTarget.js";
+import type { Payload } from "./payload.js";
+import { getActiveCords } from "./registry.js";
+import type { Strand } from "./strands/strand.js";
+import type { StrandFactory } from "./strands/strandFactory.js";
 
-export type BuiltInCloseReasons = 'MANUAL_CLOSE' | 'IDLE_TIMEOUT';
+export type BuiltInCloseReasons = "MANUAL_CLOSE" | "IDLE_TIMEOUT";
 
 /**
  * Simple API over a Cord instance.
@@ -48,7 +48,7 @@ export interface MountFinish {
 }
 
 export class Cord implements CordAPI {
-  private readonly logger = coreLog.namespaced('Cord');
+  private readonly logger = coreLog.namespaced("Cord");
   private readonly strands: Strand[] = [];
   private interactionPipeline: InteractionMiddleware[] = [];
   private updateQueued = false;
@@ -69,7 +69,7 @@ export class Cord implements CordAPI {
   get currentStrand(): Strand {
     const top = this.strands[this.strands.length - 1];
     if (!top) {
-      throw new Error('Strand stack is empty.');
+      throw new Error("Strand stack is empty.");
     }
     return top;
   }
@@ -87,7 +87,7 @@ export class Cord implements CordAPI {
     if (this.idleTimer) clearTimeout(this.idleTimer);
 
     this.idleTimer = setTimeout(() => {
-      void this.close('IDLE_TIMEOUT');
+      void this.close("IDLE_TIMEOUT");
     }, getConfig().defaultIdleTimeoutMs);
   }
 
@@ -136,13 +136,13 @@ export class Cord implements CordAPI {
     ephemeral: boolean,
   ): Promise<MountFinish> {
     if (this.resolveMountPromise) {
-      throw new Error('Already mounted');
+      throw new Error("Already mounted");
     }
     this.ephemeral = ephemeral;
     this.interactionPatcher.mountInteraction(interaction);
     const currentStrand = this.currentStrand;
     if (!currentStrand) {
-      throw new Error('No strand to mount');
+      throw new Error("No strand to mount");
     }
     const payload = currentStrand.render();
     if (this.ephemeral) {
@@ -179,10 +179,10 @@ export class Cord implements CordAPI {
   }
 
   async close(
-    reason: BuiltInCloseReasons | (string & {}) = 'MANUAL_CLOSE',
+    reason: BuiltInCloseReasons | (string & {}) = "MANUAL_CLOSE",
     data?: unknown,
   ) {
-    await this.flushClose(undefined, {reason, data});
+    await this.flushClose(undefined, { reason, data });
   }
 
   private async flushClose(
@@ -211,10 +211,10 @@ export class Cord implements CordAPI {
 
   queueUpdate(
     interaction?: RepliableInteraction,
-    debugSource = 'external_caller',
+    debugSource = "external_caller",
   ) {
     this.logger.debug(
-      `queueUpdate(${interaction?.isMessageComponent() ? interaction.customId : (interaction?.id ?? 'none')}, ${debugSource})`,
+      `queueUpdate(${interaction?.isMessageComponent() ? interaction.customId : (interaction?.id ?? "none")}, ${debugSource})`,
     );
     if (interaction) {
       this.latestInteraction = interaction;
@@ -228,14 +228,14 @@ export class Cord implements CordAPI {
       this.updateQueued = false;
       if (this.disposed) return;
 
-      this.logger.debug('Update microtask has run');
+      this.logger.debug("Update microtask has run");
       if (this.disposed) {
-        this.logger.debug('...but the Cord was disposed');
+        this.logger.debug("...but the Cord was disposed");
         return;
       }
 
       if (this.dirtyMask === PatchTarget.None) {
-        this.logger.debug('...but the Cord has no dirty mask');
+        this.logger.debug("...but the Cord has no dirty mask");
         return;
       }
       await this.flushUpdate(interaction);
@@ -275,7 +275,7 @@ export class Cord implements CordAPI {
    */
   registerComponent(
     customId: string,
-    handler: CollectedInteractionHandlerData['handle'],
+    handler: CollectedInteractionHandlerData["handle"],
   ) {
     const strand = this.currentStrand;
     if (strand.componentHandlers.has(customId)) {
@@ -292,7 +292,7 @@ export class Cord implements CordAPI {
     };
   }
 
-  registerModal(id: string, handler: ModalInteractionHandlerData['handle']) {
+  registerModal(id: string, handler: ModalInteractionHandlerData["handle"]) {
     const strand = this.currentStrand;
     strand.modalHandlers.set(id, {
       handle: handler,
@@ -315,7 +315,7 @@ export class Cord implements CordAPI {
 
     const strand = this.currentStrand;
     const dispatch = async (i: number): Promise<void> => {
-      if (i <= index) throw new Error('next() called multiple times');
+      if (i <= index) throw new Error("next() called multiple times");
       index = i;
 
       const middleware = this.interactionPipeline[i];
@@ -323,7 +323,7 @@ export class Cord implements CordAPI {
         await strand.executeComponentHandler(interaction);
         this.queueUpdate(
           interaction,
-          'middleware_after_component_exec: ' + interaction.customId,
+          "middleware_after_component_exec: " + interaction.customId,
         );
         return;
       }
@@ -334,7 +334,7 @@ export class Cord implements CordAPI {
     this.resetIdleTimer();
     this.queueUpdate(
       interaction,
-      'middleware_before_component_exec: ' + interaction.customId,
+      "middleware_before_component_exec: " + interaction.customId,
     );
 
     let owner: Owner | null = null;
@@ -357,7 +357,7 @@ export class Cord implements CordAPI {
 
     if (interaction) {
       this.interactionPatcher.mountInteraction(interaction);
-      await this.interactionPatcher.patch(payload, {type: mode});
+      await this.interactionPatcher.patch(payload, { type: mode });
       return this.interactionPatcher.message;
     }
 

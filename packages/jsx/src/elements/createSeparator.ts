@@ -1,17 +1,17 @@
-import {SeparatorBuilder} from 'discord.js';
+import { SeparatorBuilder } from "discord.js";
 
-import {patchEffect} from '@sigcord/core';
+import { patchEffect } from "@sigcord/core";
 
-import type {IntrinsicElementProps} from '../index.js';
+import type { IntrinsicElementProps } from "../index.js";
 
 export function createSeparator(
-  props: IntrinsicElementProps['separator'],
+  props: IntrinsicElementProps["separator"],
 ): SeparatorBuilder {
   const separator = new SeparatorBuilder();
 
   const spacing = props.spacing;
   if (spacing !== undefined) {
-    if (typeof spacing === 'number') {
+    if (typeof spacing === "number") {
       separator.setSpacing(spacing);
     } else {
       patchEffect(() => {
@@ -22,7 +22,7 @@ export function createSeparator(
 
   const divider = props.divider;
   if (divider !== undefined) {
-    if (typeof divider === 'boolean') {
+    if (typeof divider === "boolean") {
       separator.setDivider(divider);
     } else {
       patchEffect(() => {

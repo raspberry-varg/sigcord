@@ -1,6 +1,6 @@
-import type {MessageActionRowComponentBuilder} from 'discord.js';
+import type { MessageActionRowComponentBuilder } from "discord.js";
 
-import {type ComponentDefinition, component} from '@sigcord/core';
+import { type ComponentDefinition, component } from "@sigcord/core";
 
 /**
  * JSX wrapper over the {@link component} primitive.

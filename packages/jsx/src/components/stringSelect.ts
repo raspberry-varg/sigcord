@@ -4,7 +4,7 @@ import {
   StringSelectMenuBuilder,
   type StringSelectMenuInteraction,
   StringSelectMenuOptionBuilder,
-} from 'discord.js';
+} from "discord.js";
 
 import {
   type Owner,
@@ -23,14 +23,14 @@ import {
   read,
   signal,
   useComponentHandler,
-} from '@sigcord/core';
+} from "@sigcord/core";
 
-import type {JSXElement} from '../index.js';
-import {clamp} from '../util/clamp.js';
+import type { JSXElement } from "../index.js";
+import { clamp } from "../util/clamp.js";
 import {
   type BaseSelectMenuProps,
   applyPatchEffect,
-} from './baseSelectMenuProps.js';
+} from "./baseSelectMenuProps.js";
 
 type OptionObj = SelectMenuComponentOptionData | APISelectMenuOption;
 
@@ -82,12 +82,12 @@ class StringSelectNode extends ViewManualComputedElementNode<StringSelectMenuBui
       this.stringSelect = component({
         id: this.id,
         component: this.stringSelect,
-        handler: props['on:select'],
+        handler: props["on:select"],
       });
     } else {
       useComponentHandler(this.id, (select) => {
         if (select.isStringSelectMenu()) {
-          return props['on:select'](select);
+          return props["on:select"](select);
         }
       });
     }
@@ -153,7 +153,7 @@ class StringSelectNode extends ViewManualComputedElementNode<StringSelectMenuBui
 function isOptionObjectLike(val: unknown): val is OptionObj {
   return (
     val != null &&
-    typeof val === 'object' &&
+    typeof val === "object" &&
     (val as OptionObj).value != null &&
     (val as OptionObj).label != null
   );

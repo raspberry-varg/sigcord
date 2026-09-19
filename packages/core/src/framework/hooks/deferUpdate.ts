@@ -1,8 +1,8 @@
-import type {RepliableInteraction} from 'discord.js';
+import type { RepliableInteraction } from "discord.js";
 
-import {getCurrentSynapse} from '../../lib/builtins/builtins.js';
-import {useContext} from '../../lib/contexts/useContext.js';
-import {CordContext} from '../cordContext.js';
+import { getCurrentSynapse } from "../../lib/builtins/builtins.js";
+import { useContext } from "../../lib/contexts/useContext.js";
+import { CordContext } from "../cordContext.js";
 
 /**
  * Defer an update if the provided interaction is a

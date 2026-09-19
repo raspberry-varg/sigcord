@@ -1,4 +1,4 @@
-import {type APIButtonComponentWithCustomId, ButtonBuilder} from 'discord.js';
+import { type APIButtonComponentWithCustomId, ButtonBuilder } from "discord.js";
 
 import {
   type Signal,
@@ -9,21 +9,21 @@ import {
   isSignal,
   markDirty,
   useComponentHandler,
-} from '@sigcord/core';
+} from "@sigcord/core";
 
-import {jsxLog} from '../internal/jsxLog.js';
-import {JSX} from '../jsx-runtime.js';
-import {upgradeStringSequenceToReactive} from '../util/upgradeStringSequenceToReactive.js';
+import { jsxLog } from "../internal/jsxLog.js";
+import { JSX } from "../jsx-runtime.js";
+import { upgradeStringSequenceToReactive } from "../util/upgradeStringSequenceToReactive.js";
 
 import IntrinsicElements = JSX.IntrinsicElements;
 
 export function createButton(
-  props: IntrinsicElements['button'],
+  props: IntrinsicElements["button"],
 ): ButtonBuilder {
   const id = props.id ?? createUniqueComponentId();
 
   const button = new ButtonBuilder().setCustomId(id);
-  const onClick = props['on:click'];
+  const onClick = props["on:click"];
 
   const legacy = !!getCurrentSynapseOrDefault();
 
@@ -35,7 +35,7 @@ export function createButton(
     });
   }
 
-  let label: string | Signal<string> = '';
+  let label: string | Signal<string> = "";
   if (props.children) {
     if (!Array.isArray(props.children)) {
       label = props.children;
@@ -52,7 +52,7 @@ export function createButton(
   }
 
   let reactiveSetters: CallableFunction[] | undefined = undefined;
-  if (typeof label === 'string') {
+  if (typeof label === "string") {
     if (label) {
       button.setLabel(label);
     }
@@ -68,7 +68,7 @@ export function createButton(
   }
 
   const style = props.style;
-  if (typeof style === 'number') {
+  if (typeof style === "number") {
     button.setStyle(style);
   } else {
     (reactiveSetters ??= []).push(() => {
@@ -78,7 +78,7 @@ export function createButton(
 
   const disabled = props.disabled;
   if (disabled !== undefined) {
-    if (typeof disabled === 'boolean') {
+    if (typeof disabled === "boolean") {
       button.setDisabled(disabled);
     } else {
       (reactiveSetters ??= []).push(() => {
@@ -109,7 +109,7 @@ export function createButton(
         try {
           setter();
         } catch (error: unknown) {
-          jsxLog.error('Error processing reactive setter for button', error, {
+          jsxLog.error("Error processing reactive setter for button", error, {
             id,
             setter,
           });

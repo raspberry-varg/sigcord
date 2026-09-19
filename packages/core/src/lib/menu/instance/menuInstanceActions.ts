@@ -1,10 +1,10 @@
-import type {TimeoutEndReason} from '../../../util/CollectorUtil.js';
-import type {RenderOptions} from './menuInstance.js';
+import type { TimeoutEndReason } from "../../../util/CollectorUtil.js";
+import type { RenderOptions } from "./menuInstance.js";
 
 export interface MenuInstanceActions {
   // render API
   start(options?: Partial<RenderOptions>): Promise<void>;
-  reply(options: Omit<Partial<RenderOptions>, 'forceReply'>): Promise<void>;
+  reply(options: Omit<Partial<RenderOptions>, "forceReply">): Promise<void>;
   // listener API
   onRender(callback: () => unknown, once?: boolean): void;
   awaitRender(): Promise<void>;

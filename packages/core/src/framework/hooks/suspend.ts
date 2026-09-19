@@ -1,5 +1,5 @@
-import {getOwnerOrThrow} from '../../lib/owners/owner.js';
-import type {ResumeFn, SuspendFn} from '../../lib/render/dispose.js';
+import { getOwnerOrThrow } from "../../lib/owners/owner.js";
+import type { ResumeFn, SuspendFn } from "../../lib/render/dispose.js";
 
 /**
  * Perform an action when this reactive view is navigated away from.

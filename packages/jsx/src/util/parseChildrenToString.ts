@@ -1,14 +1,14 @@
-import {type Signal, computed, isSignal} from '@sigcord/core';
+import { type Signal, computed, isSignal } from "@sigcord/core";
 
-import {JSX, type JSXChildren, type Primitive} from '../index.js';
-import {resolveString} from './resolveString.js';
-import {tryPromoteToSignal} from './tryPromoteToSignal.js';
-import {upgradeStringSequenceToReactive} from './upgradeStringSequenceToReactive.js';
+import { JSX, type JSXChildren, type Primitive } from "../index.js";
+import { resolveString } from "./resolveString.js";
+import { tryPromoteToSignal } from "./tryPromoteToSignal.js";
+import { upgradeStringSequenceToReactive } from "./upgradeStringSequenceToReactive.js";
 
 export function parseChildrenToString(
-  children: JSXChildren['children'],
+  children: JSXChildren["children"],
 ): string | Signal<string> {
-  let finalString: Signal<JSX.JSXNode> | Primitive = '';
+  let finalString: Signal<JSX.JSXNode> | Primitive = "";
   if (!Array.isArray(children)) {
     finalString = isSignal(children) ? children : resolveString(children);
   } else {
@@ -22,7 +22,7 @@ export function parseChildrenToString(
     }
   }
 
-  return typeof finalString === 'string'
+  return typeof finalString === "string"
     ? finalString
     : computed(() => resolveString(finalString()));
 }

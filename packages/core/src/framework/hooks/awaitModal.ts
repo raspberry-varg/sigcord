@@ -1,16 +1,16 @@
-import * as crypto from 'crypto';
+import * as crypto from "crypto";
 import {
   ModalBuilder,
   type ModalComponentData,
   type ModalSubmitInteraction,
-} from 'discord.js';
+} from "discord.js";
 
-import {coreLog} from '../../internal/coreLog.js';
-import {getCurrentSynapse} from '../../lib/builtins/builtins.js';
-import {useContext} from '../../lib/contexts/useContext.js';
-import {onCleanup} from '../../lib/hooks/onCleanup.js';
-import {CordContext} from '../cordContext.js';
-import {useCurrentRepliable} from './useCurrentRepliable.js';
+import { coreLog } from "../../internal/coreLog.js";
+import { getCurrentSynapse } from "../../lib/builtins/builtins.js";
+import { useContext } from "../../lib/contexts/useContext.js";
+import { onCleanup } from "../../lib/hooks/onCleanup.js";
+import { CordContext } from "../cordContext.js";
+import { useCurrentRepliable } from "./useCurrentRepliable.js";
 
 const MAX_CUSTOM_ID_LENGTH = 100;
 const MODAL_TIMEOUT_MS = 15 * 60 * 1_000;
@@ -37,7 +37,7 @@ export async function awaitModal(
 
   let customId;
   let builder: ModalBuilder;
-  if ('customId' in definition) {
+  if ("customId" in definition) {
     customId = definition.customId;
     builder = new ModalBuilder(definition);
   } else {
@@ -47,14 +47,14 @@ export async function awaitModal(
 
   const interaction = useCurrentRepliable();
   if (!interaction) {
-    coreLog.warn('No interaction found to await modal on', {
+    coreLog.warn("No interaction found to await modal on", {
       definition,
       customId,
     });
     return null;
   }
   if (interaction.isModalSubmit()) {
-    coreLog.warn('Cannot show a modal on a modal submit interaction', {
+    coreLog.warn("Cannot show a modal on a modal submit interaction", {
       customId,
       interaction,
     });

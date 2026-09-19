@@ -1,1 +1,1 @@
-export * from '@sigcord/jsx/components';
+export * from "@sigcord/jsx/components";

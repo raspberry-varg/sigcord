@@ -1,13 +1,13 @@
-import * as core from '@preact/signals-core';
+import * as core from "@preact/signals-core";
 
-import {coreLog} from '../../../internal/coreLog.js';
-import {getOwner, runWithOwner} from '../../owners/owner.js';
-import type {DisposeFn} from '../../render/dispose.js';
+import { coreLog } from "../../../internal/coreLog.js";
+import { getOwner, runWithOwner } from "../../owners/owner.js";
+import type { DisposeFn } from "../../render/dispose.js";
 
-const WRITABLE_STAMP = Symbol('writable');
-const GETTER_STAMP = Symbol('getter');
-const SETTER_STAMP = Symbol('setter');
-const FROM_SIGNAL = Symbol('signal source instance');
+const WRITABLE_STAMP = Symbol("writable");
+const GETTER_STAMP = Symbol("getter");
+const SETTER_STAMP = Symbol("setter");
+const FROM_SIGNAL = Symbol("signal source instance");
 
 /**
  * @deprecated Writable signals will be removed or heavily reduced in v1.3
@@ -24,7 +24,7 @@ export type UnwrapSignalish<T> = T extends Signalish<infer S> ? S : T;
 
 export type MaybeSignal<T> = T | Signal<T>;
 export function isSignal<T>(value?: T | Signalish<T>): value is Signal<T> {
-  return typeof value === 'function';
+  return typeof value === "function";
 }
 export function isStampedSignal<T>(
   value?: T | Signalish<T>,
@@ -50,8 +50,8 @@ export function isWritableSignal<T>(
  */
 export function HasWritableSignalStamp<T>(
   value?: T,
-): value is T & {[WRITABLE_STAMP]: true} {
-  return value != null && typeof value === 'object' && WRITABLE_STAMP in value;
+): value is T & { [WRITABLE_STAMP]: true } {
+  return value != null && typeof value === "object" && WRITABLE_STAMP in value;
 }
 
 export interface Signal<T> {
@@ -107,7 +107,7 @@ export function createSignal<T>(
   (w.get as any)[GETTER_STAMP] = true;
   w.set = (v) =>
     (s.value =
-      typeof v === 'function' ? (v as UpdateFn<T | undefined>)(w.peek()) : v);
+      typeof v === "function" ? (v as UpdateFn<T | undefined>)(w.peek()) : v);
   (w.set as any)[FROM_SIGNAL] = s;
   (w.set as any)[SETTER_STAMP] = s;
   w.update = (updater) => {
@@ -132,7 +132,7 @@ export function createUntracked<T>(signal: () => T): T {
 export function createComputed<T>(derived: () => T): Getter<T> {
   const capturedOwner = getOwner();
   const computed = core.computed(() => runWithOwner(capturedOwner, derived));
-  return Object.assign(() => computed.value, {[GETTER_STAMP]: true});
+  return Object.assign(() => computed.value, { [GETTER_STAMP]: true });
 }
 
 /**

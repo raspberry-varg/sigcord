@@ -1,9 +1,9 @@
-import type {RepliableInteraction} from 'discord.js';
+import type { RepliableInteraction } from "discord.js";
 
-import {View} from '../../views/view.js';
-import type {PropsBase} from '../../views/viewDefinitionBase.js';
-import {MenuInstance} from './menuInstance.js';
-import type {MenuInstanceActions} from './menuInstanceActions.js';
+import { View } from "../../views/view.js";
+import type { PropsBase } from "../../views/viewDefinitionBase.js";
+import { MenuInstance } from "./menuInstance.js";
+import type { MenuInstanceActions } from "./menuInstanceActions.js";
 
 export function instantiateMenu<
   ViewId extends string = string,

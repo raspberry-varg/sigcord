@@ -1,6 +1,6 @@
 export function resolveString(s: unknown) {
   if (s == null || s === false) {
-    return '';
+    return "";
   }
   return String(s);
 }
