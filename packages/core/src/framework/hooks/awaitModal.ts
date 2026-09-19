@@ -3,10 +3,9 @@ import * as crypto from 'crypto';
 import { ModalBuilder, type ModalComponentData, type ModalSubmitInteraction } from 'discord.js';
 
 import { coreLog } from '../../internal/coreLog.js';
-import { getCurrentSynapse } from '../../lib/builtins/currentSynapse.js';
-import { useContext } from '../../lib/contexts/useContext.js';
+import { getCurrentSynapseOrDefault } from '../../lib/builtins/currentSynapse.js';
 import { onCleanup } from '../../lib/hooks/onCleanup.js';
-import { CordContext } from '../cordContext.js';
+import { useCordInternalOrThrow } from '../cordContext.js';
 
 import { useCurrentRepliable } from './useCurrentRepliable.js';
 
@@ -22,13 +21,14 @@ const UUID_LENGTH = 36 + 1;
 export async function awaitModal(
   definition: ModalBuilder | ModalComponentData,
 ): Promise<ModalSubmitInteraction | null> {
-  const cord = useContext(CordContext);
-  if (!cord) {
-    // Fall back to the legacy awaitModal
-    return getCurrentSynapse().awaitModalSubmit(getCurrentSynapse().ctx.lastCollectedInteraction!, {
+  const legacy = getCurrentSynapseOrDefault();
+  if (legacy) {
+    return legacy.awaitModalSubmit(legacy.ctx.lastCollectedInteraction!, {
       time: MODAL_TIMEOUT_MS,
     });
   }
+
+  const cord = useCordInternalOrThrow();
 
   let customId;
   let builder: ModalBuilder;
