@@ -14,8 +14,7 @@ export interface SigcordConfig {
   /**
    * How long before a menu expires in milliseconds.
    *
-   * Defaults to 14 minutes, right below the 15-minute timeout Discord has for
-   * interactions.
+   * Defaults to 14 minutes, right below the 15-minute timeout Discord has for interactions.
    */
   defaultIdleTimeoutMs: number;
 
@@ -25,10 +24,14 @@ export interface SigcordConfig {
   onDeadInteraction?: (interaction: RepliableInteraction) => void;
 
   /**
-   * Support Bun's --hot reloading (globalThis persistence of objects such as
-   * the router).
+   * Support Bun's --hot reloading (globalThis persistence of objects such as the router).
    */
   supportHotReloading: boolean;
+
+  /**
+   * Builds up a {@link MenuBuilder} in a legacy view definition's factory function.
+   */
+  useCordFactoriesForLegacyViewDefines: boolean;
 }
 
 export type SigcordLoggerMeta = Record<string, any>;
@@ -114,6 +117,7 @@ const globalConfig: SigcordConfig = {
   defaultIdleTimeoutMs: 14 * 60 * 1000,
   onDeadInteraction: undefined,
   supportHotReloading: false,
+  useCordFactoriesForLegacyViewDefines: false,
 };
 
 export function configure(options: Partial<SigcordConfig>): void {

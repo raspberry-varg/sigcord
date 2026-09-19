@@ -3,12 +3,12 @@ import { batch } from '@preact/signals-core';
 import { effect, update } from '../../framework/hooks/index.js';
 import { coreLog } from '../../internal/coreLog.js';
 import { getOwner } from '../../lib/owners/owner.js';
-import { signal } from '../../lib/primitives/signal.js';
 import { read } from '../../lib/reactivity/core/read.js';
 import { type Setter, type Signal } from '../../lib/reactivity/core/signals.js';
 import { untracked } from '../../lib/reactivity/untracked.js';
 
 import { computed } from './computed.js';
+import { signal } from './signal.js';
 
 import type { MaybePromise } from '../../util/TypesUtil.js';
 
@@ -222,13 +222,11 @@ export function resource<T, SOURCE>(
     },
   });
 
-  // const resumeContext = suspend();
   return [
     data,
     {
       mutate: setData,
       refetch() {
-        // resumeContext();
         if (getOwner()?.disposed) {
           coreLog.debug('Refetch resource ignored as owner is disposed.');
           return;
@@ -240,7 +238,6 @@ export function resource<T, SOURCE>(
             return fetch(src, true);
           }
         } else {
-          // resumeContext();
           return fetch(true as NonNullable<SOURCE>, true);
         }
       },

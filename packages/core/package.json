@@ -46,6 +46,7 @@
   },
   "nx": {
     "targets": {
+      "typecheck": {},
       "lint": {},
       "format": {},
       "yalc:push": {}

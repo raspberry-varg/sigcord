@@ -51,6 +51,10 @@ export class MenuBuilder {
     return cord.mount(interaction, this.isEphemeral);
   }
 
+  async mountV1(_interaction: RepliableInteraction, _rootView: ViewFactory) {
+    throw new Error('Not implemented.');
+  }
+
   private applyWrappers(rootView: ViewFactory): ViewFactory {
     for (let i = this.wrappers.length - 1; i >= 0; i--) {
       const wrapper = this.wrappers[i];

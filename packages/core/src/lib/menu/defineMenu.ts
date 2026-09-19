@@ -27,6 +27,10 @@ export interface IntrinsicMenuProps extends IntrinsicViewProps {
 }
 
 /**
+ * @deprecated Multi-view single menus will be removed in a future release. Please begin migrating
+ * to {@link MenuBuilder} instead. {@link useNavigation} provides navigation functionality with
+ * type safety for initializing views.
+ *
  * Define an interactive menu.
  * @param definition All required interactive menu properties.
  * @param definition.id The unique ID of this menu. Used in component `customId`s.
@@ -70,6 +74,9 @@ export function defineMenu<
     });
 }
 
+/**
+ * @deprecated Please use {@link MenuBuilder} instead.
+ */
 export type MenuFactory<Props extends PropsBase> = (
   interaction: RepliableInteraction,
   props: Props & Partial<IntrinsicMenuProps>,

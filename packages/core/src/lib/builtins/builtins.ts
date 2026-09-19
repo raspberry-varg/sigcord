@@ -9,29 +9,10 @@ import { createUniqueComponentId } from '../../framework/hooks/index.js';
 import { usePatchTarget } from '../../framework/hooks/usePatchTarget.js';
 import { PatchTarget } from '../../framework/patchTarget.js';
 import { Synapse } from '../menu/instance/synapse.js';
-import { getOwner } from '../owners/owner.js';
+
+import { getCurrentSynapse } from './currentSynapse.js';
 
 import type { MenuContext } from '../menu/instance/menuContext.js';
-
-export const SYNAPSE_CONTEXT_ID = Symbol.for('__sigcord.Synapse');
-
-export function getCurrentSynapse(): Synapse {
-  const synapse = getCurrentSynapseOrDefault();
-  if (!synapse) {
-    throw new Error(
-      'Attempted to use a hook outside of a reactive context. Was this called ' +
-        'outside of a reactive view?\n\nClassic menu views should use the ' +
-        'Synapse parameter directly ($).\n\n' +
-        'Did you await within the body of a component function?',
-    );
-  }
-  return synapse;
-}
-
-export function getCurrentSynapseOrDefault(): Synapse | undefined {
-  const owner = getOwner();
-  return owner?.context[SYNAPSE_CONTEXT_ID] as Synapse | undefined;
-}
 
 /**
  * Get info and state about the current menu.
@@ -107,15 +88,7 @@ export const onResume: Synapse['onResume'] = (action) => getCurrentSynapse().onR
 // Modals
 
 /**
- * @deprecated Use {@link awaitModalSubmit}.
- * @param interaction
- * @param modalOrOptions
- */
-export const showModal: Synapse['showModal'] = (interaction, modalOrOptions) =>
-  getCurrentSynapse().showModal(interaction, modalOrOptions as Parameters<Synapse['showModal']>[1]);
-
-/**
- * @deprecated Use {@link awaitModalSubmit}
+ * @deprecated Use {@link awaitModal}
  * @param interaction
  * @param options
  */
@@ -123,7 +96,7 @@ export const awaitModalSubmit: Synapse['awaitModalSubmit'] = (interaction, optio
   getCurrentSynapse().awaitModalSubmit(interaction, options);
 
 /**
- * @deprecated Use {@link awaitModalSubmit}
+ * @deprecated Use {@link awaitModal}
  * @param interaction
  * @param options
  * @param callback
@@ -170,12 +143,6 @@ export const setIdleMs: Synapse['setIdleMs'] = (idleMilliseconds) =>
  */
 export const setIdleSec: Synapse['setIdleSec'] = (idleSeconds) =>
   getCurrentSynapse().setIdleSec(idleSeconds);
-
-/**
- * @deprecated Use {@link close} instead.
- * @param reason
- */
-export const stopMenu: Synapse['stop'] = (reason) => getCurrentSynapse().stop(reason);
 
 // Rendering
 

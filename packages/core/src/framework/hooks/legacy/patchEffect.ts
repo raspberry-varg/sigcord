@@ -1,11 +1,13 @@
-import { effect } from '../effect.js';
+import { guardDeclarative } from '../../../core/utils/guardDeclarative.js';
+import { createEffect, type EffectFn } from '../../../lib/reactivity/core/signals.js';
+import { PatchTarget } from '../../patchTarget.js';
+import { markDirty } from '../markDirty.js';
 import { usePatchTarget } from '../usePatchTarget.js';
 
-import type { EffectFn } from '../../../lib/reactivity/core/signals.js';
 import type { DisposeFn } from '../../../lib/render/dispose.js';
 
 /**
- * @deprecated Use {@link effect} in conjunction with {@link dirty}.
+ * @deprecated Use {@link import('sigcord').effect} in conjunction with {@link dirty}.
  *
  * Create an effect that runs when signals referenced in the effect function
  * change. This effect will automatically request an update to the user's UI
@@ -57,6 +59,15 @@ import type { DisposeFn } from '../../../lib/render/dispose.js';
  *   {@link PatchTarget} context.
  */
 export function patchEffect(effectFn: EffectFn): DisposeFn {
+  guardDeclarative('patchEffect');
   const patchTarget = usePatchTarget();
-  return effect(effectFn, patchTarget);
+  if (patchTarget !== PatchTarget.None) {
+    return createEffect(() => {
+      const result = effectFn();
+      markDirty(patchTarget);
+      return result;
+    });
+  }
+
+  return createEffect(effectFn);
 }

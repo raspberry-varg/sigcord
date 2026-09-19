@@ -1,4 +1,4 @@
-import { getCurrentSynapse } from '../../lib/builtins/builtins.js';
+import { getCurrentSynapse } from '../../lib/builtins/currentSynapse.js';
 import { useCordInternalOrThrow } from '../cordContext.js';
 
 import type { Synapse } from '../../lib/menu/instance/synapse.js';

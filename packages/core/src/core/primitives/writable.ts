@@ -1,4 +1,5 @@
-import { getCurrentSynapse } from '../../lib/builtins/builtins.js';
+import { getCurrentSynapse } from '../../lib/builtins/currentSynapse.js';
+import { createSignal } from '../../lib/reactivity/core/signals.js';
 
 import type { Synapse } from '../../lib/menu/instance/synapse.js';
 
@@ -11,4 +12,4 @@ import type { Synapse } from '../../lib/menu/instance/synapse.js';
  */
 export const writable: Synapse['createWritableSignal'] = <T>(
   initialValue: T | undefined = undefined,
-) => getCurrentSynapse().createWritableSignal(initialValue);
+) => createSignal(initialValue);

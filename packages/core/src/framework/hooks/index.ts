@@ -11,3 +11,4 @@ export * from './useCord.js';
 export * from './useCurrentRepliable.js';
 export { closeMenu } from './closeMenu.js';
 export { component } from './legacy/createComponent.js';
+export { stopMenu } from './stopMenu.js';

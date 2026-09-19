@@ -3,7 +3,7 @@ import * as crypto from 'crypto';
 import { ModalBuilder, type ModalComponentData, type ModalSubmitInteraction } from 'discord.js';
 
 import { coreLog } from '../../internal/coreLog.js';
-import { getCurrentSynapse } from '../../lib/builtins/builtins.js';
+import { getCurrentSynapse } from '../../lib/builtins/currentSynapse.js';
 import { useContext } from '../../lib/contexts/useContext.js';
 import { onCleanup } from '../../lib/hooks/onCleanup.js';
 import { CordContext } from '../cordContext.js';

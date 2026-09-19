@@ -8,7 +8,7 @@ import {
 
 import { getConfig } from '../config.js';
 import { coreLog } from '../internal/coreLog.js';
-import { type Owner, getOwner, runWithOwner } from '../lib/owners/owner.js';
+import { getOwner, type Owner, runWithOwner } from '../lib/owners/owner.js';
 
 import { InteractionPatcher, PatchType } from './interactionPatcher.js';
 import { PatchTarget, type PatchTargetBitMask } from './patchTarget.js';
@@ -24,7 +24,7 @@ import type { Payload } from './payload.js';
 import type { Strand } from './strands/strand.js';
 import type { StrandFactory } from './strands/strandFactory.js';
 
-export type BuiltInCloseReasons = 'MANUAL_CLOSE' | 'IDLE_TIMEOUT';
+export type BuiltInCloseReasons = 'MANUAL_CLOSE' | 'MANUAL_STOP' | 'IDLE_TIMEOUT';
 
 /**
  * Simple API over a Cord instance.
@@ -42,7 +42,7 @@ export interface CordAPI {
  * Data returned from the promise returned from {@link Cord.mount}
  */
 export interface MountFinish {
-  reason: string;
+  reason: BuiltInCloseReasons | (string & {});
   data: unknown;
 }
 
@@ -170,13 +170,18 @@ export class Cord implements CordAPI {
     });
   }
 
-  async close(reason: BuiltInCloseReasons | (string & {}) = 'MANUAL_CLOSE', data?: unknown) {
-    await this.flushClose(undefined, { reason, data });
+  async stop(reason: BuiltInCloseReasons | (string & {}) = 'MANUAL_STOP', data?: unknown) {
+    await this.flushDispose(undefined, { reason, data }, false);
   }
 
-  private async flushClose(
+  async close(reason: BuiltInCloseReasons | (string & {}) = 'MANUAL_CLOSE', data?: unknown) {
+    await this.flushDispose(undefined, { reason, data }, true);
+  }
+
+  private async flushDispose(
     interaction: RepliableInteraction | undefined,
     mountFinish: MountFinish,
+    deleteMessage: boolean,
   ) {
     if (this.disposed) return;
     this.disposed = true;
@@ -188,7 +193,9 @@ export class Cord implements CordAPI {
     }
 
     if (interaction) this.interactionPatcher.mountInteraction(interaction);
-    await this.interactionPatcher.delete(this.interactionPatcher.message);
+    if (deleteMessage) {
+      await this.interactionPatcher.delete(this.interactionPatcher.message);
+    }
     this.interactionPatcher.dispose();
 
     while (this.strands.length) {

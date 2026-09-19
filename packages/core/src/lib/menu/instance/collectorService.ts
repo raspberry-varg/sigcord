@@ -7,7 +7,7 @@ import {
 } from 'discord.js';
 
 import { coreLog } from '../../../internal/coreLog.js';
-import { type TimeoutEndReason, endReasonIsTimeout } from '../../../util/CollectorUtil.js';
+import { discordMessageComponentListenerEndIsTimeout } from '../../../util/CollectorUtil.js';
 
 import type { Listener } from '../../../util/Listener.js';
 import type { MessageComponentCallback } from '../../views/viewFlavors.js';
@@ -25,9 +25,9 @@ interface CollectorOptions {
 }
 
 interface Listeners {
-  onEnd: Listener<TimeoutEndReason | (string & {}) | null>;
+  onEnd: Listener<string | null>;
   onStop: Listener<string | null>;
-  onTimeout: Listener<TimeoutEndReason>;
+  onTimeout: Listener<void>;
 }
 
 export class CollectorService {
@@ -111,9 +111,9 @@ export class CollectorService {
         return;
       }
       const endReason = collector.endReason;
-      if (endReasonIsTimeout(endReason)) {
+      if (discordMessageComponentListenerEndIsTimeout(endReason)) {
         onTimeout();
-        this.listeners.onTimeout?.fire(endReason);
+        this.listeners.onTimeout?.fire();
       } else {
         this.listeners.onStop?.fire(endReason);
       }

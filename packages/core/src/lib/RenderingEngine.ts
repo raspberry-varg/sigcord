@@ -1,5 +1,5 @@
 import { batch } from '@preact/signals-core';
-import { EmbedBuilder, MessageFlags } from 'discord.js';
+import { EmbedBuilder, MessageFlags, MessageFlagsBitField } from 'discord.js';
 
 import { PatchTargetContext } from '../framework/hooks/usePatchTarget.js';
 import { PatchTarget, type PatchTargetBitMask } from '../framework/patchTarget.js';
@@ -224,7 +224,10 @@ export class RenderingEngine {
 
         if (isV2) {
           runWithOwner(this.menuRootOwner, () => {
-            payload.flags = (payload.flags ?? 0) | MessageFlags.IsComponentsV2;
+            payload.flags = MessageFlagsBitField.resolve([
+              payload.flags ?? 0,
+              MessageFlags.IsComponentsV2,
+            ]);
             const patchTarget = PatchTarget.Components;
             if (this.isQueuedForClear(patchTarget)) {
               payload.components = [];
@@ -306,7 +309,13 @@ export class RenderingEngine {
 
           const wantEphemeral = instance.lastRender!.ephemeral;
           if (wantEphemeral !== undefined) {
-            payload.ephemeral = wantEphemeral;
+            let flags = MessageFlagsBitField.resolve([payload.flags ?? 0]);
+            if (!wantEphemeral) {
+              flags &= ~MessageFlags.Ephemeral;
+            } else {
+              flags |= MessageFlags.Ephemeral;
+            }
+            payload.flags = flags;
           }
 
           assert(instance.roots);
