@@ -30,10 +30,8 @@
   },
   "scripts": {
     "test": "bun test",
-    "format": "npx prettier --write src",
-    "build": "tsc",
-    "clean": "rm -rf dist",
-    "prepack": "pnpm run clean && pnpm run build"
+    "build": "tsc -p ./tsconfig.build.json",
+    "prepack": "rm -rf ./dist/** && pnpm run build"
   },
   "dependencies": {
     "@preact/signals-core": "^1.8.0"

@@ -2,38 +2,20 @@
   "name": "sigcord",
   "version": "1.2.1",
   "description": "Build interactive and stateful menus for Discord.",
-  "directories": {
-    "lib": "dist"
-  },
-  "type": "module",
-  "files": [
-    "dist"
-  ],
+  "keywords": [],
+  "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/raspberry-varg/sigcord.git"
   },
-  "scripts": {
-    "format": "npx prettier --write src",
-    "build": "tsc",
-    "clean": "rm -rf dist",
-    "prepack": "pnpm run clean && pnpm run build"
+  "directories": {
+    "lib": "dist"
   },
-  "keywords": [],
-  "license": "Apache-2.0",
-  "packageManager": "pnpm@10.11.0",
-  "dependencies": {
-    "@sigcord/core": "workspace:*"
-  },
-  "devDependencies": {
-    "nx": "22.0.3",
-    "prettier": "catalog:",
-    "typescript": "catalog:",
-    "@sigcord/jsx": "workspace:*"
-  },
-  "peerDependencies": {
-    "@sigcord/jsx": "workspace:*"
-  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "types": "./dist/index.d.ts",
   "exports": {
     "./package.json": "./package.json",
     ".": {
@@ -65,7 +47,24 @@
       "types": "./dist/flow/index.d.ts"
     }
   },
-  "types": "./dist/index.d.ts",
+  "scripts": {
+    "test": "bun test",
+    "build": "tsc -p ./tsconfig.build.json",
+    "prepack": "rm -rf ./dist/** && pnpm run build"
+  },
+  "dependencies": {
+    "@sigcord/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@sigcord/jsx": "workspace:*",
+    "nx": "22.0.3",
+    "prettier": "catalog:",
+    "typescript": "catalog:"
+  },
+  "peerDependencies": {
+    "@sigcord/jsx": "workspace:*"
+  },
+  "packageManager": "pnpm@10.11.0",
   "nx": {
     "targets": {
       "lint": {},
