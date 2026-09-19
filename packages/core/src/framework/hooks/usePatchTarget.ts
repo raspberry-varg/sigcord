@@ -1,5 +1,5 @@
-import { useContext } from '../../lib/contexts/useContext.js';
-import { PatchTarget } from '../patchTarget.js';
+import {useContext} from '../../lib/contexts/useContext.js';
+import {PatchTarget} from '../patchTarget.js';
 
 export const PatchTargetContext = {
   id: Symbol('__sigcord.PatchTargetContext'),

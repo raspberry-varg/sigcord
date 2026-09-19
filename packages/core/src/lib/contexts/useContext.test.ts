@@ -1,8 +1,9 @@
-import { describe, expect, expectTypeOf, test } from 'bun:test';
-import type { Context } from './context.js';
-import { provideContextValue } from './provideContext.js';
-import { useContext } from './useContext.js';
-import { owner } from '../owners/owner.js';
+import {describe, expect, expectTypeOf, test} from 'bun:test';
+
+import {owner} from '../owners/owner.js';
+import type {Context} from './context.js';
+import {provideContextValue} from './provideContext.js';
+import {useContext} from './useContext.js';
 
 const numberContext: Context<number | undefined> = {
   id: Symbol('NumberContext'),
@@ -14,14 +15,14 @@ const stringContext: Context<string | undefined> = {
   default: undefined,
 };
 
-const objectContext: Context<{ name: string } | undefined> = {
+const objectContext: Context<{name: string} | undefined> = {
   id: Symbol('ObjectContext'),
   default: undefined,
 };
 
-const objectContextWithDefault: Context<{ name: string }> = {
+const objectContextWithDefault: Context<{name: string}> = {
   id: Symbol('ObjectContext'),
-  default: { name: 'default name' },
+  default: {name: 'default name'},
 };
 
 const nullContext: Context<null> = {
@@ -68,7 +69,7 @@ describe('useContext', () => {
 
   test('does not return default when the context is provided', () => {
     owner(() => {
-      provideContextValue(objectContextWithDefault, { name: 'Spike Minoda' });
+      provideContextValue(objectContextWithDefault, {name: 'Spike Minoda'});
       expect(useContext(objectContextWithDefault)).toEqual({
         name: 'Spike Minoda',
       });
@@ -115,14 +116,14 @@ describe('useContext', () => {
   describe('types', () => {
     test('is potentially undefined when no default is declared', () => {
       expectTypeOf(() => useContext(objectContext)).returns.toEqualTypeOf<
-        { name: string } | undefined
+        {name: string} | undefined
       >();
     });
 
     test('is not undefined when a default is declared', () => {
       expectTypeOf(() =>
         useContext(objectContextWithDefault),
-      ).returns.toEqualTypeOf<{ name: string }>();
+      ).returns.toEqualTypeOf<{name: string}>();
     });
   });
 });

@@ -1,5 +1,6 @@
-import { CollectedInteraction, type ModalSubmitInteraction } from 'discord.js';
-import type { Owner } from '../lib/owners/owner.js';
+import {CollectedInteraction, type ModalSubmitInteraction} from 'discord.js';
+
+import type {Owner} from '../lib/owners/owner.js';
 
 interface InteractionHandlerData {
   handle: unknown | Promise<unknown>;

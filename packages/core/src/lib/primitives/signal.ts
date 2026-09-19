@@ -1,5 +1,5 @@
-import type { Synapse } from '../menu/instance/synapse.js';
-import { getCurrentSynapse } from '../builtins/builtins.js';
+import {getCurrentSynapse} from '../builtins/builtins.js';
+import type {Synapse} from '../menu/instance/synapse.js';
 
 /**
  * Create a new signal.

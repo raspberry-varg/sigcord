@@ -1,10 +1,10 @@
-import { type RenderingEngine } from '../../RenderingEngine.js';
-import type { CollectorService } from './collectorService.js';
 import {
   PatchTarget,
   type PatchTargetBitMask,
 } from '../../../framework/patchTarget.js';
-import { coreLog } from '../../../internal/coreLog.js';
+import {coreLog} from '../../../internal/coreLog.js';
+import {type RenderingEngine} from '../../RenderingEngine.js';
+import type {CollectorService} from './collectorService.js';
 
 export class PatchTracker {
   private logger = coreLog.namespaced('PatchTracker');

@@ -5,10 +5,11 @@ import {
   type ModalComponentData,
   type RepliableInteraction,
 } from 'discord.js';
-import type { ModalRepliableInteraction } from '../lib/interactivity/modalHandling.js';
-import { safeRender } from '../util/RenderingUtil.js';
-import type { Payload } from './payload.js';
-import { coreLog } from '../internal/coreLog.js';
+
+import {coreLog} from '../internal/coreLog.js';
+import type {ModalRepliableInteraction} from '../lib/interactivity/modalHandling.js';
+import {safeRender} from '../util/RenderingUtil.js';
+import type {Payload} from './payload.js';
 
 export enum BufferedPatchStatus {
   Completed,
@@ -55,11 +56,11 @@ export class InteractionPatcher {
     if (this.disposed) return;
 
     const id = interaction.id;
-    this.logger.debug('InteractionPatcher.deferUpdate', { id });
+    this.logger.debug('InteractionPatcher.deferUpdate', {id});
     if (this.patching && this.interaction?.id === id) {
       this.logger.debug(
         'Not deferring update since this interaction is already being patched.',
-        { id },
+        {id},
       );
       return;
     }
@@ -69,7 +70,7 @@ export class InteractionPatcher {
       !interaction.deferred &&
       !interaction.replied
     ) {
-      this.logger.debug('Should defer', { id });
+      this.logger.debug('Should defer', {id});
       if (this.trackedActions.has(id)) {
         // Already deferring.
         this.logger.debug('(deferUpdate) -> Already performing an action', {
@@ -82,7 +83,7 @@ export class InteractionPatcher {
         interaction
           .deferUpdate()
           .then((res) => {
-            this.logger.verbose('Tracked deferUpdate complete', { id });
+            this.logger.verbose('Tracked deferUpdate complete', {id});
             resolve(res);
           })
           .catch((e) => {
@@ -105,18 +106,18 @@ export class InteractionPatcher {
     if (this.disposed) return;
 
     const id = interaction.id;
-    this.logger.debug('InteractionPatcher.showModal', { id });
+    this.logger.debug('InteractionPatcher.showModal', {id});
     if (this.patching && this.interaction?.id === id) {
       this.logger.debug(
         'Not showing a modal since this interaction is already being patched.',
-        { id },
+        {id},
       );
       return;
     }
 
     if (this.trackedActions.has(id)) {
       // Already deferring.
-      this.logger.debug('(showModal) -> Already performing an action', { id });
+      this.logger.debug('(showModal) -> Already performing an action', {id});
       return;
     }
 
@@ -125,7 +126,7 @@ export class InteractionPatcher {
         interaction
           .showModal(modal)
           .then((res) => {
-            this.logger.verbose('Tracked showModal complete', { id });
+            this.logger.verbose('Tracked showModal complete', {id});
             resolve(res as any);
           })
           .catch((e) => {
@@ -244,7 +245,7 @@ export class InteractionPatcher {
       } catch (error: unknown) {
         this.logger.verbose(
           'Error while delete was waiting for active defer update.',
-          { error },
+          {error},
         );
       }
       this.logger.debug('Delete resolved active defer.');

@@ -1,7 +1,7 @@
-import type { Synapse } from '../../lib/menu/instance/synapse.js';
-import { getCurrentSynapse } from '../../lib/builtins/builtins.js';
-import type { ViewFactory } from '../menuBuilder.js';
-import { useCordInternalOrThrow } from '../cordContext.js';
+import {getCurrentSynapse} from '../../lib/builtins/builtins.js';
+import type {Synapse} from '../../lib/menu/instance/synapse.js';
+import {useCordInternalOrThrow} from '../cordContext.js';
+import type {ViewFactory} from '../menuBuilder.js';
 
 /**
  * Instantiate and navigate to a different view.

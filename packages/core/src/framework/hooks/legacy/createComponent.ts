@@ -1,8 +1,8 @@
-import { Synapse } from '../../../lib/menu/instance/synapse.js';
-import { useCordInternal } from '../../cordContext.js';
-import { createUniqueComponentId } from '../createUniqueComponentId.js';
-import { useComponentHandler } from '../useComponentHandler.js';
-import { getCurrentSynapse } from '../../../lib/builtins/builtins.js';
+import {getCurrentSynapse} from '../../../lib/builtins/builtins.js';
+import {Synapse} from '../../../lib/menu/instance/synapse.js';
+import {useCordInternal} from '../../cordContext.js';
+import {createUniqueComponentId} from '../createUniqueComponentId.js';
+import {useComponentHandler} from '../useComponentHandler.js';
 
 /**
  * @deprecated Please use {@link useComponentHandler}.

@@ -1,11 +1,11 @@
+import {guardDeclarative} from '../../core/utils/guardDeclarative.js';
 import {
-  createEffect,
   type EffectFn,
+  createEffect,
 } from '../../lib/reactivity/core/signals.js';
-import type { DisposeFn } from '../../lib/render/dispose.js';
-import { markDirty } from './markDirty.js';
-import { PatchTarget, type PatchTargetBitMask } from '../patchTarget.js';
-import { guardDeclarative } from '../../core/utils/guardDeclarative.js';
+import type {DisposeFn} from '../../lib/render/dispose.js';
+import {PatchTarget, type PatchTargetBitMask} from '../patchTarget.js';
+import {markDirty} from './markDirty.js';
 
 /**
  * @deprecated Use a simple effect and manually call {@link markDirty}.

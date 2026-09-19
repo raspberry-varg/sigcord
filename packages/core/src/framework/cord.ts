@@ -5,21 +5,22 @@ import {
   MessageFlagsBitField,
   RepliableInteraction,
 } from 'discord.js';
-import { getOwner, type Owner, runWithOwner } from '../lib/owners/owner.js';
-import type { InteractionMiddleware } from './interactionMiddleware.js';
-import type { Payload } from './payload.js';
+
+import {getConfig} from '../config.js';
+import {coreLog} from '../internal/coreLog.js';
+import {type Owner, getOwner, runWithOwner} from '../lib/owners/owner.js';
 import type {
   CollectedInteractionHandlerData,
   ModalInteractionHandlerData,
 } from './interactionHandlerData.js';
-import type { Strand } from './strands/strand.js';
-import { getActiveCords } from './registry.js';
-import { getConfig } from '../config.js';
-import type { ViewFactory } from './menuBuilder.js';
-import type { StrandFactory } from './strands/strandFactory.js';
-import { InteractionPatcher, PatchType } from './interactionPatcher.js';
-import { PatchTarget, type PatchTargetBitMask } from './patchTarget.js';
-import { coreLog } from '../internal/coreLog.js';
+import type {InteractionMiddleware} from './interactionMiddleware.js';
+import {InteractionPatcher, PatchType} from './interactionPatcher.js';
+import type {ViewFactory} from './menuBuilder.js';
+import {PatchTarget, type PatchTargetBitMask} from './patchTarget.js';
+import type {Payload} from './payload.js';
+import {getActiveCords} from './registry.js';
+import type {Strand} from './strands/strand.js';
+import type {StrandFactory} from './strands/strandFactory.js';
 
 export type BuiltInCloseReasons = 'MANUAL_CLOSE' | 'IDLE_TIMEOUT';
 
@@ -181,7 +182,7 @@ export class Cord implements CordAPI {
     reason: BuiltInCloseReasons | (string & {}) = 'MANUAL_CLOSE',
     data?: unknown,
   ) {
-    await this.flushClose(undefined, { reason, data });
+    await this.flushClose(undefined, {reason, data});
   }
 
   private async flushClose(
@@ -356,7 +357,7 @@ export class Cord implements CordAPI {
 
     if (interaction) {
       this.interactionPatcher.mountInteraction(interaction);
-      await this.interactionPatcher.patch(payload, { type: mode });
+      await this.interactionPatcher.patch(payload, {type: mode});
       return this.interactionPatcher.message;
     }
 

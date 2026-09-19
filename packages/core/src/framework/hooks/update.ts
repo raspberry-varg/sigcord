@@ -1,6 +1,6 @@
-import { useContext } from '../../lib/contexts/useContext.js';
-import { CordContext } from '../cordContext.js';
-import { getCurrentSynapse } from '../../lib/builtins/builtins.js';
+import {getCurrentSynapse} from '../../lib/builtins/builtins.js';
+import {useContext} from '../../lib/contexts/useContext.js';
+import {CordContext} from '../cordContext.js';
 
 /**
  * Manually schedule an update to the current view in a microtask.

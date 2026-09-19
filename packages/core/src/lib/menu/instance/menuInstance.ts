@@ -8,55 +8,57 @@ import {
   ModalSubmitInteraction,
   type RepliableInteraction,
 } from 'discord.js';
-import { type DefinedView, View } from '../../views/view.js';
-import type { PropsBase } from '../../views/viewDefinitionBase.js';
-import type { TimeoutEndReason } from '../../../util/CollectorUtil.js';
-import type { Synapse } from './synapse.js';
-import { ClassViewProps } from '../../FunctionalMenuView.js';
-import type { IntrinsicMenuProps } from '../defineMenu.js';
-import type { DisposeFn, ResumeFn, SuspendFn } from '../../render/dispose.js';
+
+import {batch} from '@preact/signals-core';
+
 import {
-  BufferedPatchStatusLegacy,
-  InteractionPatcherLegacy,
-} from './interactionPatcherLegacy.js';
-import { CollectorService } from './collectorService.js';
-import { Navigation } from '../../Navigation.js';
-import { PatchTracker } from './patchTracker.js';
-import { NamedIdGenerator } from '../../ids/namedIdGenerator.js';
-import { ModalTracker } from './modalTracker.js';
-import { RenderingEngine } from '../../RenderingEngine.js';
-import { Listener } from '../../../util/Listener.js';
-import { microtaskQueuer, type MicrotaskQueuer } from './microtaskQueuer.js';
-import { MenuContext } from './menuContext.js';
-import { assert, assertAndReturn } from '../../../util/Assertions.js';
-import type { ViewMessagePayload } from '../../views/viewFlavors.js';
-import { batch } from '@preact/signals-core';
-import { createRootOwner, getOwner, runWithOwner } from '../../owners/owner.js';
-import { AutoComponentId } from '../../components/autocomponents.js';
-import { TimeoutComponent, TimeoutEmbed } from '../../PrebuiltEmbeds.js';
-import { SYNAPSE_CONTEXT_ID } from '../../builtins/builtins.js';
-import { untracked } from '../../reactivity/untracked.js';
-import { ComponentDefinition } from '../../components/componentDefinition.js';
+  PatchTarget,
+  type PatchTargetBitMask,
+} from '../../../framework/patchTarget.js';
+import {coreLog} from '../../../internal/coreLog.js';
+import {assert, assertAndReturn} from '../../../util/Assertions.js';
+import type {TimeoutEndReason} from '../../../util/CollectorUtil.js';
+import {Listener} from '../../../util/Listener.js';
+import {ClassViewProps} from '../../FunctionalMenuView.js';
+import {Navigation} from '../../Navigation.js';
+import {TimeoutComponent, TimeoutEmbed} from '../../PrebuiltEmbeds.js';
+import {RenderingEngine} from '../../RenderingEngine.js';
+import {SYNAPSE_CONTEXT_ID} from '../../builtins/builtins.js';
+import {AutoComponentId} from '../../components/autocomponents.js';
+import {ComponentDefinition} from '../../components/componentDefinition.js';
+import {NamedIdGenerator} from '../../ids/namedIdGenerator.js';
 import {
   ModalHandlingOptions,
   ModalOnSubmitHandler,
   ModalRepliableInteraction,
 } from '../../interactivity/modalHandling.js';
+import {createRootOwner, getOwner, runWithOwner} from '../../owners/owner.js';
 import {
-  createComputed,
-  createEffect,
-  createSignal,
   EffectFn,
   Signal,
   SignalTuple,
   WritableSignal,
+  createComputed,
+  createEffect,
+  createSignal,
 } from '../../reactivity/core/signals.js';
-import type { MenuInstanceActions } from './menuInstanceActions.js';
+import {untracked} from '../../reactivity/untracked.js';
+import type {DisposeFn, ResumeFn, SuspendFn} from '../../render/dispose.js';
+import {type DefinedView, View} from '../../views/view.js';
+import type {PropsBase} from '../../views/viewDefinitionBase.js';
+import type {ViewMessagePayload} from '../../views/viewFlavors.js';
+import type {IntrinsicMenuProps} from '../defineMenu.js';
+import {CollectorService} from './collectorService.js';
 import {
-  PatchTarget,
-  type PatchTargetBitMask,
-} from '../../../framework/patchTarget.js';
-import { coreLog } from '../../../internal/coreLog.js';
+  BufferedPatchStatusLegacy,
+  InteractionPatcherLegacy,
+} from './interactionPatcherLegacy.js';
+import {MenuContext} from './menuContext.js';
+import type {MenuInstanceActions} from './menuInstanceActions.js';
+import {type MicrotaskQueuer, microtaskQueuer} from './microtaskQueuer.js';
+import {ModalTracker} from './modalTracker.js';
+import {PatchTracker} from './patchTracker.js';
+import type {Synapse} from './synapse.js';
 
 const DEFAULT_IDLE = 60_000;
 const DefaultProperties: IntrinsicMenuProps = {
@@ -183,11 +185,11 @@ export class MenuInstance<
    */
 
   async reply(options: Omit<Partial<RenderOptions<ViewId>>, 'forceReply'>) {
-    return await this.start({ ...options, forceReply: true });
+    return await this.start({...options, forceReply: true});
   }
 
   async start(options: Partial<RenderOptions> = {}) {
-    options = { ...DefaultRenderOptions, ...options };
+    options = {...DefaultRenderOptions, ...options};
     await this.initialRender(options);
     this.initCollector();
   }
@@ -248,7 +250,7 @@ export class MenuInstance<
     let payload: ViewMessagePayload | null = null;
     try {
       const targets = this.patchTracker.collectTargets();
-      this.logger.debug('targets in render microtask ->', { targets });
+      this.logger.debug('targets in render microtask ->', {targets});
       payload = await this.render(targets);
     } catch (error: unknown) {
       this.logger.error('Error during update microtask', error);
@@ -388,7 +390,7 @@ export class MenuInstance<
 
   private dispose(): void {
     this.disposed = true;
-    this.logger.verbose('Disposing menu instance', { menuId: this.menuId });
+    this.logger.verbose('Disposing menu instance', {menuId: this.menuId});
     this.logger.debug(
       `Disposing ${this.hangingDisposals.length} hanging effect disposal(s)`,
     );
@@ -403,7 +405,7 @@ export class MenuInstance<
   }
 
   private initCollector(): void {
-    const { message } = this.patcher;
+    const {message} = this.patcher;
     assert(message, `Unable to initialize collectors; 'message' is undefined.`);
     this.collector.init({
       idle: this.idle,

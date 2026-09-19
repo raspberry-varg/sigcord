@@ -1,7 +1,7 @@
-import { ViewNode } from './viewNode.js';
-import type { ViewNodeKind } from './viewNodeKind.js';
-import { removeManyInPlace } from '../../util/arrays/removeManyInPlace.js';
-import { coreLog } from '../../internal/coreLog.js';
+import {coreLog} from '../../internal/coreLog.js';
+import {removeManyInPlace} from '../../util/arrays/removeManyInPlace.js';
+import {ViewNode} from './viewNode.js';
+import type {ViewNodeKind} from './viewNodeKind.js';
 
 export class ViewElementNode<
   T extends ViewNodeKind = ViewNodeKind,

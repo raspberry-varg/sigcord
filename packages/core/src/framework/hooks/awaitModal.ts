@@ -1,15 +1,16 @@
-import { useContext } from '../../lib/contexts/useContext.js';
-import { CordContext } from '../cordContext.js';
-import { getCurrentSynapse } from '../../lib/builtins/builtins.js';
+import * as crypto from 'crypto';
 import {
   ModalBuilder,
   type ModalComponentData,
   type ModalSubmitInteraction,
 } from 'discord.js';
-import * as crypto from 'crypto';
-import { onCleanup } from '../../lib/hooks/onCleanup.js';
-import { useCurrentRepliable } from './useCurrentRepliable.js';
-import { coreLog } from '../../internal/coreLog.js';
+
+import {coreLog} from '../../internal/coreLog.js';
+import {getCurrentSynapse} from '../../lib/builtins/builtins.js';
+import {useContext} from '../../lib/contexts/useContext.js';
+import {onCleanup} from '../../lib/hooks/onCleanup.js';
+import {CordContext} from '../cordContext.js';
+import {useCurrentRepliable} from './useCurrentRepliable.js';
 
 const MAX_CUSTOM_ID_LENGTH = 100;
 const MODAL_TIMEOUT_MS = 15 * 60 * 1_000;

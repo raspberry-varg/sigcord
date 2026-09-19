@@ -1,8 +1,8 @@
 import {
-  getConfig,
   LogLevel,
   type LogLevelString,
   type SigcordLoggerMeta,
+  getConfig,
 } from '../config.js';
 
 export function shouldLog(level: (typeof LogLevel)[LogLevelString]): boolean {

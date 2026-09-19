@@ -33,7 +33,7 @@ function extractModalSubmitValues<Values extends {}>(
         (e): e is [(typeof e)[0], TextInputModalData] =>
           e[1].type === ComponentType.TextInput,
       ),
-    ([key, { value }]) => {
+    ([key, {value}]) => {
       return [key, value];
     },
   );

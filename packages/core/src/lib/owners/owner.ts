@@ -1,12 +1,13 @@
-import type { DisposeFn, ResumeFn, SuspendFn } from '../render/dispose.js';
-import type { ContextNode } from '../contexts/contextNode.js';
-import { AsyncLocalStorage } from 'node:async_hooks';
-import { provideContextValue } from '../contexts/provideContext.js';
+import {AsyncLocalStorage} from 'node:async_hooks';
+
 import {
   ImperativeLockContext,
   ImperativeLockKind,
 } from '../../core/contexts/imperativeLock.js';
-import { coreLog } from '../../internal/coreLog.js';
+import {coreLog} from '../../internal/coreLog.js';
+import type {ContextNode} from '../contexts/contextNode.js';
+import {provideContextValue} from '../contexts/provideContext.js';
+import type {DisposeFn, ResumeFn, SuspendFn} from '../render/dispose.js';
 
 export interface Owner extends Disposable {
   readonly context: ContextNode;

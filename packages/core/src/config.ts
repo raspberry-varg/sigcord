@@ -1,4 +1,4 @@
-import type { RepliableInteraction } from 'discord.js';
+import type {RepliableInteraction} from 'discord.js';
 
 export interface SigcordConfig {
   /**

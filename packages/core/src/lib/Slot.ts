@@ -1,11 +1,11 @@
-import type { ViewNodeKindBase } from './dom/viewNodeKind.js';
-import type { ViewComponent } from './views/viewFlavors.js';
-import type { WritableSignal } from './reactivity/core/signals.js';
-import { ViewManualComputedElementNode } from './dom/viewManualComputedElementNode.js';
-import { getCurrentPatchTarget } from './builtins/builtins.js';
-import { update } from '../framework/hooks/index.js';
-import { markDirty } from '../framework/hooks/markDirty.js';
-import { PatchTarget } from '../framework/patchTarget.js';
+import {update} from '../framework/hooks/index.js';
+import {markDirty} from '../framework/hooks/markDirty.js';
+import {PatchTarget} from '../framework/patchTarget.js';
+import {getCurrentPatchTarget} from './builtins/builtins.js';
+import {ViewManualComputedElementNode} from './dom/viewManualComputedElementNode.js';
+import type {ViewNodeKindBase} from './dom/viewNodeKind.js';
+import type {WritableSignal} from './reactivity/core/signals.js';
+import type {ViewComponent} from './views/viewFlavors.js';
 
 const isTruthy = (x: unknown) => !!x;
 

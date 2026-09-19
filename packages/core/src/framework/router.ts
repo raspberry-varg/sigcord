@@ -1,6 +1,7 @@
-import type { Interaction } from 'discord.js';
-import { getActiveCords } from './registry.js';
-import { coreLog } from '../internal/coreLog.js';
+import type {Interaction} from 'discord.js';
+
+import {coreLog} from '../internal/coreLog.js';
+import {getActiveCords} from './registry.js';
 
 const nsLogger = coreLog.namespaced('router');
 

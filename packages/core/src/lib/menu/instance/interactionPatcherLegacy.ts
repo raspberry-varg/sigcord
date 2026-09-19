@@ -5,12 +5,13 @@ import {
   type ModalComponentData,
   type RepliableInteraction,
 } from 'discord.js';
-import type { ViewMessagePayload } from '../../views/viewFlavors.js';
-import { safeRender } from '../../../util/RenderingUtil.js';
-import type { RenderOptions } from './menuInstance.js';
-import type { IntrinsicMenuProps } from '../defineMenu.js';
-import type { ModalRepliableInteraction } from '../../interactivity/modalHandling.js';
-import { coreLog } from '../../../internal/coreLog.js';
+
+import {coreLog} from '../../../internal/coreLog.js';
+import {safeRender} from '../../../util/RenderingUtil.js';
+import type {ModalRepliableInteraction} from '../../interactivity/modalHandling.js';
+import type {ViewMessagePayload} from '../../views/viewFlavors.js';
+import type {IntrinsicMenuProps} from '../defineMenu.js';
+import type {RenderOptions} from './menuInstance.js';
 
 export enum BufferedPatchStatusLegacy {
   Completed,
@@ -48,11 +49,11 @@ export class InteractionPatcherLegacy {
 
   deferUpdate(interaction: RepliableInteraction): void {
     const id = interaction.id;
-    this.logger.debug('InteractionPatcher.deferUpdate', { id });
+    this.logger.debug('InteractionPatcher.deferUpdate', {id});
     if (this.patching && this.interaction?.id === id) {
       this.logger.debug(
         'Not deferring update since this interaction is already being patched.',
-        { id },
+        {id},
       );
       return;
     }
@@ -62,7 +63,7 @@ export class InteractionPatcherLegacy {
       !interaction.deferred &&
       !interaction.replied
     ) {
-      this.logger.debug('Should defer', { id });
+      this.logger.debug('Should defer', {id});
       if (this.trackedActions.has(id)) {
         // Already deferring.
         this.logger.debug('(deferUpdate) -> Already performing an action', {
@@ -75,7 +76,7 @@ export class InteractionPatcherLegacy {
         interaction
           .deferUpdate()
           .then((res) => {
-            this.logger.verbose('Tracked deferUpdate complete', { id });
+            this.logger.verbose('Tracked deferUpdate complete', {id});
             resolve(res);
           })
           .catch((e) => {
@@ -95,18 +96,18 @@ export class InteractionPatcherLegacy {
     modal: ModalComponentData | ModalBuilder,
   ): void {
     const id = interaction.id;
-    this.logger.debug('InteractionPatcher.showModal', { id });
+    this.logger.debug('InteractionPatcher.showModal', {id});
     if (this.patching && this.interaction?.id === interaction.id) {
       this.logger.debug(
         'Not showing a modal since this interaction is already being patched.',
-        { id },
+        {id},
       );
       return;
     }
 
     if (this.trackedActions.has(id)) {
       // Already deferring.
-      this.logger.debug('(showModal) -> Already performing an action', { id });
+      this.logger.debug('(showModal) -> Already performing an action', {id});
       return;
     }
 
@@ -115,7 +116,7 @@ export class InteractionPatcherLegacy {
         interaction
           .showModal(modal)
           .then((res) => {
-            this.logger.verbose('Tracked showModal complete', { id });
+            this.logger.verbose('Tracked showModal complete', {id});
             resolve(res as any);
           })
           .catch((e) => {

@@ -1,7 +1,7 @@
-import type { Synapse } from '../menu/instance/synapse.js';
-import { createComputed, createSignal } from '../reactivity/core/signals.js';
-import type { DisposeFn } from './dispose.js';
-import { getOwner, runWithOwner } from '../owners/owner.js';
+import type {Synapse} from '../menu/instance/synapse.js';
+import {getOwner, runWithOwner} from '../owners/owner.js';
+import {createComputed, createSignal} from '../reactivity/core/signals.js';
+import type {DisposeFn} from './dispose.js';
 
 const noop = (() => {}) as any;
 

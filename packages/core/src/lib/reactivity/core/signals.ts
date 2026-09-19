@@ -1,7 +1,8 @@
-import type { DisposeFn } from '../../render/dispose.js';
-import { getOwner, runWithOwner } from '../../owners/owner.js';
 import * as core from '@preact/signals-core';
-import { coreLog } from '../../../internal/coreLog.js';
+
+import {coreLog} from '../../../internal/coreLog.js';
+import {getOwner, runWithOwner} from '../../owners/owner.js';
+import type {DisposeFn} from '../../render/dispose.js';
 
 const WRITABLE_STAMP = Symbol('writable');
 const GETTER_STAMP = Symbol('getter');
@@ -49,7 +50,7 @@ export function isWritableSignal<T>(
  */
 export function HasWritableSignalStamp<T>(
   value?: T,
-): value is T & { [WRITABLE_STAMP]: true } {
+): value is T & {[WRITABLE_STAMP]: true} {
   return value != null && typeof value === 'object' && WRITABLE_STAMP in value;
 }
 
@@ -131,7 +132,7 @@ export function createUntracked<T>(signal: () => T): T {
 export function createComputed<T>(derived: () => T): Getter<T> {
   const capturedOwner = getOwner();
   const computed = core.computed(() => runWithOwner(capturedOwner, derived));
-  return Object.assign(() => computed.value, { [GETTER_STAMP]: true });
+  return Object.assign(() => computed.value, {[GETTER_STAMP]: true});
 }
 
 /**

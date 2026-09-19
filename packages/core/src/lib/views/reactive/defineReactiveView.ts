@@ -1,6 +1,10 @@
-import type { IntrinsicMenuProps, MenuFactory } from '../../menu/defineMenu.js';
-import { IS_V2 } from '../viewFlavors.js';
-import type { PropsBase } from '../viewDefinitionBase.js';
+import {MessageFlags} from 'discord.js';
+
+import {MenuBuilder} from '../../../framework/menuBuilder.js';
+import type {IntrinsicMenuProps, MenuFactory} from '../../menu/defineMenu.js';
+import {instantiateMenu} from '../../menu/instance/instantiateMenu.js';
+import type {PropsBase} from '../viewDefinitionBase.js';
+import {IS_V2} from '../viewFlavors.js';
 import type {
   ReactiveViewDefinitionV1,
   ReactiveViewDefinitionV2,
@@ -9,10 +13,7 @@ import type {
   ReactiveViewFactoryV1,
   ReactiveViewFactoryV2,
 } from './reactiveViewFactory.js';
-import { REACTIVE_VIEW_SYMBOL } from './reactiveViewSymbol.js';
-import { instantiateMenu } from '../../menu/instance/instantiateMenu.js';
-import { MenuBuilder } from '../../../framework/menuBuilder.js';
-import { MessageFlags } from 'discord.js';
+import {REACTIVE_VIEW_SYMBOL} from './reactiveViewSymbol.js';
 
 /**
  * Define a reactive view instance.

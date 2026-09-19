@@ -1,16 +1,13 @@
-import { ViewContentNode } from '../dom/viewContentNode.js';
-import { ViewElementNode } from '../dom/viewElementNode.js';
-import { ViewNode } from '../dom/viewNode.js';
-import type { ViewNodeKind, ViewNodeKindBase } from '../dom/viewNodeKind.js';
-import {
-  isStampedSignal,
-  isWritableSignal,
-} from '../reactivity/core/signals.js';
-import type { Recursive } from '../recursive.js';
-import { isSlot, SlotImpl } from '../Slot.js';
-import { read } from '../reactivity/core/read.js';
-import { DeferredComponent } from './deferredComponent.js';
-import { effect, markDirty } from '../../framework/hooks/index.js';
+import {effect, markDirty} from '../../framework/hooks/index.js';
+import {SlotImpl, isSlot} from '../Slot.js';
+import {ViewContentNode} from '../dom/viewContentNode.js';
+import {ViewElementNode} from '../dom/viewElementNode.js';
+import {ViewNode} from '../dom/viewNode.js';
+import type {ViewNodeKind, ViewNodeKindBase} from '../dom/viewNodeKind.js';
+import {read} from '../reactivity/core/read.js';
+import {isStampedSignal, isWritableSignal} from '../reactivity/core/signals.js';
+import type {Recursive} from '../recursive.js';
+import {DeferredComponent} from './deferredComponent.js';
 
 export function flattenToContentNodes<T extends ViewNodeKind>(
   content: T,

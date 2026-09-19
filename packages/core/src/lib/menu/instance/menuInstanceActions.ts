@@ -1,5 +1,5 @@
-import type { TimeoutEndReason } from '../../../util/CollectorUtil.js';
-import type { RenderOptions } from './menuInstance.js';
+import type {TimeoutEndReason} from '../../../util/CollectorUtil.js';
+import type {RenderOptions} from './menuInstance.js';
 
 export interface MenuInstanceActions {
   // render API

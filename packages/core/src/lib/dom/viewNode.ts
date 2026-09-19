@@ -1,5 +1,5 @@
-import type { ViewElementNode } from './viewElementNode.js';
-import type { ViewNodeKind } from './viewNodeKind.js';
+import type {ViewElementNode} from './viewElementNode.js';
+import type {ViewNodeKind} from './viewNodeKind.js';
 
 export abstract class ViewNode<
   T extends ViewNodeKind = ViewNodeKind,

@@ -1,6 +1,6 @@
-import { getConfig } from '../config.js';
-import type { Cord } from './cord.js';
-import { coreLog } from '../internal/coreLog.js';
+import {getConfig} from '../config.js';
+import {coreLog} from '../internal/coreLog.js';
+import type {Cord} from './cord.js';
 
 declare global {
   var hmr__sigcord_activeCords: Map<string, Cord> | undefined;

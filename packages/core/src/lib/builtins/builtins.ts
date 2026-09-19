@@ -3,17 +3,17 @@
  * the need to drill a `$` synapse prop to reactive components or nested
  * reactive views.
  */
-
-import { Synapse } from '../menu/instance/synapse.js';
-import { getOwner } from '../owners/owner.js';
-import type { MenuContext } from '../menu/instance/menuContext.js';
 import {
   type CollectedMessageInteraction,
   type RepliableInteraction,
 } from 'discord.js';
-import { usePatchTarget } from '../../framework/hooks/usePatchTarget.js';
-import { PatchTarget } from '../../framework/patchTarget.js';
-import { createUniqueComponentId } from '../../framework/hooks/index.js';
+
+import {createUniqueComponentId} from '../../framework/hooks/index.js';
+import {usePatchTarget} from '../../framework/hooks/usePatchTarget.js';
+import {PatchTarget} from '../../framework/patchTarget.js';
+import type {MenuContext} from '../menu/instance/menuContext.js';
+import {Synapse} from '../menu/instance/synapse.js';
+import {getOwner} from '../owners/owner.js';
 
 export const SYNAPSE_CONTEXT_ID = Symbol.for('__sigcord.Synapse');
 
