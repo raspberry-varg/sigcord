@@ -186,9 +186,9 @@ export class InteractionPatcherLegacy {
 
     if (this.bufferedPatch) {
       this.logger.debug('Patch complete, but another was buffered...');
-      const { payload, options } = this.bufferedPatch;
+      const buffered = this.bufferedPatch;
       this.bufferedPatch = null;
-      return await this.patch(payload, options);
+      return await this.patch(buffered.payload, buffered.options);
     } else {
       this.logger.debug('Patch complete.');
       return BufferedPatchStatusLegacy.Completed;

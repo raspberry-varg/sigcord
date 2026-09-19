@@ -2,7 +2,6 @@ import type { Synapse } from '../menu/instance/synapse.js';
 import { createComputed, createSignal } from '../reactivity/core/signals.js';
 import type { DisposeFn } from './dispose.js';
 import { getOwner, runWithOwner } from '../owners/owner.js';
-import { PatchTarget } from '../../framework/patchTarget.js';
 
 const noop = (() => {}) as any;
 
@@ -23,10 +22,10 @@ export const STATIC_RENDER_SYNAPSE: Synapse = {
     return createComputed(fn);
   },
   createSignal<T>(fnOrValue: T | undefined = undefined) {
-    return createSignal(fnOrValue, PatchTarget.None).split();
+    return createSignal(fnOrValue).split();
   },
   createWritableSignal<T>(initialValue: T | undefined = undefined) {
-    return createSignal(initialValue, PatchTarget.None);
+    return createSignal(initialValue);
   },
   createEffect: (fn) => staticEffect(fn),
   goTo: unsupported('goTo'),

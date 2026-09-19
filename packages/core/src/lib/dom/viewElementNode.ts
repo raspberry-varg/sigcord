@@ -6,19 +6,19 @@ import { coreLog } from '../../internal/coreLog.js';
 export class ViewElementNode<
   T extends ViewNodeKind = ViewNodeKind,
 > extends ViewNode<T> {
-  private readonly children_: ViewNode<T>[] = [];
+  private readonly _children: ViewNode<T>[] = [];
   private readonly childrenSet: Set<ViewNode<T>> = new Set();
 
   get empty(): boolean {
-    return this.children_.length === 0;
+    return this._children.length === 0;
   }
 
   get children(): readonly ViewNode<T>[] {
-    return this.children_;
+    return this._children;
   }
 
   get childCount(): number {
-    return this.children_.length;
+    return this._children.length;
   }
 
   hasChild(child: ViewNode<T>): boolean {
@@ -28,7 +28,7 @@ export class ViewElementNode<
   addChild(...children: ViewNode<T>[]): void {
     for (const child of children) {
       if (this.childrenSet.has(child)) continue;
-      this.children_.push(child);
+      this._children.push(child);
       this.registerChild(child);
     }
   }
@@ -42,12 +42,12 @@ export class ViewElementNode<
     // are not yet added.
     for (let i = 0; i < children.length; i++) {
       const child = children[i];
-      this.children_[i] = child;
+      this._children[i] = child;
       if (!this.hasChild(child)) {
         this.registerChild(child);
       }
     }
-    this.children_.length = children.length;
+    this._children.length = children.length;
   }
 
   removeChild(child: ViewNode<T>): ViewNode<T> | null {
@@ -55,7 +55,7 @@ export class ViewElementNode<
       return null;
     }
 
-    this.children_.splice(this.children_.indexOf(child));
+    this._children.splice(this._children.indexOf(child));
     this.unregisterChild(child);
     return child;
   }
@@ -64,14 +64,14 @@ export class ViewElementNode<
     if (!this.childrenSet.size) {
       return;
     }
-    removeManyInPlace(this.children_, new Set(children));
+    removeManyInPlace(this._children, new Set(children));
     for (const child of children) {
       this.unregisterChild(child);
     }
   }
 
   clear(): void {
-    for (const child of this.children_) {
+    for (const child of this._children) {
       this.removeChild(child);
     }
   }
@@ -89,17 +89,17 @@ export class ViewElementNode<
   override dispose(): void {
     if (this.disposed) return;
     this.reset();
-    this.disposed_ = true;
+    this._disposed = true;
   }
 
   reset(): void {
     coreLog.verbose('DisposingViewElementNode', {
       childCount: this.childCount,
     });
-    for (let i = 0; i < this.children_.length; i++) {
-      this.children_[i].dispose();
+    for (let i = 0; i < this._children.length; i++) {
+      this._children[i].dispose();
     }
-    this.children_.length = 0;
+    this._children.length = 0;
     this.childrenSet.clear();
   }
 }

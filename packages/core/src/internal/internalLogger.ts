@@ -16,9 +16,7 @@ export class InternalLogger {
   constructor(
     private readonly scope: string,
     private readonly ns: string = '',
-  ) {
-    this.ns = ns;
-  }
+  ) {}
 
   namespaced(ns: string): InternalLogger {
     return new InternalLogger(this.scope, ns);

@@ -694,13 +694,8 @@ export class MenuInstance<
   createSignal<T>(initialValue: T): SignalTuple<T>;
   createSignal<T>(
     fnOrValue: T | undefined = undefined,
-    patchTarget = PatchTarget.None,
   ): SignalTuple<T | undefined> | SignalTuple<T> {
-    const s = createSignal(fnOrValue, patchTarget);
-    if (patchTarget !== PatchTarget.None) {
-      this.createEffect(() => void s.get(), patchTarget);
-    }
-    return s.split();
+    return createSignal(fnOrValue).split();
   }
 
   createWritableSignal<T>(): WritableSignal<T | undefined>;
@@ -710,13 +705,8 @@ export class MenuInstance<
   createWritableSignal<T>(initialValue: T): WritableSignal<T>;
   createWritableSignal<T>(
     initialValue: T | undefined = undefined,
-    patchTarget = PatchTarget.None,
   ): WritableSignal<T | undefined> | WritableSignal<T> {
-    const s = createSignal(initialValue, patchTarget);
-    if (patchTarget !== PatchTarget.None) {
-      this.createEffect(() => void s.get(), patchTarget);
-    }
-    return s;
+    return createSignal(initialValue);
   }
 
   createComputed<T>(fn: () => T): Signal<T> {

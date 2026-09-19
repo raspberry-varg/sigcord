@@ -47,19 +47,19 @@ class OwnerImpl implements Owner {
   private componentDisposals = new Map<string, DisposeFn>();
   private onSuspendFns: SuspendFn[] = [];
   private onResumeFns: ResumeFn[] = [];
-  private disposed_ = false;
-  private suspended_ = false;
+  private _disposed = false;
+  private _suspended = false;
 
   constructor(public parent: Owner | null) {
     this.context = this.parent ? Object.create(this.parent.context) : {};
   }
 
   get disposed() {
-    return this.disposed_;
+    return this._disposed;
   }
 
   get suspended() {
-    return this.suspended_;
+    return this._suspended;
   }
 
   registerDisposal(disposal: DisposeFn): void {
@@ -80,17 +80,17 @@ class OwnerImpl implements Owner {
     this.onResumeFns.push(onResume);
   }
 
-  addChild(owner: Owner): void {
-    this.childOwners.add(owner);
+  addChild(child: Owner): void {
+    this.childOwners.add(child);
   }
 
-  removeChild(owner: Owner): void {
-    this.childOwners.delete(owner);
+  removeChild(child: Owner): void {
+    this.childOwners.delete(child);
   }
 
   suspend() {
     if (this.disposed || this.suspended) return;
-    this.suspended_ = true;
+    this._suspended = true;
 
     this.runCallbacksWithLock(ImperativeLockKind.Suspend, this.onSuspendFns);
 
@@ -101,7 +101,7 @@ class OwnerImpl implements Owner {
 
   resume() {
     if (this.disposed || !this.suspended) return;
-    this.suspended_ = false;
+    this._suspended = false;
 
     this.runCallbacksWithLock(ImperativeLockKind.Resume, this.onResumeFns);
     for (const child of this.childOwners) {
@@ -129,9 +129,9 @@ class OwnerImpl implements Owner {
 
   dispose() {
     if (this.disposed) return;
-    this.disposed_ = true;
+    this._disposed = true;
 
-    this.childOwners.forEach((owner) => owner.dispose());
+    this.childOwners.forEach(disposeOwner);
     this.childOwners.clear();
 
     coreLog.verbose('DisposingOwner.', {
@@ -173,20 +173,20 @@ export function getOwner(): Owner | null {
 }
 
 export function getOwnerOrThrow(): Owner {
-  const owner = getOwner();
-  if (!owner) {
+  const openOwner = getOwner();
+  if (!openOwner) {
     throw new Error('No current owner. Were we called outside a menu context?');
   }
-  return owner;
+  return openOwner;
 }
 
 export function useDisposeOwnerFn(): DisposeFn | undefined {
-  const owner = getOwner();
-  return owner?.dispose.bind(owner);
+  const openOwner = getOwner();
+  return openOwner?.dispose.bind(openOwner);
 }
 
-export function disposeOwner(owner: Owner | null) {
-  owner?.dispose();
+export function disposeOwner(toDispose: Owner | null) {
+  toDispose?.dispose();
 }
 
 export function setCurrentOwner(newOwner: Owner | null): Owner | null {
@@ -232,6 +232,6 @@ export function createRootOwner(): Owner {
   return new OwnerImpl(null);
 }
 
-export function runWithOwner<T>(owner: Owner | null, ownerFn: () => T): T {
-  return ownerStore.run(owner, ownerFn);
+export function runWithOwner<T>(withOwner: Owner | null, ownerFn: () => T): T {
+  return ownerStore.run(withOwner, ownerFn);
 }

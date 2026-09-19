@@ -1,7 +1,6 @@
 import type { DisposeFn } from '../../render/dispose.js';
 import { getOwner, runWithOwner } from '../../owners/owner.js';
 import * as core from '@preact/signals-core';
-import { PatchTarget } from '../../../framework/patchTarget.js';
 import { coreLog } from '../../../internal/coreLog.js';
 
 const WRITABLE_STAMP = Symbol('writable');
@@ -62,7 +61,6 @@ export interface Signal<T> {
  * @deprecated Writable signals will be removed or heavily reduced in v1.3
  */
 export interface WritableSignal<T> extends core.Signal<T> {
-  readonly _patchContext: PatchTarget;
   get: Getter<T>;
   set: Setter<T>;
   update: Updater<T>;
@@ -92,22 +90,16 @@ export type SignalTuple<T> = [
   WritableSignal<T>,
 ];
 
-export function createSignal<T>(
-  initialVal: T,
-  patchContext: PatchTarget,
-): WritableSignal<T>;
+export function createSignal<T>(initialVal: T): WritableSignal<T>;
 export function createSignal<T>(
   initialVal: T | undefined,
-  patchContext: PatchTarget,
 ): WritableSignal<T | undefined>;
 export function createSignal<T>(
   initialVal: T | undefined,
-  patchContext: PatchTarget,
 ): WritableSignal<T | undefined> {
   const s = core.signal(initialVal);
   const w = s as WritableSignalInternal<T | undefined>;
   (w as any)[WRITABLE_STAMP] = true;
-  (w as any)._patchContext = patchContext;
 
   w.get = () => s.value;
   (w.get as any)[FROM_SIGNAL] = s;

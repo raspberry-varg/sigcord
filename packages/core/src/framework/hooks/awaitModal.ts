@@ -7,8 +7,9 @@ import {
   type ModalSubmitInteraction,
 } from 'discord.js';
 import * as crypto from 'crypto';
-import type { ModalRepliableInteraction } from '../../lib/interactivity/modalHandling.js';
 import { onCleanup } from '../../lib/hooks/onCleanup.js';
+import { useCurrentRepliable } from './useCurrentRepliable.js';
+import { coreLog } from '../../internal/coreLog.js';
 
 const MAX_CUSTOM_ID_LENGTH = 100;
 const MODAL_TIMEOUT_MS = 15 * 60 * 1_000;
@@ -17,19 +18,20 @@ const UUID_LENGTH = 36 + 1;
 /**
  * Show a modal to the user. When submitted, runs all middleware and returns the
  * interaction.
- * @param interaction
  * @param definition
  */
 export async function awaitModal(
-  interaction: ModalRepliableInteraction,
   definition: ModalBuilder | ModalComponentData,
 ): Promise<ModalSubmitInteraction | null> {
   const cord = useContext(CordContext);
   if (!cord) {
     // Fall back to the legacy awaitModal
-    return getCurrentSynapse().awaitModalSubmit(interaction, {
-      time: MODAL_TIMEOUT_MS,
-    });
+    return getCurrentSynapse().awaitModalSubmit(
+      getCurrentSynapse().ctx.lastCollectedInteraction!,
+      {
+        time: MODAL_TIMEOUT_MS,
+      },
+    );
   }
 
   let customId;
@@ -40,6 +42,22 @@ export async function awaitModal(
   } else {
     customId = definition.data.custom_id;
     builder = ModalBuilder.from(definition);
+  }
+
+  const interaction = useCurrentRepliable();
+  if (!interaction) {
+    coreLog.warn('No interaction found to await modal on', {
+      definition,
+      customId,
+    });
+    return null;
+  }
+  if (interaction.isModalSubmit()) {
+    coreLog.warn('Cannot show a modal on a modal submit interaction', {
+      customId,
+      interaction,
+    });
+    return null;
   }
 
   if (!customId) {

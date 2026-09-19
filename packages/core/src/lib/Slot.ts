@@ -65,7 +65,7 @@ class SlotNode extends ViewManualComputedElementNode<ViewNodeKindBase> {
 
   override dispose(): void {
     if (this.disposed) return;
-    this.disposed_ = true;
+    this._disposed = true;
     this.items.length = 0;
   }
 

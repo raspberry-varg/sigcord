@@ -42,7 +42,7 @@ export class MenuBuilder {
 
   async mount(interaction: RepliableInteraction, rootView: ViewFactory) {
     const cord = new Cord(
-      (cord, factory) => new ComponentsV2Strand(cord, factory),
+      (thisCord, factory) => new ComponentsV2Strand(thisCord, factory),
     );
     for (let i = 0; i < this.middlewares.length; i++) {
       cord.use(this.middlewares[i]);

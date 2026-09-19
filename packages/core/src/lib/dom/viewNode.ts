@@ -4,11 +4,11 @@ import type { ViewNodeKind } from './viewNodeKind.js';
 export abstract class ViewNode<
   T extends ViewNodeKind = ViewNodeKind,
 > implements Disposable {
-  protected disposed_ = false;
+  protected _disposed = false;
   private parentInternal: ViewElementNode<T> | null = null;
 
   get disposed(): boolean {
-    return this.disposed_;
+    return this._disposed;
   }
 
   get parent() {

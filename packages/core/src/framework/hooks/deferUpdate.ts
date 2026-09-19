@@ -1,14 +1,11 @@
 import { useContext } from '../../lib/contexts/useContext.js';
 import { CordContext } from '../cordContext.js';
 import { getCurrentSynapse } from '../../lib/builtins/builtins.js';
-import type {
-  MessageComponentInteraction,
-  RepliableInteraction,
-} from 'discord.js';
+import type { RepliableInteraction } from 'discord.js';
 
 /**
  * Defer an update if the provided interaction is a
- * {@link MessageComponentInteraction}. If no interaction is provided, it will
+ * {@link import('discord.js').MessageComponentInteraction}. If no interaction is provided, it will
  * attempt to defer update of the latest interaction collected.
  *
  * If update deferral is possible, no scheduled updates to the interaction will
