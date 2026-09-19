@@ -1,4 +1,4 @@
-import { getCurrentSynapseOrDefault } from '../../lib/builtins/builtins.js';
+import { getCurrentSynapseOrDefault } from '../../lib/builtins/currentSynapse.js';
 import { type SignalTuple, createSignal } from '../../lib/reactivity/core/signals.js';
 
 /**
@@ -29,10 +29,10 @@ import { type SignalTuple, createSignal } from '../../lib/reactivity/core/signal
 export function signal<T>(initialValue?: undefined): SignalTuple<T | undefined>;
 export function signal<T>(initialValue: T): SignalTuple<T>;
 export function signal<T>(initialValue?: T): SignalTuple<T | undefined> {
-  const synapse = getCurrentSynapseOrDefault();
-  if (synapse) {
+  const legacy = getCurrentSynapseOrDefault();
+  if (legacy) {
     // Route to legacy behavior.
-    return synapse.createSignal(initialValue);
+    return legacy.createSignal(initialValue);
   }
   return createSignal(initialValue).split();
 }

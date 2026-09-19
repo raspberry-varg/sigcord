@@ -5,6 +5,7 @@ import {
   EmbedBuilder,
   MessageActionRowComponentBuilder,
   MessageComponentBuilder,
+  MessageFlags,
   ModalBuilder,
   ModalSubmitInteraction,
   type RepliableInteraction,
@@ -14,7 +15,7 @@ import { PatchTarget, type PatchTargetBitMask } from '../../../framework/patchTa
 import { coreLog } from '../../../internal/coreLog.js';
 import { assert, assertAndReturn } from '../../../util/Assertions.js';
 import { Listener } from '../../../util/Listener.js';
-import { SYNAPSE_CONTEXT_ID } from '../../builtins/builtins.js';
+import { SYNAPSE_CONTEXT_ID } from '../../builtins/currentSynapse.js';
 import { AutoComponentId } from '../../components/autocomponents.js';
 import { ComponentDefinition } from '../../components/componentDefinition.js';
 import { ClassViewProps } from '../../FunctionalMenuView.js';
@@ -28,13 +29,13 @@ import { Navigation } from '../../Navigation.js';
 import { createRootOwner, getOwner, runWithOwner } from '../../owners/owner.js';
 import { TimeoutComponent, TimeoutEmbed } from '../../PrebuiltEmbeds.js';
 import {
+  createComputed,
+  createEffect,
+  createSignal,
   EffectFn,
   Signal,
   SignalTuple,
   WritableSignal,
-  createComputed,
-  createEffect,
-  createSignal,
 } from '../../reactivity/core/signals.js';
 import { untracked } from '../../reactivity/untracked.js';
 import { RenderingEngine } from '../../RenderingEngine.js';
@@ -47,7 +48,6 @@ import { type MicrotaskQueuer, microtaskQueuer } from './microtaskQueuer.js';
 import { ModalTracker } from './modalTracker.js';
 import { PatchTracker } from './patchTracker.js';
 
-import type { TimeoutEndReason } from '../../../util/CollectorUtil.js';
 import type { DisposeFn, ResumeFn, SuspendFn } from '../../render/dispose.js';
 import type { PropsBase } from '../../views/viewDefinitionBase.js';
 import type { ViewMessagePayload } from '../../views/viewFlavors.js';
@@ -59,7 +59,6 @@ const DEFAULT_IDLE = 60_000;
 const DefaultProperties: IntrinsicMenuProps = {
   renderAfterHandledInteraction: true,
   idleTimeMs: DEFAULT_IDLE,
-  ephemeral: false,
 };
 const DefaultRenderOptions: RenderOptions = {
   forceReply: false,
@@ -67,9 +66,9 @@ const DefaultRenderOptions: RenderOptions = {
 
 interface MenuControllerListeners {
   onRender: Listener<void>;
-  onEnd: Listener<TimeoutEndReason | (string & {}) | null>;
+  onEnd: Listener<string | null>;
   onStop: Listener<string | null>;
-  onTimeout: Listener<TimeoutEndReason>;
+  onTimeout: Listener<void>;
 }
 
 export interface RenderOptions<ViewIds extends string = string> {
@@ -124,7 +123,7 @@ export class MenuInstance<ViewId extends string = string, AllProps extends Props
   ) {
     this.rootOwner.context[SYNAPSE_CONTEXT_ID] = this;
     this.views = new Map(registeredViews.map((v) => [v.id, v]));
-    this.props = buildProps(this, this.getView(initialViewId).defaults, initialProps);
+    this.props = buildProps(this, this.getView(initialViewId).defaults as any, initialProps as any);
 
     this.patcher = new InteractionPatcherLegacy(interaction, this.props);
 
@@ -190,7 +189,7 @@ export class MenuInstance<ViewId extends string = string, AllProps extends Props
     this.listeners.onRender.do(callback, once);
   }
 
-  onEnd(callback: (endReason: TimeoutEndReason | (string & {}) | null) => unknown): void {
+  onEnd(callback: (endReason: string | null) => unknown): void {
     this.listeners.onEnd.do(callback);
   }
 
@@ -198,7 +197,7 @@ export class MenuInstance<ViewId extends string = string, AllProps extends Props
     this.listeners.onStop.do(callback);
   }
 
-  onTimeout(callback: (timeoutReason: TimeoutEndReason) => unknown): void {
+  onTimeout(callback: () => unknown): void {
     this.listeners.onTimeout.do(callback);
   }
 
@@ -739,15 +738,31 @@ export class MenuInstance<ViewId extends string = string, AllProps extends Props
   }
 }
 
-function buildProps<AllProps extends PropsBase>(
-  instance: MenuInstance<string, AllProps>,
-  initProps: PropsBase,
-  initialViewDefaults: PropsBase,
+function buildProps(
+  instance: MenuInstance<any, any>,
+  initProps: PropsBase & IntrinsicMenuProps,
+  initialViewDefaults: PropsBase & IntrinsicMenuProps,
 ): ClassViewProps & IntrinsicMenuProps {
+  let flags = initProps.flags ?? 0;
+  flags |= initialViewDefaults.flags ?? 0;
+
+  if (initProps.ephemeral) {
+    flags |= MessageFlags.Ephemeral;
+  } else if (initProps.ephemeral === false) {
+    flags &= ~MessageFlags.Ephemeral;
+  }
+
+  if (initProps.ephemeral) {
+    flags |= MessageFlags.Ephemeral;
+  } else if (initProps.ephemeral === false) {
+    flags &= ~MessageFlags.Ephemeral;
+  }
+
   return {
     ...DefaultProperties,
     ...initialViewDefaults,
     ...initProps,
+    flags,
     $: instance,
   };
 }

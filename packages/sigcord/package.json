@@ -65,7 +65,9 @@
   "packageManager": "pnpm@10.11.0",
   "nx": {
     "targets": {
+      "typecheck": {},
       "lint": {},
+      "format": {},
       "test": {
         "dependsOn": [
           "^test"

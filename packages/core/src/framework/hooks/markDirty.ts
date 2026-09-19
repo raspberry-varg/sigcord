@@ -1,4 +1,4 @@
-import { getCurrentSynapseOrDefault } from '../../lib/builtins/builtins.js';
+import { getCurrentSynapseOrDefault } from '../../lib/builtins/currentSynapse.js';
 import { useCordInternalOrThrow } from '../cordContext.js';
 import { PatchTarget } from '../patchTarget.js';
 

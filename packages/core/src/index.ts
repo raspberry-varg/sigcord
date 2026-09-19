@@ -39,7 +39,6 @@ export {
   goTo,
   goBack,
   canNavigateBack,
-  showModal,
   awaitModalSubmit,
   onModalSubmit,
   queueEmbeds,
@@ -48,13 +47,11 @@ export {
   queueComponentsAtHead,
   setIdleMs,
   setIdleSec,
-  stopMenu,
   patch,
   useMenuInfo,
   injectCurrentInteraction,
   injectLastCollectedInteraction,
   getNextUniqueComponentId,
-  getCurrentSynapseOrDefault,
 } from './lib/builtins/builtins.js';
 export { defineView, defineViewV2 } from './lib/views/reactive/defineReactiveView.js';
 export { ViewClass, defineClassView } from './lib/views/classic/defineClassicView.js';
@@ -108,3 +105,6 @@ export { isSuspended } from './framework/hooks/index.js';
 export { closeMenu } from './framework/hooks/index.js';
 export { PatchTarget } from './framework/patchTarget.js';
 export { component } from './framework/hooks/index.js';
+export { getCurrentSynapseOrDefault } from './lib/builtins/currentSynapse.js';
+export { stopMenu } from './framework/hooks/index.js';
+export { showModal } from './lib/builtins/showModal.js';
