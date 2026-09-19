@@ -3,7 +3,7 @@ import {
   type WritableSignal,
   isSignal,
   isWritableSignal,
-} from './signals.js';
+} from "./signals.js";
 
 /**
  * Resolves a possible signal to its held value.
@@ -11,7 +11,7 @@ import {
 export function read<T>(maybeSignal: T | Signal<T> | WritableSignal<T>): T {
   return isWritableSignal(maybeSignal)
     ? maybeSignal.get()
-    : isSignal(maybeSignal) || typeof maybeSignal === 'function'
+    : isSignal(maybeSignal) || typeof maybeSignal === "function"
       ? (maybeSignal as () => T)()
       : maybeSignal;
 }

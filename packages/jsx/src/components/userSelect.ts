@@ -1,7 +1,7 @@
 import {
   UserSelectMenuBuilder,
   type UserSelectMenuInteraction,
-} from 'discord.js';
+} from "discord.js";
 
 import {
   type MaybeSignal,
@@ -9,12 +9,12 @@ import {
   getNextUniqueComponentId,
   patchEffect,
   read,
-} from '@sigcord/core';
+} from "@sigcord/core";
 
 import {
   type BaseSelectMenuProps,
   applyPatchEffect as applySelectMenuSignals,
-} from './baseSelectMenuProps.js';
+} from "./baseSelectMenuProps.js";
 
 const MIN_DEFAULT = 0;
 const MAX_DEFAULT = 1;
@@ -51,6 +51,6 @@ export function UserSelect(props: UserSelectProps) {
   return component({
     id,
     component: selectMenu,
-    handler: props['on:select'],
+    handler: props["on:select"],
   });
 }

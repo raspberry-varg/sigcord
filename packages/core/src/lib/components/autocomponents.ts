@@ -2,13 +2,13 @@ import {
   ButtonBuilder,
   ButtonStyle,
   type MessageActionRowComponentBuilder,
-} from 'discord.js';
+} from "discord.js";
 
 /**
  * Special id attached to one of the pre-configured {@link AutoComponents}.
  */
 export enum AutoComponentId {
-  CloseMenuButton = '%%RSRV%%_CloseMenuButton',
+  CloseMenuButton = "%%RSRV%%_CloseMenuButton",
 }
 
 /**
@@ -25,7 +25,7 @@ const COMPONENT_FACTORIES = {
   [AutoComponentId.CloseMenuButton]: () =>
     new ButtonBuilder({
       style: ButtonStyle.Secondary,
-      label: 'Close',
+      label: "Close",
     }),
 } as const;
 

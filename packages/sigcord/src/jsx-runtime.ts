@@ -1,1 +1,1 @@
-export * from '@sigcord/jsx/jsx-runtime';
+export * from "@sigcord/jsx/jsx-runtime";

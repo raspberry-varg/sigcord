@@ -1,7 +1,7 @@
 import type {
   CollectedMessageInteraction,
   RepliableInteraction,
-} from 'discord.js';
+} from "discord.js";
 
 export interface MenuContext {
   /**

@@ -3,7 +3,7 @@ export class NamedIdGenerator {
 
   constructor(
     readonly identifier: string,
-    readonly namespace = 'anon',
+    readonly namespace = "anon",
   ) {}
 
   next(): string {

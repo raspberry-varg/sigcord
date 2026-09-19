@@ -1,17 +1,17 @@
-import {hyperlink} from 'discord.js';
+import { hyperlink } from "discord.js";
 
-import {computed, isSignal, read} from '@sigcord/core';
+import { computed, isSignal, read } from "@sigcord/core";
 
-import {JSX} from '../jsx-runtime.js';
-import {parseChildrenToString} from '../util/parseChildrenToString.js';
-import {resolveString} from '../util/resolveString.js';
+import { JSX } from "../jsx-runtime.js";
+import { parseChildrenToString } from "../util/parseChildrenToString.js";
+import { resolveString } from "../util/resolveString.js";
 
 import IntrinsicElements = JSX.IntrinsicElements;
 
-export function createAnchor(props: IntrinsicElements['a']) {
+export function createAnchor(props: IntrinsicElements["a"]) {
   const children = props.children;
   if (!children) {
-    return '';
+    return "";
   }
 
   const displayText = parseChildrenToString(children);
@@ -26,7 +26,7 @@ export function createAnchor(props: IntrinsicElements['a']) {
   return computed(() => {
     const txt = read(displayText);
     if (!txt) {
-      return '';
+      return "";
     }
 
     return hyperlink(txt, read(url), resolveString(read(title)));

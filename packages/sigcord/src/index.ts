@@ -1,1 +1,1 @@
-export * from '@sigcord/core';
+export * from "@sigcord/core";

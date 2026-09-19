@@ -1,5 +1,5 @@
-import {getOwner} from '../owners/owner.js';
-import type {Context} from './context.js';
+import { getOwner } from "../owners/owner.js";
+import type { Context } from "./context.js";
 
 export function provideContextValue<T>(
   context: Readonly<Context<T>>,

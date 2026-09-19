@@ -1,7 +1,7 @@
-import type {EffectFn} from '../../../lib/reactivity/core/signals.js';
-import type {DisposeFn} from '../../../lib/render/dispose.js';
-import {effect} from '../effect.js';
-import {usePatchTarget} from '../usePatchTarget.js';
+import type { EffectFn } from "../../../lib/reactivity/core/signals.js";
+import type { DisposeFn } from "../../../lib/render/dispose.js";
+import { effect } from "../effect.js";
+import { usePatchTarget } from "../usePatchTarget.js";
 
 /**
  * @deprecated Use {@link effect} in conjunction with {@link dirty}.

@@ -1,14 +1,14 @@
-import {batch} from '@preact/signals-core';
+import { batch } from "@preact/signals-core";
 
-import {effect, update} from '../../framework/hooks/index.js';
-import {coreLog} from '../../internal/coreLog.js';
-import {getOwner} from '../../lib/owners/owner.js';
-import {signal} from '../../lib/primitives/signal.js';
-import {read} from '../../lib/reactivity/core/read.js';
-import {type Setter, type Signal} from '../../lib/reactivity/core/signals.js';
-import {untracked} from '../../lib/reactivity/untracked.js';
-import type {MaybePromise} from '../../util/TypesUtil.js';
-import {computed} from './computed.js';
+import { effect, update } from "../../framework/hooks/index.js";
+import { coreLog } from "../../internal/coreLog.js";
+import { getOwner } from "../../lib/owners/owner.js";
+import { signal } from "../../lib/primitives/signal.js";
+import { read } from "../../lib/reactivity/core/read.js";
+import { type Setter, type Signal } from "../../lib/reactivity/core/signals.js";
+import { untracked } from "../../lib/reactivity/untracked.js";
+import type { MaybePromise } from "../../util/TypesUtil.js";
+import { computed } from "./computed.js";
 
 const OPTIONS_DEFAULTS: Readonly<ResourceOptions<unknown, unknown>> = {
   autoUpdate: true,
@@ -133,13 +133,13 @@ export function resource<T, SOURCE>(
   let fetcher: ResourceFetcher<T, SOURCE>;
 
   if (fetcherOrUndefined !== undefined) {
-    options = typeof fetcherOrOptions === 'object' ? fetcherOrOptions : {};
+    options = typeof fetcherOrOptions === "object" ? fetcherOrOptions : {};
     fetcher = fetcherOrUndefined;
-  } else if (typeof fetcherOrOptions !== 'object') {
+  } else if (typeof fetcherOrOptions !== "object") {
     options = {};
     fetcher = fetcherOrOptions;
   } else {
-    throw new Error('Invalid override.');
+    throw new Error("Invalid override.");
   }
 
   const [backingSignal, setData] = signal<T | undefined>(options.initialValue);
@@ -233,7 +233,7 @@ export function resource<T, SOURCE>(
       refetch() {
         // resumeContext();
         if (getOwner()?.disposed) {
-          coreLog.debug('Refetch resource ignored as owner is disposed.');
+          coreLog.debug("Refetch resource ignored as owner is disposed.");
           return;
         }
 

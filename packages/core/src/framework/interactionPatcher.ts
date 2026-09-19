@@ -4,12 +4,12 @@ import {
   type ModalBuilder,
   type ModalComponentData,
   type RepliableInteraction,
-} from 'discord.js';
+} from "discord.js";
 
-import {coreLog} from '../internal/coreLog.js';
-import type {ModalRepliableInteraction} from '../lib/interactivity/modalHandling.js';
-import {safeRender} from '../util/RenderingUtil.js';
-import type {Payload} from './payload.js';
+import { coreLog } from "../internal/coreLog.js";
+import type { ModalRepliableInteraction } from "../lib/interactivity/modalHandling.js";
+import { safeRender } from "../util/RenderingUtil.js";
+import type { Payload } from "./payload.js";
 
 export enum BufferedPatchStatus {
   Completed,
@@ -34,7 +34,7 @@ export interface BufferedPatch {
 type TrackedAction = Promise<unknown>;
 
 export class InteractionPatcher {
-  private logger = coreLog.namespaced('InteractionPatcher');
+  private logger = coreLog.namespaced("InteractionPatcher");
   private patching = false;
   private trackedActions = new Map<string, TrackedAction>();
   private activePatchPromise: Promise<Message | undefined> | undefined;
@@ -56,11 +56,11 @@ export class InteractionPatcher {
     if (this.disposed) return;
 
     const id = interaction.id;
-    this.logger.debug('InteractionPatcher.deferUpdate', {id});
+    this.logger.debug("InteractionPatcher.deferUpdate", { id });
     if (this.patching && this.interaction?.id === id) {
       this.logger.debug(
-        'Not deferring update since this interaction is already being patched.',
-        {id},
+        "Not deferring update since this interaction is already being patched.",
+        { id },
       );
       return;
     }
@@ -70,10 +70,10 @@ export class InteractionPatcher {
       !interaction.deferred &&
       !interaction.replied
     ) {
-      this.logger.debug('Should defer', {id});
+      this.logger.debug("Should defer", { id });
       if (this.trackedActions.has(id)) {
         // Already deferring.
-        this.logger.debug('(deferUpdate) -> Already performing an action', {
+        this.logger.debug("(deferUpdate) -> Already performing an action", {
           id,
         });
         return;
@@ -83,11 +83,11 @@ export class InteractionPatcher {
         interaction
           .deferUpdate()
           .then((res) => {
-            this.logger.verbose('Tracked deferUpdate complete', {id});
+            this.logger.verbose("Tracked deferUpdate complete", { id });
             resolve(res);
           })
           .catch((e) => {
-            this.logger.error('Error in tracked deferUpdate', e);
+            this.logger.error("Error in tracked deferUpdate", e);
             reject(e);
           })
           .finally(() => {
@@ -106,18 +106,18 @@ export class InteractionPatcher {
     if (this.disposed) return;
 
     const id = interaction.id;
-    this.logger.debug('InteractionPatcher.showModal', {id});
+    this.logger.debug("InteractionPatcher.showModal", { id });
     if (this.patching && this.interaction?.id === id) {
       this.logger.debug(
-        'Not showing a modal since this interaction is already being patched.',
-        {id},
+        "Not showing a modal since this interaction is already being patched.",
+        { id },
       );
       return;
     }
 
     if (this.trackedActions.has(id)) {
       // Already deferring.
-      this.logger.debug('(showModal) -> Already performing an action', {id});
+      this.logger.debug("(showModal) -> Already performing an action", { id });
       return;
     }
 
@@ -126,11 +126,11 @@ export class InteractionPatcher {
         interaction
           .showModal(modal)
           .then((res) => {
-            this.logger.verbose('Tracked showModal complete', {id});
+            this.logger.verbose("Tracked showModal complete", { id });
             resolve(res as any);
           })
           .catch((e) => {
-            this.logger.error('Error in tracked showModal', e);
+            this.logger.error("Error in tracked showModal", e);
             reject(e);
           })
           .finally(() => {
@@ -147,7 +147,7 @@ export class InteractionPatcher {
   ): Promise<BufferedPatchStatus> {
     if (this.disposed) return new Promise(() => undefined);
     if (!this.interaction) {
-      throw new Error('No interaction was mounted, yet patch was requested.');
+      throw new Error("No interaction was mounted, yet patch was requested.");
     }
 
     this.logger.debug(
@@ -167,14 +167,14 @@ export class InteractionPatcher {
       return promise;
     }
 
-    this.logger.debug('No patch was buffered, begin patch.');
+    this.logger.debug("No patch was buffered, begin patch.");
     this.patching = true;
     try {
       const activeDeferUpdate = this.trackedActions.get(this.interaction.id);
       if (activeDeferUpdate) {
-        this.logger.debug('There is an active defer. Waiting...');
+        this.logger.debug("There is an active defer. Waiting...");
         await activeDeferUpdate;
-        this.logger.debug('Resolved active defer.');
+        this.logger.debug("Resolved active defer.");
       }
       this.message =
         (await (this.activePatchPromise = safeRender(
@@ -192,12 +192,12 @@ export class InteractionPatcher {
     }
 
     if (this.bufferedPatch) {
-      this.logger.debug('Patch complete, but another was buffered...');
+      this.logger.debug("Patch complete, but another was buffered...");
       const buffered = this.bufferedPatch;
       this.bufferedPatch = null;
       return await this.patch(buffered.payload, buffered.options);
     } else {
-      this.logger.debug('Patch complete.');
+      this.logger.debug("Patch complete.");
       return BufferedPatchStatus.Completed;
     }
   }
@@ -212,16 +212,16 @@ export class InteractionPatcher {
     try {
       const activeDeferUpdate = this.trackedActions.get(this.interaction.id);
       if (activeDeferUpdate) {
-        this.logger.debug('Stop encountered active defer.');
+        this.logger.debug("Stop encountered active defer.");
         await activeDeferUpdate;
       }
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (_: unknown) {
       this.logger.verbose(
-        'Error while stop was waiting for active defer update.',
+        "Error while stop was waiting for active defer update.",
       );
     }
-    this.logger.debug('Stop resolved active defer.');
+    this.logger.debug("Stop resolved active defer.");
     this.trackedActions.clear();
 
     if (this.patching) {
@@ -234,21 +234,21 @@ export class InteractionPatcher {
 
     this.cancelBufferedPatch();
     if (!this.interaction) {
-      throw new Error('No interaction was mounted, yet delete was requested.');
+      throw new Error("No interaction was mounted, yet delete was requested.");
     }
 
     const activeDeferUpdate = this.trackedActions.get(this.interaction.id);
     if (activeDeferUpdate) {
-      this.logger.debug('Delete encountered active defer.');
+      this.logger.debug("Delete encountered active defer.");
       try {
         await activeDeferUpdate;
       } catch (error: unknown) {
         this.logger.verbose(
-          'Error while delete was waiting for active defer update.',
-          {error},
+          "Error while delete was waiting for active defer update.",
+          { error },
         );
       }
-      this.logger.debug('Delete resolved active defer.');
+      this.logger.debug("Delete resolved active defer.");
     }
 
     if (this.patching) {
@@ -274,7 +274,7 @@ export class InteractionPatcher {
         this.message = undefined;
       }
     } catch (error: unknown) {
-      this.logger.error('Error when deleting reply', error);
+      this.logger.error("Error when deleting reply", error);
       throw error;
     } finally {
       this.patching = false;
@@ -294,7 +294,7 @@ export class InteractionPatcher {
 
   private cancelBufferedPatch() {
     if (this.bufferedPatch) {
-      this.logger.debug('Cancelling buffered patch.');
+      this.logger.debug("Cancelling buffered patch.");
       this.bufferedPatch.promiseResolve(BufferedPatchStatus.Cancelled);
     }
   }

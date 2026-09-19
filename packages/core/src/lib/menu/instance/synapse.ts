@@ -6,31 +6,31 @@ import type {
   ModalBuilder,
   ModalSubmitInteraction,
   RepliableInteraction,
-} from 'discord.js';
+} from "discord.js";
 
-import {PatchTarget} from '../../../framework/patchTarget.js';
-import type {UnionToIntersection} from '../../../util/TypesUtil.js';
-import type {ComponentDefinition} from '../../components/componentDefinition.js';
-import type {Context} from '../../contexts/context.js';
+import { PatchTarget } from "../../../framework/patchTarget.js";
+import type { UnionToIntersection } from "../../../util/TypesUtil.js";
+import type { ComponentDefinition } from "../../components/componentDefinition.js";
+import type { Context } from "../../contexts/context.js";
 import type {
   ModalHandlingOptions,
   ModalOnSubmitHandler,
   ModalRepliableInteraction,
-} from '../../interactivity/modalHandling.js';
+} from "../../interactivity/modalHandling.js";
 import type {
   EffectFn,
   Signal,
   SignalTuple,
   WritableSignal,
-} from '../../reactivity/core/signals.js';
-import type {DisposeFn, ResumeFn, SuspendFn} from '../../render/dispose.js';
-import {STATIC_RENDER_SYNAPSE} from '../../render/staticRenderSynapse.js';
-import type {DefinedView, View} from '../../views/view.js';
-import type {PropsBase} from '../../views/viewDefinitionBase.js';
-import type {MenuContext} from './menuContext.js';
+} from "../../reactivity/core/signals.js";
+import type { DisposeFn, ResumeFn, SuspendFn } from "../../render/dispose.js";
+import { STATIC_RENDER_SYNAPSE } from "../../render/staticRenderSynapse.js";
+import type { DefinedView, View } from "../../views/view.js";
+import type { PropsBase } from "../../views/viewDefinitionBase.js";
+import type { MenuContext } from "./menuContext.js";
 
 export const SynapseContext: Context<Readonly<Synapse>> = Object.freeze({
-  id: Symbol('MenuContext'),
+  id: Symbol("MenuContext"),
   default: STATIC_RENDER_SYNAPSE,
 });
 
@@ -78,7 +78,7 @@ export interface Synapse {
   awaitModalSubmit(
     interaction: ModalRepliableInteraction,
     options: AwaitModalSubmitOptions<ModalSubmitInteraction>,
-  ): Promise<ModalSubmitInteraction<import('discord.js').CacheType> | null>;
+  ): Promise<ModalSubmitInteraction<import("discord.js").CacheType> | null>;
   onModalSubmit(
     interaction: ModalRepliableInteraction,
     options: AwaitModalSubmitOptions<ModalSubmitInteraction>,

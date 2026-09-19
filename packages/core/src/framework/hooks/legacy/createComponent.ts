@@ -1,8 +1,8 @@
-import {getCurrentSynapse} from '../../../lib/builtins/builtins.js';
-import {Synapse} from '../../../lib/menu/instance/synapse.js';
-import {useCordInternal} from '../../cordContext.js';
-import {createUniqueComponentId} from '../createUniqueComponentId.js';
-import {useComponentHandler} from '../useComponentHandler.js';
+import { getCurrentSynapse } from "../../../lib/builtins/builtins.js";
+import { Synapse } from "../../../lib/menu/instance/synapse.js";
+import { useCordInternal } from "../../cordContext.js";
+import { createUniqueComponentId } from "../createUniqueComponentId.js";
+import { useComponentHandler } from "../useComponentHandler.js";
 
 /**
  * @deprecated Please use {@link useComponentHandler}.
@@ -15,7 +15,7 @@ import {useComponentHandler} from '../useComponentHandler.js';
  * - Binds a given handler to a component via its id.
  * @returns The provided component builder.
  */
-export const component: Synapse['component'] = (definition) => {
+export const component: Synapse["component"] = (definition) => {
   const cord = useCordInternal();
   if (cord) {
     // Handle partial migration.

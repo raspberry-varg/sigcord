@@ -8,17 +8,17 @@ import {
   type StringSelectMenuOptionBuilder,
   type TopLevelComponent,
   type TopLevelComponentData,
-} from 'discord.js';
+} from "discord.js";
 
-import type {Slot} from '../Slot.js';
-import type {ViewElementNode} from '../dom/viewElementNode.js';
-import type {ViewNode} from '../dom/viewNode.js';
-import type {ViewNodeKind, ViewNodeKindBase} from '../dom/viewNodeKind.js';
-import type {Owner} from '../owners/owner.js';
-import type {Signalish, WritableSignal} from '../reactivity/core/signals.js';
-import type {DeferredComponent} from '../render/deferredComponent.js';
-import type {DisposeFn} from '../render/dispose.js';
-import type {REACTIVE_VIEW_SYMBOL} from './reactive/reactiveViewSymbol.js';
+import type { Slot } from "../Slot.js";
+import type { ViewElementNode } from "../dom/viewElementNode.js";
+import type { ViewNode } from "../dom/viewNode.js";
+import type { ViewNodeKind, ViewNodeKindBase } from "../dom/viewNodeKind.js";
+import type { Owner } from "../owners/owner.js";
+import type { Signalish, WritableSignal } from "../reactivity/core/signals.js";
+import type { DeferredComponent } from "../render/deferredComponent.js";
+import type { DisposeFn } from "../render/dispose.js";
+import type { REACTIVE_VIEW_SYMBOL } from "./reactive/reactiveViewSymbol.js";
 
 export type EmbedComponent = EmbedBuilder;
 
@@ -32,7 +32,7 @@ type ViewComponentKind =
   | StringSelectMenuOptionBuilder
   | SelectMenuComponentOptionData;
 
-export const IS_V2: unique symbol = Symbol('using v2 components');
+export const IS_V2: unique symbol = Symbol("using v2 components");
 
 export type RenderedReactiveView =
   RenderedReactiveViewV1 | RenderedReactiveViewV2;

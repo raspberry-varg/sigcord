@@ -1,11 +1,11 @@
-import type {Message, RepliableInteraction} from 'discord.js';
+import type { Message, RepliableInteraction } from "discord.js";
 
-import type {ArrayUnionToIntersection} from '../../util/TypesUtil.js';
-import {type DefinedView, View} from '../views/view.js';
-import type {PropsBase} from '../views/viewDefinitionBase.js';
-import type {IntrinsicViewProps} from '../views/viewFlavors.js';
-import {instantiateMenu} from './instance/instantiateMenu.js';
-import type {MenuInstanceActions} from './instance/menuInstanceActions.js';
+import type { ArrayUnionToIntersection } from "../../util/TypesUtil.js";
+import { type DefinedView, View } from "../views/view.js";
+import type { PropsBase } from "../views/viewDefinitionBase.js";
+import type { IntrinsicViewProps } from "../views/viewFlavors.js";
+import { instantiateMenu } from "./instance/instantiateMenu.js";
+import type { MenuInstanceActions } from "./instance/menuInstanceActions.js";
 
 type ViewDefinitions = DefinedView<any>[];
 
@@ -45,7 +45,7 @@ export function defineMenu<
   views: Views;
   intrinsic?: Partial<IntrinsicMenuProps>;
 }): MenuFactory<Props> {
-  const {id, initialView, views, intrinsic} = definition;
+  const { id, initialView, views, intrinsic } = definition;
 
   // check if initial view is valid
   const idToClass = new Map<string, View>();
@@ -72,7 +72,7 @@ export function defineMenu<
       initialView,
       [...idToClass.values()],
       interaction,
-      {...intrinsic, ...props},
+      { ...intrinsic, ...props },
     );
 }
 

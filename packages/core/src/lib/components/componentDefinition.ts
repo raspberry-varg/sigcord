@@ -1,14 +1,14 @@
 import type {
   MappedInteractionTypes,
   MessageActionRowComponentBuilder,
-} from 'discord.js';
+} from "discord.js";
 
-import type {MessageComponentCallback} from './messageComponentCallback.js';
+import type { MessageComponentCallback } from "./messageComponentCallback.js";
 
 type InteractionFromBuilder<
   Builder extends MessageActionRowComponentBuilder,
   Cached extends boolean,
-> = MappedInteractionTypes<Cached>[NonNullable<Builder['data']['type']>];
+> = MappedInteractionTypes<Cached>[NonNullable<Builder["data"]["type"]>];
 
 export interface ComponentDefinition<
   Builder extends MessageActionRowComponentBuilder,

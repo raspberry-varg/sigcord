@@ -3,7 +3,7 @@ import type {
   EmbedComponent,
   Primitive,
   ViewComponent,
-} from '../views/viewFlavors.js';
+} from "../views/viewFlavors.js";
 
 export type ViewNodeKind<T extends ViewNodeKindBase = ViewNodeKindBase> =
   T | Children<T>;

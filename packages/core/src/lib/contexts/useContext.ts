@@ -1,5 +1,5 @@
-import {getOwnerOrThrow} from '../owners/owner.js';
-import type {Context} from './context.js';
+import { getOwnerOrThrow } from "../owners/owner.js";
+import type { Context } from "./context.js";
 
 /**
  * Attempt to inject a value from the current context.

@@ -15,7 +15,7 @@ import {
   signal,
   untracked,
   useDisposeOwnerFn,
-} from '@sigcord/core';
+} from "@sigcord/core";
 
 interface IndexProps<
   Each extends Iterable<unknown> | Signal<Iterable<unknown>>,
@@ -88,7 +88,7 @@ export function Index<
           return useDisposeOwnerFn();
         },
         {
-          debugName: `[Loop_Index_${i}]${props.debugName ?? '%'}`,
+          debugName: `[Loop_Index_${i}]${props.debugName ?? "%"}`,
         },
       );
       nextNodes[i] = nodes!;

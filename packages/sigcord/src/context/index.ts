@@ -1,1 +1,1 @@
-export * from '@sigcord/jsx/context';
+export * from "@sigcord/jsx/context";
