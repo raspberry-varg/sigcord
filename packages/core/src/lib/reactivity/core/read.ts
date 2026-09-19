@@ -1,8 +1,8 @@
 import {
-  isSignal,
-  isWritableSignal,
   type Signal,
   type WritableSignal,
+  isSignal,
+  isWritableSignal,
 } from './signals.js';
 
 /**

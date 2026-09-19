@@ -1,4 +1,4 @@
-import { CollectedInteraction } from 'discord.js';
+import {CollectedInteraction} from 'discord.js';
 
 export type InteractionMiddleware = (
   interaction: CollectedInteraction,

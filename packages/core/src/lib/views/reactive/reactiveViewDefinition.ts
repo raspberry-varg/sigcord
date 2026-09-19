@@ -1,13 +1,13 @@
-import type { IntrinsicMenuProps } from '../../menu/defineMenu.js';
-import { IS_V2 } from '../viewFlavors.js';
-import { REACTIVE_VIEW_SYMBOL } from './reactiveViewSymbol.js';
-import type { PropsBase } from '../viewDefinitionBase.js';
+import type {IntrinsicMenuProps} from '../../menu/defineMenu.js';
+import type {View} from '../view.js';
+import type {PropsBase} from '../viewDefinitionBase.js';
+import {IS_V2} from '../viewFlavors.js';
 import type {
   ReactiveViewFactory,
   ReactiveViewFactoryV1,
   ReactiveViewFactoryV2,
 } from './reactiveViewFactory.js';
-import type { View } from '../view.js';
+import {REACTIVE_VIEW_SYMBOL} from './reactiveViewSymbol.js';
 
 export type ReactiveViewBody<Props extends PropsBase = PropsBase> =
   ReactiveViewDefinition<Props>;

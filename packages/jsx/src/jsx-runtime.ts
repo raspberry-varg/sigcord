@@ -14,7 +14,6 @@ import type {
   ViewNodeKind,
 } from '@sigcord/core';
 
-
 import {elementFactory} from './jsx-runtime.js';
 
 import JSXNode = JSX.JSXNode;

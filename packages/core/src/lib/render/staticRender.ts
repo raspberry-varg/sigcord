@@ -1,11 +1,11 @@
-import type { ViewNodeKind, ViewNodeKindBase } from '../dom/viewNodeKind.js';
-import { renderFragment } from './render.js';
-import { flatten } from './flatten.js';
-import { STATIC_RENDER_SYNAPSE } from './staticRenderSynapse.js';
-import { ViewElementNode } from '../dom/viewElementNode.js';
-import { createRootOwner, runWithOwner } from '../owners/owner.js';
-import { provideContextValue } from '../contexts/provideContext.js';
-import { SynapseContext } from '../menu/instance/synapse.js';
+import {provideContextValue} from '../contexts/provideContext.js';
+import {ViewElementNode} from '../dom/viewElementNode.js';
+import type {ViewNodeKind, ViewNodeKindBase} from '../dom/viewNodeKind.js';
+import {SynapseContext} from '../menu/instance/synapse.js';
+import {createRootOwner, runWithOwner} from '../owners/owner.js';
+import {flatten} from './flatten.js';
+import {renderFragment} from './render.js';
+import {STATIC_RENDER_SYNAPSE} from './staticRenderSynapse.js';
 
 type StaticRenderFn<T extends ViewNodeKindBase> = () => ViewNodeKind<T>;
 

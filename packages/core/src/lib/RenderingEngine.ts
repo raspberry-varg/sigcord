@@ -1,46 +1,48 @@
-import { EmbedBuilder, MessageFlags } from 'discord.js';
-import { assert } from '../util/Assertions.js';
-import {
-  instantiateClassView,
-  isClassViewInstance,
-} from './views/classic/classViewInstance.js';
-import { isReactiveViewInstance } from './views/reactive/reactiveViewInstance.js';
-import { type View, type ViewInstance } from './views/view.js';
-import {
-  type EmbedComponent,
-  IS_V2,
-  isRenderedReactiveViewV2,
-  type RenderedReactiveView,
-  type ViewComponent,
-  type ViewMessagePayload,
-} from './views/viewFlavors.js';
-import { createUntracked } from './reactivity/core/signals.js';
-import { type PropsBase } from './views/viewDefinitionBase.js';
-import type { NavigationPayload } from './Navigation.js';
-import {
-  instantiateReactiveView,
-  type ReactiveViewInstance,
-} from './menu/instance/instantiateReactiveView.js';
-import { isReactiveViewDefinition } from './views/reactive/reactiveViewDefinition.js';
-import { batch } from '@preact/signals-core';
-import {
-  getOwnerOrThrow,
-  type Owner,
-  type Props,
-  provideContextValue,
-  renderFragment,
-  runWithOwner,
-} from '../index.js';
-import { ViewElementNode } from './dom/viewElementNode.js';
-import { owner } from './owners/owner.js';
-import { flatten } from './render/flatten.js';
-import { read } from './reactivity/core/read.js';
-import { PatchTargetContext } from '../framework/hooks/usePatchTarget.js';
+import {EmbedBuilder, MessageFlags} from 'discord.js';
+
+import {batch} from '@preact/signals-core';
+
+import {PatchTargetContext} from '../framework/hooks/usePatchTarget.js';
 import {
   PatchTarget,
   type PatchTargetBitMask,
 } from '../framework/patchTarget.js';
-import { coreLog } from '../internal/coreLog.js';
+import {
+  type Owner,
+  type Props,
+  getOwnerOrThrow,
+  provideContextValue,
+  renderFragment,
+  runWithOwner,
+} from '../index.js';
+import {coreLog} from '../internal/coreLog.js';
+import {assert} from '../util/Assertions.js';
+import type {NavigationPayload} from './Navigation.js';
+import {ViewElementNode} from './dom/viewElementNode.js';
+import {
+  type ReactiveViewInstance,
+  instantiateReactiveView,
+} from './menu/instance/instantiateReactiveView.js';
+import {owner} from './owners/owner.js';
+import {read} from './reactivity/core/read.js';
+import {createUntracked} from './reactivity/core/signals.js';
+import {flatten} from './render/flatten.js';
+import {
+  instantiateClassView,
+  isClassViewInstance,
+} from './views/classic/classViewInstance.js';
+import {isReactiveViewDefinition} from './views/reactive/reactiveViewDefinition.js';
+import {isReactiveViewInstance} from './views/reactive/reactiveViewInstance.js';
+import {type View, type ViewInstance} from './views/view.js';
+import {type PropsBase} from './views/viewDefinitionBase.js';
+import {
+  type EmbedComponent,
+  IS_V2,
+  type RenderedReactiveView,
+  type ViewComponent,
+  type ViewMessagePayload,
+  isRenderedReactiveViewV2,
+} from './views/viewFlavors.js';
 
 type QueuedView = {
   view: View;
@@ -144,7 +146,7 @@ export class RenderingEngine {
     props: PropsBase,
     skipCache = false,
   ): void {
-    this.queuedView = { view, props, skipCache };
+    this.queuedView = {view, props, skipCache};
   }
 
   queueViewSwap(view: View, args: unknown[]): void {
@@ -155,7 +157,7 @@ export class RenderingEngine {
       );
       return;
     }
-    this.queuedView = { view, args, skipCache: false };
+    this.queuedView = {view, args, skipCache: false};
   }
 
   queueNavigation(navigationPayload: NavigationPayload): void {
@@ -340,7 +342,7 @@ export class RenderingEngine {
 
         assert(instance.lastRender);
 
-        const { roots } = instance;
+        const {roots} = instance;
         if (roots.embeds) {
           if (this.isQueuedForClear(PatchTarget.Embeds)) {
             payload.embeds = [];
@@ -406,7 +408,7 @@ export class RenderingEngine {
     const view = this.getViewInstance(
       !this.queuedView || 'args' in this.queuedView
         ? props
-        : { $: props.$, ...this.queuedView.props },
+        : {$: props.$, ...this.queuedView.props},
     );
     if (this.queuedView) {
       if ('args' in this.queuedView && isClassViewInstance(view)) {

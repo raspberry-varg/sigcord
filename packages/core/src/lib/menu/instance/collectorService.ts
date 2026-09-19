@@ -5,13 +5,14 @@ import {
   type Message,
   type MessageComponentInteraction,
 } from 'discord.js';
-import type { Listener } from '../../../util/Listener.js';
-import type { MessageComponentCallback } from '../../views/viewFlavors.js';
+
+import {coreLog} from '../../../internal/coreLog.js';
 import {
-  endReasonIsTimeout,
   type TimeoutEndReason,
+  endReasonIsTimeout,
 } from '../../../util/CollectorUtil.js';
-import { coreLog } from '../../../internal/coreLog.js';
+import type {Listener} from '../../../util/Listener.js';
+import type {MessageComponentCallback} from '../../views/viewFlavors.js';
 
 type ComponentId = string;
 export type ComponentCallbackMap = Map<
@@ -82,7 +83,7 @@ export class CollectorService {
     if (!this.collector || this.hasEnded()) {
       return;
     }
-    this.collector.resetTimer({ time: timeMilliseconds });
+    this.collector.resetTimer({time: timeMilliseconds});
   }
 
   stop(reason?: string) {
@@ -97,13 +98,7 @@ export class CollectorService {
     return !!this.collector;
   }
 
-  init({
-    message,
-    idle,
-    filter,
-    onTimeout,
-    onCollect,
-  }: CollectorOptions): void {
+  init({message, idle, filter, onTimeout, onCollect}: CollectorOptions): void {
     const collector = (this.collector = message.createMessageComponentCollector(
       {
         filter,

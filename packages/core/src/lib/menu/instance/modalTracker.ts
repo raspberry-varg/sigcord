@@ -1,5 +1,6 @@
-import type { ModalRepliableInteraction } from '../../interactivity/modalHandling.js';
-import type { ModalBuilder } from 'discord.js';
+import type {ModalBuilder} from 'discord.js';
+
+import type {ModalRepliableInteraction} from '../../interactivity/modalHandling.js';
 
 export class ModalTracker {
   private latestInteractionId = '';

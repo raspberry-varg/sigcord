@@ -1,10 +1,9 @@
-import { useContext } from '../../lib/contexts/useContext.js';
+import {coreLog} from '../../internal/coreLog.js';
+import {useContext} from '../../lib/contexts/useContext.js';
 import {
   ImperativeLockContext,
   ImperativeLockKind,
 } from '../contexts/imperativeLock.js';
-
-import { coreLog } from '../../internal/coreLog.js';
 
 const LOCK_DESCRIPTIONS: Record<ImperativeLockKind, string> = {
   [ImperativeLockKind.InteractionHandler]:

@@ -1,17 +1,18 @@
-import type { Cord } from '../cord.js';
-import type {
-  CollectedInteractionHandlerData,
-  ModalInteractionHandlerData,
-} from '../interactionHandlerData.js';
-import { CollectedInteraction } from 'discord.js';
-import type { Payload } from '../payload.js';
-import { getOwnerOrThrow, owner } from '../../lib/owners/owner.js';
+import {CollectedInteraction} from 'discord.js';
+
+import {CurrentRepliableContext} from '../../core/contexts/currentRepliableContext.js';
 import {
   ImperativeLockContext,
   ImperativeLockKind,
 } from '../../core/contexts/imperativeLock.js';
-import { provideContextValue } from '../../lib/contexts/provideContext.js';
-import { CurrentRepliableContext } from '../../core/contexts/currentRepliableContext.js';
+import {provideContextValue} from '../../lib/contexts/provideContext.js';
+import {getOwnerOrThrow, owner} from '../../lib/owners/owner.js';
+import type {Cord} from '../cord.js';
+import type {
+  CollectedInteractionHandlerData,
+  ModalInteractionHandlerData,
+} from '../interactionHandlerData.js';
+import type {Payload} from '../payload.js';
 
 /**
  * An active view for a given {@link Cord}.

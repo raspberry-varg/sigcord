@@ -1,11 +1,11 @@
-import { ClassViewProps } from '../../FunctionalMenuView.js';
-import { IS_V2, type RenderedReactiveView } from '../../views/viewFlavors.js';
+import {ClassViewProps} from '../../FunctionalMenuView.js';
 import {
-  isReactiveViewDefinitionV2,
   type ReactiveViewDefinition,
+  isReactiveViewDefinitionV2,
 } from '../../views/reactive/reactiveViewDefinition.js';
-import { REACTIVE_VIEW_SYMBOL } from '../../views/reactive/reactiveViewSymbol.js';
-import type { PropsBase } from '../../views/viewDefinitionBase.js';
+import {REACTIVE_VIEW_SYMBOL} from '../../views/reactive/reactiveViewSymbol.js';
+import type {PropsBase} from '../../views/viewDefinitionBase.js';
+import {IS_V2, type RenderedReactiveView} from '../../views/viewFlavors.js';
 
 export type ReactiveViewInstance = {
   readonly id: string;

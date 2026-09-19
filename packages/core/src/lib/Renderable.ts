@@ -6,8 +6,9 @@ import {
   MessageFlags,
   type RepliableInteraction,
 } from 'discord.js';
-import { safeRender } from '../util/RenderingUtil.js';
-import { ViewMessagePayload } from './views/viewFlavors.js';
+
+import {safeRender} from '../util/RenderingUtil.js';
+import {ViewMessagePayload} from './views/viewFlavors.js';
 
 interface RenderOptions {
   flags?: MessageFlags;

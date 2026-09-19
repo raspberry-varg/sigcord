@@ -2,38 +2,19 @@
   "name": "@sigcord/core",
   "version": "7.2.1",
   "description": "Simple utility to have reactive, routed, and interactive Discord menus.",
-  "directories": {
-    "lib": "dist"
-  },
-  "type": "module",
-  "files": [
-    "dist"
-  ],
+  "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/raspberry-varg/sigcord.git"
   },
-  "scripts": {
-    "test": "bun test",
-    "format": "npx prettier --write src",
-    "build": "tsc",
-    "clean": "rm -rf dist",
-    "prepack": "pnpm run clean && pnpm run build"
+  "directories": {
+    "lib": "dist"
   },
-  "license": "Apache-2.0",
-  "dependencies": {
-    "@preact/signals-core": "^1.8.0"
-  },
-  "peerDependencies": {
-    "discord.js": "catalog:"
-  },
-  "devDependencies": {
-    "@types/bun": "catalog:",
-    "discord.js": "catalog:",
-    "nx": "22.0.3",
-    "prettier": "catalog:",
-    "typescript": "catalog:"
-  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "default": "./dist/index.js",
@@ -44,14 +25,32 @@
       "types": "./dist/legacy/index.d.ts"
     }
   },
-  "types": "./dist/index.d.ts",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "bun test",
+    "format": "npx prettier --write src",
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "prepack": "pnpm run clean && pnpm run build"
+  },
+  "dependencies": {
+    "@preact/signals-core": "^1.8.0"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "discord.js": "catalog:",
+    "typescript": "catalog:"
+  },
+  "peerDependencies": {
+    "discord.js": "catalog:"
+  },
   "nx": {
     "targets": {
       "lint": {},
+      "format": {},
       "yalc:push": {}
     }
-  },
-  "publishConfig": {
-    "access": "public"
   }
 }

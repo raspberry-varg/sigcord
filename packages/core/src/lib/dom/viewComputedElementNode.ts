@@ -1,7 +1,7 @@
-import { ViewElementNode } from './viewElementNode.js';
-import type { ViewNodeKindBase } from './viewNodeKind.js';
-import type { Children } from '../views/viewFlavors.js';
-import { render } from '../render/render.js';
+import {render} from '../render/render.js';
+import type {Children} from '../views/viewFlavors.js';
+import {ViewElementNode} from './viewElementNode.js';
+import type {ViewNodeKindBase} from './viewNodeKind.js';
 
 export type NodeContentComputer<T, U extends ViewNodeKindBase> = (
   content: T,

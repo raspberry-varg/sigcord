@@ -1,7 +1,4 @@
-import type {
-  ButtonInteraction,
-  MessageComponentInteraction,
-} from 'discord.js';
+import type {ButtonInteraction, MessageComponentInteraction} from 'discord.js';
 
 /**
  * Callback for a given interaction.

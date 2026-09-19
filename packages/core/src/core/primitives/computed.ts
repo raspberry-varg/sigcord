@@ -1,7 +1,7 @@
-import { getCurrentSynapseOrDefault } from '../../lib/builtins/builtins.js';
+import {getCurrentSynapseOrDefault} from '../../lib/builtins/builtins.js';
 import {
-  createComputed,
   type Signal,
+  createComputed,
 } from '../../lib/reactivity/core/signals.js';
 
 /**

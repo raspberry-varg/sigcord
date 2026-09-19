@@ -1,5 +1,5 @@
-import type { Synapse } from '../../lib/menu/instance/synapse.js';
-import { getCurrentSynapse } from '../../lib/builtins/builtins.js';
+import {getCurrentSynapse} from '../../lib/builtins/builtins.js';
+import type {Synapse} from '../../lib/menu/instance/synapse.js';
 
 /**
  * Create an object to modify and read from a single signal. Capable of being
