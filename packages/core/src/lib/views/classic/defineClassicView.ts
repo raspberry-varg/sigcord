@@ -1,10 +1,11 @@
-import type { MaybePromise } from "../../../util/TypesUtil.js";
-import type { ClassViewDefinition } from "../../FunctionalMenuView.js";
-import type { IntrinsicMenuProps, MenuFactory } from "../../menu/defineMenu.js";
-import { instantiateMenu } from "../../menu/instance/instantiateMenu.js";
-import type { Synapse } from "../../menu/instance/synapse.js";
-import type { PropsBase } from "../viewDefinitionBase.js";
-import type { ViewMessagePayload } from "../viewFlavors.js";
+import { instantiateMenu } from '../../menu/instance/instantiateMenu.js';
+
+import type { MaybePromise } from '../../../util/TypesUtil.js';
+import type { ClassViewDefinition } from '../../FunctionalMenuView.js';
+import type { IntrinsicMenuProps, MenuFactory } from '../../menu/defineMenu.js';
+import type { Synapse } from '../../menu/instance/synapse.js';
+import type { PropsBase } from '../viewDefinitionBase.js';
+import type { ViewMessagePayload } from '../viewFlavors.js';
 
 export interface ViewClassImplementation<Props extends PropsBase> {
   new (props: Props & { $: Synapse }): ViewClass<Props>;
@@ -13,9 +14,7 @@ export interface ViewClassImplementation<Props extends PropsBase> {
 export abstract class ViewClass<Props extends PropsBase = PropsBase> {
   constructor(protected readonly props: Props & { $: Synapse }) {}
 
-  abstract render(
-    props: Props & { $: Synapse },
-  ): MaybePromise<ViewMessagePayload>;
+  abstract render(props: Props & { $: Synapse }): MaybePromise<ViewMessagePayload>;
 
   /**
    * Action to perform when this view is swapped back into via id with $.swap().

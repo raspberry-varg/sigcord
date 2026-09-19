@@ -1,3 +1,24 @@
+import { PatchTarget } from '../../../framework/patchTarget.js';
+import { STATIC_RENDER_SYNAPSE } from '../../render/staticRenderSynapse.js';
+
+import type { UnionToIntersection } from '../../../util/TypesUtil.js';
+import type { ComponentDefinition } from '../../components/componentDefinition.js';
+import type { Context } from '../../contexts/context.js';
+import type {
+  ModalHandlingOptions,
+  ModalOnSubmitHandler,
+  ModalRepliableInteraction,
+} from '../../interactivity/modalHandling.js';
+import type {
+  EffectFn,
+  Signal,
+  SignalTuple,
+  WritableSignal,
+} from '../../reactivity/core/signals.js';
+import type { DisposeFn, ResumeFn, SuspendFn } from '../../render/dispose.js';
+import type { DefinedView, View } from '../../views/view.js';
+import type { PropsBase } from '../../views/viewDefinitionBase.js';
+import type { MenuContext } from './menuContext.js';
 import type {
   AwaitModalSubmitOptions,
   EmbedBuilder,
@@ -6,31 +27,10 @@ import type {
   ModalBuilder,
   ModalSubmitInteraction,
   RepliableInteraction,
-} from "discord.js";
-
-import { PatchTarget } from "../../../framework/patchTarget.js";
-import type { UnionToIntersection } from "../../../util/TypesUtil.js";
-import type { ComponentDefinition } from "../../components/componentDefinition.js";
-import type { Context } from "../../contexts/context.js";
-import type {
-  ModalHandlingOptions,
-  ModalOnSubmitHandler,
-  ModalRepliableInteraction,
-} from "../../interactivity/modalHandling.js";
-import type {
-  EffectFn,
-  Signal,
-  SignalTuple,
-  WritableSignal,
-} from "../../reactivity/core/signals.js";
-import type { DisposeFn, ResumeFn, SuspendFn } from "../../render/dispose.js";
-import { STATIC_RENDER_SYNAPSE } from "../../render/staticRenderSynapse.js";
-import type { DefinedView, View } from "../../views/view.js";
-import type { PropsBase } from "../../views/viewDefinitionBase.js";
-import type { MenuContext } from "./menuContext.js";
+} from 'discord.js';
 
 export const SynapseContext: Context<Readonly<Synapse>> = Object.freeze({
-  id: Symbol("MenuContext"),
+  id: Symbol('MenuContext'),
   default: STATIC_RENDER_SYNAPSE,
 });
 
@@ -52,10 +52,7 @@ export interface Synapse {
    * - Binds a given handler to a component via its id.
    * @returns The provided component builder.
    */
-  component<
-    Builder extends MessageActionRowComponentBuilder,
-    Cached extends boolean = boolean,
-  >(
+  component<Builder extends MessageActionRowComponentBuilder, Cached extends boolean = boolean>(
     definition: ComponentDefinition<Builder, Cached>,
   ): Builder;
   swap(toViewId: string, ...args: unknown[]): void;
@@ -67,18 +64,12 @@ export interface Synapse {
   prependEmbeds(...embeds: EmbedBuilder[]): void;
   appendComponents(...components: MessageComponentBuilder[]): void;
   prependComponents(...components: MessageComponentBuilder[]): void;
-  showModal(
-    interaction: ModalRepliableInteraction,
-    modal: ModalBuilder,
-  ): Promise<void>;
-  showModal(
-    interaction: ModalRepliableInteraction,
-    options: ModalHandlingOptions,
-  ): Promise<void>;
+  showModal(interaction: ModalRepliableInteraction, modal: ModalBuilder): Promise<void>;
+  showModal(interaction: ModalRepliableInteraction, options: ModalHandlingOptions): Promise<void>;
   awaitModalSubmit(
     interaction: ModalRepliableInteraction,
     options: AwaitModalSubmitOptions<ModalSubmitInteraction>,
-  ): Promise<ModalSubmitInteraction<import("discord.js").CacheType> | null>;
+  ): Promise<ModalSubmitInteraction<import('discord.js').CacheType> | null>;
   onModalSubmit(
     interaction: ModalRepliableInteraction,
     options: AwaitModalSubmitOptions<ModalSubmitInteraction>,
@@ -101,9 +92,7 @@ export interface Synapse {
   createSignal<T>(initialValue: T): SignalTuple<T>;
 
   createWritableSignal<T>(): WritableSignal<T | undefined>;
-  createWritableSignal<T>(
-    initialValue: undefined,
-  ): WritableSignal<T | undefined>;
+  createWritableSignal<T>(initialValue: undefined): WritableSignal<T | undefined>;
   createWritableSignal<T>(initialValue: T): WritableSignal<T>;
 
   createComputed<T>(fn: () => T): Signal<T>;

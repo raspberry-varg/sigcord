@@ -1,8 +1,5 @@
-import { getCurrentSynapseOrDefault } from "../../lib/builtins/builtins.js";
-import {
-  type Signal,
-  createComputed,
-} from "../../lib/reactivity/core/signals.js";
+import { getCurrentSynapseOrDefault } from '../../lib/builtins/builtins.js';
+import { type Signal, createComputed } from '../../lib/reactivity/core/signals.js';
 
 /**
  * Create a signal that only updates if any of its dependencies change.

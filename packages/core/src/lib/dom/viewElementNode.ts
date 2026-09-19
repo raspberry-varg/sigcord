@@ -1,11 +1,11 @@
-import { coreLog } from "../../internal/coreLog.js";
-import { removeManyInPlace } from "../../util/arrays/removeManyInPlace.js";
-import { ViewNode } from "./viewNode.js";
-import type { ViewNodeKind } from "./viewNodeKind.js";
+import { coreLog } from '../../internal/coreLog.js';
+import { removeManyInPlace } from '../../util/arrays/removeManyInPlace.js';
 
-export class ViewElementNode<
-  T extends ViewNodeKind = ViewNodeKind,
-> extends ViewNode<T> {
+import { ViewNode } from './viewNode.js';
+
+import type { ViewNodeKind } from './viewNodeKind.js';
+
+export class ViewElementNode<T extends ViewNodeKind = ViewNodeKind> extends ViewNode<T> {
   private readonly _children: ViewNode<T>[] = [];
   private readonly childrenSet: Set<ViewNode<T>> = new Set();
 
@@ -93,7 +93,7 @@ export class ViewElementNode<
   }
 
   reset(): void {
-    coreLog.verbose("DisposingViewElementNode", {
+    coreLog.verbose('DisposingViewElementNode', {
       childCount: this.childCount,
     });
     for (let i = 0; i < this._children.length; i++) {

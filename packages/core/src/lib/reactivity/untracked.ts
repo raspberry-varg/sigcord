@@ -1,4 +1,4 @@
-import { type Signal, createUntracked } from "./core/signals.js";
+import { type Signal, createUntracked } from './core/signals.js';
 
 /**
  * Read a signal or callback of signals without subscribing it to the current

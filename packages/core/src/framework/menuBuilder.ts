@@ -1,9 +1,9 @@
-import type { RepliableInteraction } from "discord.js";
+import { Cord } from './cord.js';
+import { ComponentsV2Strand } from './strands/componentsV2Strand.js';
 
-import type { ViewNodeKind } from "../lib/dom/viewNodeKind.js";
-import { Cord } from "./cord.js";
-import type { InteractionMiddleware } from "./interactionMiddleware.js";
-import { ComponentsV2Strand } from "./strands/componentsV2Strand.js";
+import type { ViewNodeKind } from '../lib/dom/viewNodeKind.js';
+import type { InteractionMiddleware } from './interactionMiddleware.js';
+import type { RepliableInteraction } from 'discord.js';
 
 export type ViewFactory = () => ViewNodeKind;
 
@@ -42,9 +42,7 @@ export class MenuBuilder {
   }
 
   async mount(interaction: RepliableInteraction, rootView: ViewFactory) {
-    const cord = new Cord(
-      (thisCord, factory) => new ComponentsV2Strand(thisCord, factory),
-    );
+    const cord = new Cord((thisCord, factory) => new ComponentsV2Strand(thisCord, factory));
     for (let i = 0; i < this.middlewares.length; i++) {
       cord.use(this.middlewares[i]);
     }

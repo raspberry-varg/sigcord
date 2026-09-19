@@ -1,11 +1,12 @@
-import type { Message, RepliableInteraction } from "discord.js";
+import { type DefinedView, View } from '../views/view.js';
 
-import type { ArrayUnionToIntersection } from "../../util/TypesUtil.js";
-import { type DefinedView, View } from "../views/view.js";
-import type { PropsBase } from "../views/viewDefinitionBase.js";
-import type { IntrinsicViewProps } from "../views/viewFlavors.js";
-import { instantiateMenu } from "./instance/instantiateMenu.js";
-import type { MenuInstanceActions } from "./instance/menuInstanceActions.js";
+import { instantiateMenu } from './instance/instantiateMenu.js';
+
+import type { ArrayUnionToIntersection } from '../../util/TypesUtil.js';
+import type { PropsBase } from '../views/viewDefinitionBase.js';
+import type { IntrinsicViewProps } from '../views/viewFlavors.js';
+import type { MenuInstanceActions } from './instance/menuInstanceActions.js';
+import type { Message, RepliableInteraction } from 'discord.js';
 
 type ViewDefinitions = DefinedView<any>[];
 
@@ -53,27 +54,20 @@ export function defineMenu<
   for (const view of views as Views) {
     const viewId = view.id;
     if (idToClass.has(viewId)) {
-      throw new InteractiveMenuError(
-        `Id '${viewId}' already exists in this interactive menu.`,
-      );
+      throw new InteractiveMenuError(`Id '${viewId}' already exists in this interactive menu.`);
     }
     idToClass.set(viewId, view);
   }
   if (!idToClass.has(initialView)) {
-    throw new InteractiveMenuError(
-      `Initial view ID: "${initialView}" is not a registered view.`,
-    );
+    throw new InteractiveMenuError(`Initial view ID: "${initialView}" is not a registered view.`);
   }
 
   // factory callback
   return (interaction: RepliableInteraction, props: Props) =>
-    instantiateMenu<typeof initialView>(
-      id,
-      initialView,
-      [...idToClass.values()],
-      interaction,
-      { ...intrinsic, ...props },
-    );
+    instantiateMenu<typeof initialView>(id, initialView, [...idToClass.values()], interaction, {
+      ...intrinsic,
+      ...props,
+    });
 }
 
 export type MenuFactory<Props extends PropsBase> = (

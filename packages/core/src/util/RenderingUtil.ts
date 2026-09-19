@@ -4,11 +4,12 @@ import {
   type InteractionUpdateOptions,
   type Message,
   RepliableInteraction,
-} from "discord.js";
+} from 'discord.js';
 
-import type { Payload } from "../framework/payload.js";
-import { TimeoutEmbed } from "../lib/PrebuiltEmbeds.js";
-import { ViewMessagePayload } from "../lib/views/viewFlavors.js";
+import { TimeoutEmbed } from '../lib/PrebuiltEmbeds.js';
+import { ViewMessagePayload } from '../lib/views/viewFlavors.js';
+
+import type { Payload } from '../framework/payload.js';
 
 export function appendTimeoutEmbed(payload: ViewMessagePayload) {
   payload.embeds = [...(payload.embeds ?? []).splice(0, 10), TimeoutEmbed];
@@ -29,8 +30,7 @@ export async function safeRender(
   let message: Message | undefined = undefined;
 
   if (options.initialMessage) {
-    (viewPayload as InteractionEditReplyOptions).message =
-      options.initialMessage;
+    (viewPayload as InteractionEditReplyOptions).message = options.initialMessage;
     message = options.initialMessage;
   }
 
@@ -40,13 +40,9 @@ export async function safeRender(
 
   if (renderTarget.replied || renderTarget.deferred) {
     if (options.preferReplyForComponent) {
-      message = await renderTarget.followUp(
-        viewPayload as InteractionReplyOptions,
-      );
+      message = await renderTarget.followUp(viewPayload as InteractionReplyOptions);
     } else {
-      message = await renderTarget.editReply(
-        viewPayload as InteractionEditReplyOptions,
-      );
+      message = await renderTarget.editReply(viewPayload as InteractionEditReplyOptions);
     }
   } else if (renderTarget.isMessageComponent()) {
     if (options.preferReplyForComponent) {

@@ -1,11 +1,11 @@
-import { ContainerBuilder, EmbedBuilder, bold } from "discord.js";
+import { ContainerBuilder, EmbedBuilder, bold } from 'discord.js';
 
-const TIMEOUT_MESSAGE = `⏰ ${bold("Menu has timed out due to inactivity.")}`;
+const TIMEOUT_MESSAGE = `⏰ ${bold('Menu has timed out due to inactivity.')}`;
 
 export const TimeoutEmbed = new EmbedBuilder({
   description: TIMEOUT_MESSAGE,
 });
 
-export const TimeoutComponent = new ContainerBuilder().addTextDisplayComponents(
-  (textDisplay) => textDisplay.setContent(TIMEOUT_MESSAGE),
+export const TimeoutComponent = new ContainerBuilder().addTextDisplayComponents((textDisplay) =>
+  textDisplay.setContent(TIMEOUT_MESSAGE),
 );

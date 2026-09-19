@@ -1,5 +1,6 @@
-import { getCurrentSynapse } from "../builtins/builtins.js";
-import type { Synapse } from "../menu/instance/synapse.js";
+import { getCurrentSynapse } from '../builtins/builtins.js';
+
+import type { Synapse } from '../menu/instance/synapse.js';
 
 /**
  * Create a new signal.
@@ -47,6 +48,5 @@ import type { Synapse } from "../menu/instance/synapse.js";
  *    later.
  * @returns Signal tuple with a signal getter and setter.
  */
-export const signal: Synapse["createSignal"] = <T>(
-  initialValue: T | undefined = undefined,
-) => getCurrentSynapse().createSignal(initialValue);
+export const signal: Synapse['createSignal'] = <T>(initialValue: T | undefined = undefined) =>
+  getCurrentSynapse().createSignal(initialValue);

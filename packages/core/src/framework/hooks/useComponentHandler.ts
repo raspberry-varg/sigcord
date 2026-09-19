@@ -1,7 +1,8 @@
-import { type CollectedInteraction } from "discord.js";
+import { type CollectedInteraction } from 'discord.js';
 
-import type { DisposeFn } from "../../lib/render/dispose.js";
-import { useCordInternalOrThrow } from "../cordContext.js";
+import { useCordInternalOrThrow } from '../cordContext.js';
+
+import type { DisposeFn } from '../../lib/render/dispose.js';
 
 /**
  * Manually maps a custom id to a callback to execute when a component with that

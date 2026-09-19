@@ -1,8 +1,5 @@
-import { getCurrentSynapseOrDefault } from "../../lib/builtins/builtins.js";
-import {
-  type SignalTuple,
-  createSignal,
-} from "../../lib/reactivity/core/signals.js";
+import { getCurrentSynapseOrDefault } from '../../lib/builtins/builtins.js';
+import { type SignalTuple, createSignal } from '../../lib/reactivity/core/signals.js';
 
 /**
  * Create a new signal.

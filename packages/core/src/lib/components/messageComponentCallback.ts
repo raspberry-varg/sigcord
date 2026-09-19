@@ -1,7 +1,4 @@
-import type {
-  ButtonInteraction,
-  MessageComponentInteraction,
-} from "discord.js";
+import type { ButtonInteraction, MessageComponentInteraction } from 'discord.js';
 
 /**
  * Callback for a given interaction.
@@ -14,6 +11,5 @@ interface MessageComponentTypeToCallbackMap {
   button: ButtonInteraction;
 }
 
-export type MessageComponentCallbackFor<
-  T extends keyof MessageComponentTypeToCallbackMap,
-> = MessageComponentCallback<MessageComponentTypeToCallbackMap[T]>;
+export type MessageComponentCallbackFor<T extends keyof MessageComponentTypeToCallbackMap> =
+  MessageComponentCallback<MessageComponentTypeToCallbackMap[T]>;

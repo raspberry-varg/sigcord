@@ -1,11 +1,10 @@
-import { guardDeclarative } from "../../core/utils/guardDeclarative.js";
-import {
-  type EffectFn,
-  createEffect,
-} from "../../lib/reactivity/core/signals.js";
-import type { DisposeFn } from "../../lib/render/dispose.js";
-import { PatchTarget, type PatchTargetBitMask } from "../patchTarget.js";
-import { markDirty } from "./markDirty.js";
+import { guardDeclarative } from '../../core/utils/guardDeclarative.js';
+import { type EffectFn, createEffect } from '../../lib/reactivity/core/signals.js';
+import { PatchTarget, type PatchTargetBitMask } from '../patchTarget.js';
+
+import { markDirty } from './markDirty.js';
+
+import type { DisposeFn } from '../../lib/render/dispose.js';
 
 /**
  * @deprecated Use a simple effect and manually call {@link markDirty}.
@@ -18,10 +17,7 @@ import { markDirty } from "./markDirty.js";
  *   Useful when mutating content objects like component or embed builders to
  *   have the change reflected to the user.
  */
-export function effect(
-  fn: EffectFn,
-  patchTarget: PatchTarget | undefined,
-): DisposeFn;
+export function effect(fn: EffectFn, patchTarget: PatchTarget | undefined): DisposeFn;
 /**
  * Create an effect that runs when signals referenced in the effect function
  * change.
@@ -29,11 +25,8 @@ export function effect(
  * @param fn The effect to run.
  */
 export function effect(fn: EffectFn): DisposeFn;
-export function effect(
-  fn: EffectFn,
-  patchTarget?: PatchTargetBitMask,
-): DisposeFn {
-  guardDeclarative("effect");
+export function effect(fn: EffectFn, patchTarget?: PatchTargetBitMask): DisposeFn {
+  guardDeclarative('effect');
 
   if (patchTarget !== undefined && patchTarget !== PatchTarget.None) {
     return createEffect(() => {

@@ -57,8 +57,6 @@
   },
   "devDependencies": {
     "@sigcord/jsx": "workspace:*",
-    "nx": "22.0.3",
-    "prettier": "catalog:",
     "typescript": "catalog:"
   },
   "peerDependencies": {
