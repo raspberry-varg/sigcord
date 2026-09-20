@@ -5,21 +5,12 @@
  */
 import { type CollectedMessageInteraction, type RepliableInteraction } from 'discord.js';
 
-import { createUniqueComponentId } from '../../framework/hooks/index.js';
+import { createUniqueComponentId, useMenuInfo } from '../../framework/hooks/index.js';
 import { usePatchTarget } from '../../framework/hooks/usePatchTarget.js';
 import { PatchTarget } from '../../framework/patchTarget.js';
 import { Synapse } from '../menu/instance/synapse.js';
 
 import { getCurrentSynapse } from './currentSynapse.js';
-
-import type { MenuContext } from '../menu/instance/menuContext.js';
-
-/**
- * Get info and state about the current menu.
- */
-export function useMenuInfo(): Readonly<MenuContext> {
-  return getCurrentSynapse().getMenuInfo();
-}
 
 // Signal effects
 

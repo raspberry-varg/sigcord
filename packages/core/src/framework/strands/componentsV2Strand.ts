@@ -15,13 +15,15 @@ import type { ViewNodeKind } from '../../lib/dom/viewNodeKind.js';
 import type { Cord } from '../cord.js';
 import type { Payload } from '../payload.js';
 
+type UncheckedFactory = () => unknown;
+
 export class ComponentsV2Strand extends Strand {
   private readonly rootOwner = createRootOwner();
   private rootElement?: ViewElementNode;
 
   constructor(
     cord: Cord,
-    private readonly factory: () => ViewNodeKind,
+    private readonly factory: UncheckedFactory,
   ) {
     super(cord);
   }
@@ -32,7 +34,7 @@ export class ComponentsV2Strand extends Strand {
       const children = runWithOwner(this.rootOwner, () => {
         provideContextValue(CordContext, this.cord);
         provideContextValue(PatchTargetContext, PatchTarget.Components);
-        return renderFragment(this.factory);
+        return renderFragment(this.factory as () => ViewNodeKind);
       });
       this.rootElement.setChildren(...children);
     }

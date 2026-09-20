@@ -7,8 +7,10 @@ import {
 } from 'discord.js';
 
 import { getConfig } from '../config.js';
+import { enhanceErrorWithComponentStack } from '../core/utils/errorStack.js';
 import { coreLog } from '../internal/coreLog.js';
-import { getOwner, type Owner, runWithOwner } from '../lib/owners/owner.js';
+import { onCleanup } from '../lib/hooks/onCleanup.js';
+import { createOwner, getOwner, type Owner, runWithOwner } from '../lib/owners/owner.js';
 
 import { InteractionPatcher, PatchType } from './interactionPatcher.js';
 import { PatchTarget, type PatchTargetBitMask } from './patchTarget.js';
@@ -71,6 +73,10 @@ export class Cord implements CordAPI {
       throw new Error('Strand stack is empty.');
     }
     return top;
+  }
+
+  get dirty(): PatchTargetBitMask {
+    return this.dirtyMask;
   }
 
   isDisposed() {
@@ -267,7 +273,7 @@ export class Cord implements CordAPI {
   registerComponent(customId: string, handler: CollectedInteractionHandlerData['handle']) {
     const strand = this.currentStrand;
     if (strand.componentHandlers.has(customId)) {
-      coreLog.warn(`[Cord] Overwriting existing handler for ${customId}`);
+      this.logger.warn(`Overwriting existing handler for ${customId}`);
     }
 
     strand.componentHandlers.set(customId, {
@@ -275,9 +281,11 @@ export class Cord implements CordAPI {
       owner: getOwner(),
     });
 
-    return () => {
+    const dispose = () => {
       strand.componentHandlers.delete(customId);
     };
+    onCleanup(dispose);
+    return dispose;
   }
 
   registerModal(id: string, handler: ModalInteractionHandlerData['handle']) {
@@ -329,7 +337,7 @@ export class Cord implements CordAPI {
       }
     }
 
-    await runWithOwner(owner, () => dispatch(0));
+    await runWithOwner(owner, async () => await dispatch(0));
   }
 
   protected async dispatchPayload(

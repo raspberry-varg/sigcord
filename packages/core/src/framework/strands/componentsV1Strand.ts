@@ -1,0 +1,163 @@
+import { type EmbedBuilder, type TopLevelComponent } from 'discord.js';
+
+import { provideContextValue } from '../../lib/contexts/provideContext.js';
+import { ViewElementNode } from '../../lib/dom/viewElementNode.js';
+import {
+  createRootOwner,
+  getOwnerOrThrow,
+  owner,
+  type Owner,
+  runWithOwner,
+} from '../../lib/owners/owner.js';
+import { flatten } from '../../lib/render/flatten.js';
+import { renderFragment } from '../../lib/render/render.js';
+import { CordContext } from '../cordContext.js';
+import { PatchTargetContext } from '../hooks/usePatchTarget.js';
+import { PatchTarget, type PatchTargetBitMask } from '../patchTarget.js';
+
+import { Strand } from './strand.js';
+
+import type { ViewNodeKind } from '../../lib/dom/viewNodeKind.js';
+import type { Cord } from '../cord.js';
+import type { Payload } from '../payload.js';
+
+interface Branch {
+  root: ViewElementNode;
+  owner: Owner;
+}
+
+export interface V1Payload {
+  content?: string | (() => string);
+  embeds?: ViewNodeKind;
+  components?: ViewNodeKind;
+}
+
+export type ComponentsV1ViewFactory = () => V1Payload;
+type UncheckedComponentsV1ViewFactory = () => unknown;
+
+export class ComponentsV1Strand extends Strand {
+  private readonly rootOwner = createRootOwner();
+  private fromFactory?: V1Payload;
+  private content?: Branch;
+  private embeds?: Branch;
+  private components?: Branch;
+
+  private readonly queuedEmbeds: EmbedBuilder[] = [];
+  private readonly queuedComponents: TopLevelComponent[] = [];
+
+  constructor(
+    cord: Cord,
+    private readonly factory: UncheckedComponentsV1ViewFactory,
+  ) {
+    super(cord);
+  }
+
+  override render(): Payload {
+    const firstTime = !this.fromFactory;
+    if (!this.fromFactory) {
+      const unchecked = runWithOwner(this.rootOwner, () => {
+        provideContextValue(CordContext, this.cord);
+        provideContextValue(PatchTargetContext, PatchTarget.All);
+        return this.factory();
+      });
+      // TODO: Strict flag to toggle these tests?
+      if (!unchecked || typeof unchecked !== 'object') {
+        throw new Error('ComponentsV1Strand factory must return an object');
+      }
+      if (!('content' in unchecked || 'embeds' in unchecked || 'components' in unchecked)) {
+        throw new Error(
+          'ComponentsV1Strand factory must return an object with at least content, embeds or components.',
+        );
+      }
+      this.fromFactory = unchecked as V1Payload;
+    }
+
+    const shape = this.fromFactory;
+    const payload: {
+      content?: string;
+      embeds?: EmbedBuilder[];
+      components?: TopLevelComponent[];
+    } = {};
+    if (!this.content && shape.content) {
+      this.content = runWithOwner(this.rootOwner, () =>
+        owner(() => {
+          provideContextValue(PatchTargetContext, PatchTarget.Content);
+          const rendered = renderFragment(() =>
+            typeof shape.content === 'string' ? shape.content : shape.content?.(),
+          );
+          const root = new ViewElementNode();
+          root.setChildren(...rendered);
+          return { owner: getOwnerOrThrow(), root };
+        }),
+      );
+    }
+
+    if (!this.embeds && shape.embeds) {
+      this.embeds = runWithOwner(this.rootOwner, () =>
+        owner(() => {
+          provideContextValue(PatchTargetContext, PatchTarget.Embeds);
+          const rendered = renderFragment(() => shape.embeds);
+          const root = new ViewElementNode();
+          root.setChildren(...rendered);
+          return { owner: getOwnerOrThrow(), root };
+        }),
+      );
+    }
+
+    if (!this.components && shape.components) {
+      this.components = runWithOwner(this.rootOwner, () =>
+        owner(() => {
+          provideContextValue(PatchTargetContext, PatchTarget.Components);
+          const rendered = renderFragment(() => shape.components);
+          const root = new ViewElementNode();
+          root.setChildren(...rendered);
+          return { owner: getOwnerOrThrow(), root };
+        }),
+      );
+    }
+
+    let dirty: PatchTargetBitMask = firstTime ? PatchTarget.All : this.cord.dirty;
+    if (this.queuedEmbeds.length) {
+      dirty |= PatchTarget.Embeds;
+    }
+    if (this.queuedComponents.length) {
+      dirty |= PatchTarget.Components;
+    }
+
+    if (this.content && (dirty & PatchTarget.Content) !== 0) {
+      payload.content = flatten<string>(this.content.root, this.content.owner).join(' ');
+    }
+    if (this.embeds && (dirty & PatchTarget.Embeds) !== 0) {
+      payload.embeds = flatten<EmbedBuilder>(this.embeds.root, this.embeds.owner);
+      payload.embeds.push(...this.queuedEmbeds);
+    }
+    if (this.components && (dirty & PatchTarget.Components) !== 0) {
+      payload.components = flatten<TopLevelComponent>(this.components.root, this.components.owner);
+      payload.components.push(...this.queuedComponents);
+    }
+
+    this.queuedEmbeds.length = 0;
+    this.queuedComponents.length = 0;
+
+    return payload;
+  }
+
+  override destroy() {
+    this.rootOwner.dispose();
+    this.fromFactory = undefined;
+    this.content = undefined;
+    this.embeds = undefined;
+    this.components = undefined;
+    super.destroy();
+  }
+
+  override suspend() {
+    this.rootOwner.suspend();
+    super.suspend?.();
+  }
+
+  override resume() {
+    this.rootOwner.resume();
+    super.resume?.();
+  }
+}
