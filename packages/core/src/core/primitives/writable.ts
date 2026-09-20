@@ -1,4 +1,3 @@
-import { getCurrentSynapse } from '../../lib/builtins/currentSynapse.js';
 import { createSignal } from '../../lib/reactivity/core/signals.js';
 
 import type { Synapse } from '../../lib/menu/instance/synapse.js';
