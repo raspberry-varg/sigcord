@@ -39,6 +39,7 @@ export async function awaitModal(
     customId = definition.data.custom_id;
     builder = ModalBuilder.from(definition);
   }
+  const originalCustomId = customId;
 
   const interaction = useCurrentRepliable();
   if (!interaction) {
@@ -87,8 +88,9 @@ export async function awaitModal(
   timeoutId = setTimeout(cancel, MODAL_TIMEOUT_MS);
   onCleanup(cancel);
 
+  coreLog.debug('Awaiting modal', { originalCustomId, mangledId: customId });
   try {
-    await interaction.showModal(builder);
+    await interaction.showModal(builder.setCustomId(customId));
   } catch (error) {
     clearTimeout(timeoutId);
     unregister();

@@ -32,8 +32,12 @@ export async function routeInteraction(interaction: Interaction): Promise<boolea
     return false;
   }
 
-  nsLogger.debug(`Routing interaction to Cord for message id ${messageId}`);
+  const debugInfo = {
+    messageId,
+    customId: interaction.customId,
+  };
+  nsLogger.debug('Routing interaction to Cord', debugInfo);
   await cord.handleInteraction(interaction);
-  nsLogger.debug(`Interaction routed to Cord for message id ${messageId}`);
+  nsLogger.debug('Interaction routed to Cord', debugInfo);
   return true;
 }
