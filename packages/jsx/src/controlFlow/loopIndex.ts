@@ -15,11 +15,12 @@ import {
   signal,
   untracked,
   useDisposeOwnerFn,
-} from "@sigcord/core";
+  provideContextValue,
+  OwnerTraceContext,
+  OwnerTraceType,
+} from '@sigcord/core';
 
-interface IndexProps<
-  Each extends Iterable<unknown> | Signal<Iterable<unknown>>,
-> {
+interface IndexProps<Each extends Iterable<unknown> | Signal<Iterable<unknown>>> {
   each: Each;
   children: (
     item: Each extends Signal<Iterable<infer U>>
@@ -38,14 +39,12 @@ interface IndexProps<
  * Items are "slotted in" at each index rather than being moved around in their
  * entirety.
  */
-export function Index<
-  Each extends Iterable<unknown> | Signal<Iterable<unknown>>,
->(props: IndexProps<Each>): ViewElementNode<ViewNodeKind> | ViewNodeKind[] {
+export function Index<Each extends Iterable<unknown> | Signal<Iterable<unknown>>>(
+  props: IndexProps<Each>,
+): ViewElementNode<ViewNodeKind> | ViewNodeKind[] {
   const each = props.each;
   if (!isSignal(each)) {
-    return untracked(() =>
-      Array.from(each, (r, i) => props.children(r as any, i)),
-    );
+    return untracked(() => Array.from(each, (r, i) => props.children(r as any, i)));
   }
 
   const node = new ViewElementNode();
@@ -84,11 +83,17 @@ export function Index<
       let nodes;
       const dispose = owner(
         () => {
+          provideContextValue(OwnerTraceContext, {
+            type: OwnerTraceType.ControlFlow,
+            name: 'Iteration',
+            details: `index: ${i}`,
+          });
+
           nodes = renderFragment(() => props.children(get as any, i));
           return useDisposeOwnerFn();
         },
         {
-          debugName: `[Loop_Index_${i}]${props.debugName ?? "%"}`,
+          debugName: `[Loop_Index_${i}]${props.debugName ?? '%'}`,
         },
       );
       nextNodes[i] = nodes!;

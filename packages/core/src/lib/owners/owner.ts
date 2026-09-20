@@ -193,35 +193,37 @@ export function setCurrentOwner(newOwner: Owner | null): Owner | null {
 
 interface OwnerOptions {
   debugName?: string;
-  /**
-   * @default true
-   */
-  autoReparent?: boolean;
 }
 
 /**
  * Run a function under a new owner.
  * @param ownerFn
  */
-export function owner<T>(ownerFn: () => T, options?: OwnerOptions): T {
-  coreLog.verbose(`creating a new owner(${options?.debugName}) with fn=${ownerFn}`);
-  const newOwner = new OwnerImpl(options?.autoReparent === false ? null : getOwner());
-  if (options?.debugName) {
-    newOwner.debugName = options.debugName;
-  }
-
-  if (options?.autoReparent) {
-    const currentOwner = getOwner();
-    if (currentOwner) {
-      currentOwner.addChild(newOwner);
-    }
-  }
-
+export function owner<T>(
+  ownerFn: () => T,
+  options?: OwnerOptions & {
+    /**
+     * @default true
+     */
+    autoReparent?: boolean;
+  },
+): T {
+  const newOwner = createOwner(options?.autoReparent === false ? null : getOwner(), options);
   return runWithOwner(newOwner, ownerFn);
 }
 
 export function createRootOwner(): Owner {
   return new OwnerImpl(null);
+}
+
+export function createOwner(parent: Owner | null, options?: OwnerOptions): Owner {
+  coreLog.verbose(`creating a new owner(${options?.debugName})`);
+  const newOwner = new OwnerImpl(parent);
+  if (options?.debugName) {
+    newOwner.debugName = options.debugName;
+  }
+  parent?.addChild(newOwner);
+  return newOwner;
 }
 
 export function runWithOwner<T>(withOwner: Owner | null, ownerFn: () => T): T {

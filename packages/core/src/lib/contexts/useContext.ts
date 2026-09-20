@@ -1,4 +1,4 @@
-import { getOwnerOrThrow } from '../owners/owner.js';
+import { getOwnerOrThrow, type Owner } from '../owners/owner.js';
 
 import type { Context } from './context.js';
 
@@ -8,11 +8,26 @@ import type { Context } from './context.js';
  * @param context
  */
 export function useContext<T>(context: Context<T>): T {
-  const openOwner = getOwnerOrThrow();
-  const node = openOwner.context;
+  return extractContext(getOwnerOrThrow(), context);
+}
+
+/**
+ * Extract the context of a given owner.
+ */
+export function extractContext<T>(targetOwner: Owner, context: Context<T>): T {
+  const node = targetOwner.context;
   if (!node) {
     return context.default;
   }
 
   return context.id in node ? (node[context.id] as T) : context.default;
+}
+
+export function extractOwnContext<T>(targetOwner: Owner, context: Context<T>): T {
+  const node = targetOwner.context;
+  if (node.hasOwnProperty(context.id)) {
+    return node[context.id] as T;
+  }
+
+  return context.default;
 }

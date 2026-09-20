@@ -1,9 +1,12 @@
-import { CollectedInteraction } from 'discord.js';
+import { CollectedInteraction, ComponentType, InteractionType } from 'discord.js';
 
+import { getConfig } from '../../config.js';
 import { CurrentRepliableContext } from '../../core/contexts/currentRepliableContext.js';
 import { ImperativeLockContext, ImperativeLockKind } from '../../core/contexts/imperativeLock.js';
+import { OwnerTraceContext, OwnerTraceType } from '../../core/contexts/ownerTraceContext.js';
+import { enhanceErrorWithComponentStack } from '../../core/utils/errorStack.js';
 import { provideContextValue } from '../../lib/contexts/provideContext.js';
-import { getOwnerOrThrow, owner } from '../../lib/owners/owner.js';
+import { createOwner, getOwner, runWithOwner } from '../../lib/owners/owner.js';
 
 import type { Cord } from '../cord.js';
 import type {
@@ -49,16 +52,35 @@ export abstract class Strand {
     interaction: CollectedInteraction,
     handler: CollectedInteractionHandlerData,
   ) {
-    const handlerOwner = await owner(async () => {
-      provideContextValue(CurrentRepliableContext, interaction);
-      provideContextValue(ImperativeLockContext, ImperativeLockKind.InteractionHandler);
+    const handlerOwner = createOwner(getOwner());
+    try {
+      await runWithOwner(handlerOwner, async () => {
+        provideContextValue(CurrentRepliableContext, interaction);
+        provideContextValue(ImperativeLockContext, ImperativeLockKind.InteractionHandler);
+        if (getConfig().componentStacks) {
+          const name = handler.handle.name || 'Handler';
+          const fields = [`type: ${InteractionType[interaction.type]}`];
+          if (interaction.isMessageComponent()) {
+            fields.push(`componentType: ${ComponentType[interaction.componentType]}`);
+          }
+          fields.push(`id: "${interaction.customId}"`);
 
-      const promise = handler.handle(interaction);
-      if (promise instanceof Promise) {
-        await promise;
-      }
-      return getOwnerOrThrow();
-    });
-    handlerOwner.dispose();
+          provideContextValue(OwnerTraceContext, {
+            type: OwnerTraceType.Handler,
+            name,
+            details: fields.join(', '),
+          });
+        }
+
+        const promise = handler.handle(interaction);
+        if (promise instanceof Promise) {
+          await promise;
+        }
+      });
+    } catch (error: unknown) {
+      throw enhanceErrorWithComponentStack(error, handlerOwner);
+    } finally {
+      handlerOwner.dispose();
+    }
   }
 }

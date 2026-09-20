@@ -1,10 +1,4 @@
-import type {
-  ButtonBuilder,
-  ButtonStyle,
-  ComponentEmojiResolvable,
-  SeparatorSpacingSize,
-  TimestampStylesString,
-} from "discord.js";
+import { elementFactory } from './jsx-runtime.js';
 
 import type {
   DeferredComponent,
@@ -12,19 +6,22 @@ import type {
   MessageComponentCallbackFor,
   Signal,
   ViewNodeKind,
-} from "@sigcord/core";
-
-import { elementFactory } from "./jsx-runtime.js";
+} from '@sigcord/core';
+import type {
+  ButtonBuilder,
+  ButtonStyle,
+  ComponentEmojiResolvable,
+  SeparatorSpacingSize,
+  TimestampStylesString,
+} from 'discord.js';
 
 import JSXNode = JSX.JSXNode;
 
-export type FunctionalComponent = (
-  props: Record<string, unknown>,
-) => JSX.Element;
+export type FunctionalComponent = (props: Record<string, unknown>) => JSX.Element;
 
 export type Attributes = Record<string, JSX.JSXNode | undefined> & JSXChildren;
 
-export { elementFactory } from "./elementFactory.js";
+export { elementFactory } from './elementFactory.js';
 
 export const fragmentFactory = (props: JSXChildren): JSXNode[] => {
   if (!props.children) {
@@ -73,18 +70,18 @@ interface AnchorAttributes {
 
 interface ButtonAttributesBase {
   id?: string;
-  emoji?: ComponentEmojiResolvable | Signal<ComponentEmojiResolvable>;
+  emoji?: ComponentEmojiResolvable | Signal<ComponentEmojiResolvable | undefined>;
   children?: string | Signal<string>;
   disabled?: boolean | Signal<boolean>;
   style: unknown;
-  "on:click"?: MessageComponentCallbackFor<"button">;
+  'on:click'?: MessageComponentCallbackFor<'button'>;
 }
 
 interface InteractionButton extends ButtonAttributesBase {
   style:
     | Exclude<ButtonStyle, ButtonStyle.Link | ButtonStyle.Premium>
     | Signal<Exclude<ButtonStyle, ButtonStyle.Link | ButtonStyle.Premium>>;
-  emoji?: ComponentEmojiResolvable | Signal<ComponentEmojiResolvable>;
+  emoji?: ComponentEmojiResolvable | Signal<ComponentEmojiResolvable | undefined>;
 }
 
 type ButtonAttributes = InteractionButton;
@@ -110,8 +107,7 @@ interface ContainerAttributes {
 }
 
 interface SectionAttributes {
-  accessory:
-    JSX.Element | MaybeSignal<ButtonBuilder | boolean | null | undefined>;
+  accessory: JSX.Element | MaybeSignal<ButtonBuilder | boolean | null | undefined>;
   children: JSXNode | JSXNode[];
 }
 

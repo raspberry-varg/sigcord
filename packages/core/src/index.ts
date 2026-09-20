@@ -4,6 +4,8 @@ export { MenuBuilder } from './framework/menuBuilder.js';
 export * from './framework/hooks/index.js';
 export * from './framework/interactionMiddleware.js';
 
+export { OwnerTraceContext, OwnerTraceType } from './core/contexts/ownerTraceContext.js';
+
 export { patchEffect } from './framework/hooks/legacy/patchEffect.js';
 
 export { CordAPI as Cord } from './framework/cord.js';
@@ -48,7 +50,6 @@ export {
   setIdleMs,
   setIdleSec,
   patch,
-  useMenuInfo,
   injectCurrentInteraction,
   injectLastCollectedInteraction,
   getNextUniqueComponentId,
@@ -108,3 +109,4 @@ export { component } from './framework/hooks/index.js';
 export { getCurrentSynapseOrDefault } from './lib/builtins/currentSynapse.js';
 export { stopMenu } from './framework/hooks/index.js';
 export { showModal } from './lib/builtins/showModal.js';
+export { useMenuInfo } from './framework/hooks/index.js';

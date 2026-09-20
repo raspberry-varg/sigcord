@@ -32,6 +32,13 @@ export interface SigcordConfig {
    * Builds up a {@link MenuBuilder} in a legacy view definition's factory function.
    */
   useCordFactoriesForLegacyViewDefines: boolean;
+
+  /**
+   * Whether to include component stacks in error messages.
+   *
+   * Note: This creates extra owners, so it's disabled in production.
+   */
+  componentStacks: boolean;
 }
 
 export type SigcordLoggerMeta = Record<string, any>;
@@ -118,6 +125,7 @@ const globalConfig: SigcordConfig = {
   onDeadInteraction: undefined,
   supportHotReloading: false,
   useCordFactoriesForLegacyViewDefines: false,
+  componentStacks: process.env.NODE_ENV !== 'production',
 };
 
 export function configure(options: Partial<SigcordConfig>): void {

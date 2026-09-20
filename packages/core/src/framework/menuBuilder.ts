@@ -1,11 +1,12 @@
 import { Cord } from './cord.js';
+import { ComponentsV1Strand, type ComponentsV1ViewFactory } from './strands/componentsV1Strand.js';
 import { ComponentsV2Strand } from './strands/componentsV2Strand.js';
 
 import type { ViewNodeKind } from '../lib/dom/viewNodeKind.js';
 import type { InteractionMiddleware } from './interactionMiddleware.js';
 import type { RepliableInteraction } from 'discord.js';
 
-export type ViewFactory = () => ViewNodeKind;
+export type ViewFactory = () => unknown;
 
 export type Wrapper = (children: ViewFactory) => ViewNodeKind;
 
@@ -51,8 +52,14 @@ export class MenuBuilder {
     return cord.mount(interaction, this.isEphemeral);
   }
 
-  async mountV1(_interaction: RepliableInteraction, _rootView: ViewFactory) {
-    throw new Error('Not implemented.');
+  async mountV1(interaction: RepliableInteraction, rootView: ComponentsV1ViewFactory) {
+    const cord = new Cord((thisCord, factory) => new ComponentsV1Strand(thisCord, factory));
+    for (let i = 0; i < this.middlewares.length; i++) {
+      cord.use(this.middlewares[i]);
+    }
+    const wrapped = this.applyWrappers(rootView);
+    cord.pushStrand(cord.createStrand(wrapped));
+    return cord.mount(interaction, this.isEphemeral);
   }
 
   private applyWrappers(rootView: ViewFactory): ViewFactory {

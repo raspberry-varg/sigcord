@@ -1,19 +1,23 @@
 import {
   DeferredComponent,
   type DisposeFn,
-  type Signal,
-  ViewElementNode,
-  type ViewNodeKind,
-  type ViewNodeKindBase,
   effect,
+  getConfig,
   markDirty,
   onCleanup,
   owner,
+  OwnerTraceContext,
+  OwnerTraceType,
+  provideContextValue,
   renderFragment,
+  type Signal,
   useDisposeOwnerFn,
-} from "@sigcord/core";
+  ViewElementNode,
+  type ViewNodeKind,
+  type ViewNodeKindBase,
+} from '@sigcord/core';
 
-import { type JSXElement, type JSXNode } from "../index.js";
+import { type JSXElement, type JSXNode } from '../index.js';
 
 interface BaseProps {
   isDefault?: true;
@@ -35,16 +39,11 @@ interface MatchProps {
   children: JSXElement[];
 }
 
-export function Match(
-  ...props: [MatchProps] | JSXElement[]
-): ViewElementNode<ViewNodeKind> {
+export function Match(...props: [MatchProps] | JSXElement[]): ViewElementNode<ViewNodeKind> {
   const node = new ViewElementNode<ViewNodeKind>();
   let dispose: DisposeFn | undefined;
   const cases = (
-    props.length === 1 &&
-    !!props[0] &&
-    typeof props[0] === "object" &&
-    "children" in props[0]
+    props.length === 1 && !!props[0] && typeof props[0] === 'object' && 'children' in props[0]
       ? (props[0] as unknown as MatchProps).children
       : props
   ).map((child, index) => {
@@ -52,13 +51,13 @@ export function Match(
       child = child.execute();
     }
 
-    if (!child || typeof child !== "object") {
+    if (!child || typeof child !== 'object') {
       throw new Error(
         `(Match[${index}]) Provided child to <Match> was not an object. Was <Case> or <Default> used?`,
       );
     }
 
-    if (!("when" in child && "content" in child)) {
+    if (!('when' in child && 'content' in child)) {
       throw new Error(
         `(Match[${index}]) Match expects one or more <Case> children, and an optional <Default> child. Got: ${JSON.stringify(child, null, 2)}`,
       );
@@ -74,10 +73,10 @@ export function Match(
     for (const c of cases) {
       if (c.isDefault) {
         if (i !== cases.length - 1) {
-          throw new Error("Default case must be at the end.");
+          throw new Error('Default case must be at the end.');
         }
         if (defaultIndex !== -1) {
-          throw new Error("A Default case has already been defined.");
+          throw new Error('A Default case has already been defined.');
         }
         defaultIndex = i;
         continue;
@@ -103,14 +102,30 @@ export function Match(
 
     dispose = owner(
       () => {
-        const nodes = renderFragment(
-          cases[finalIndex].content as () => ViewNodeKindBase,
-        );
+        const thisCase = cases[finalIndex];
+
+        if (getConfig().componentStacks) {
+          provideContextValue(
+            OwnerTraceContext,
+            thisCase.isDefault
+              ? {
+                  type: OwnerTraceType.ControlFlow,
+                  name: 'Default',
+                }
+              : {
+                  type: OwnerTraceType.ControlFlow,
+                  name: 'Case',
+                  details: `when: ${String(thisCase.when).slice(0, 100)}`,
+                },
+          );
+        }
+
+        const nodes = renderFragment(thisCase.content as () => ViewNodeKindBase);
         node.setChildren(...nodes);
         return useDisposeOwnerFn();
       },
       {
-        debugName: `[Match_${finalIndex === defaultIndex ? "Default" : finalIndex}_Branch]%`,
+        debugName: `[Match_${finalIndex === defaultIndex ? 'Default' : finalIndex}_Branch]%`,
       },
     );
 
@@ -130,8 +145,7 @@ interface CaseProps<Condition = unknown> {
 }
 
 export function Case<Condition = unknown>(
-  ...props:
-    [CaseProps<Condition>] | [when: () => Condition, content: () => unknown]
+  ...props: [CaseProps<Condition>] | [when: () => Condition, content: () => unknown]
 ): JSXNode {
   let when;
   let content;

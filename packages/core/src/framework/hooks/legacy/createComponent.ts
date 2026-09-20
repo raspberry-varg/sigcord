@@ -21,9 +21,9 @@ export const component: Synapse['component'] = (definition) => {
     // Handle partial migration.
     const id = definition.id || createUniqueComponentId();
     definition.component.setCustomId(id);
-    useComponentHandler(id, (interaction) => {
+    useComponentHandler(id, async (interaction) => {
       if (interaction.isMessageComponent()) {
-        definition.handler(interaction as never);
+        await definition.handler(interaction as never);
       }
     });
     return definition.component;
