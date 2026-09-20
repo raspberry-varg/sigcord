@@ -231,7 +231,7 @@ export class Cord implements CordAPI {
         this.logger.debug('...but the Cord has no dirty mask');
         return;
       }
-      await this.flushUpdate(interaction);
+      await this.flushUpdate(undefined /* use the latest interaction */);
     });
   }
 
@@ -254,7 +254,7 @@ export class Cord implements CordAPI {
   async flushUpdate(interaction: RepliableInteraction | undefined): Promise<void> {
     const payload = this.currentStrand.render();
     if (!payload) {
-      this.deferUpdate();
+      this.deferUpdate(interaction);
       return;
     }
     this.dirtyMask = PatchTarget.None;
@@ -324,6 +324,9 @@ export class Cord implements CordAPI {
       owner = strand.componentHandlers.get(interaction.customId)?.owner ?? null;
     } else if (interaction.isModalSubmit()) {
       owner = strand.modalHandlers.get(interaction.customId)?.owner ?? null;
+      if (!interaction.deferred) {
+        void interaction.deferUpdate().catch(() => {});
+      }
     }
 
     await runWithOwner(owner, () => dispatch(0));
@@ -334,7 +337,6 @@ export class Cord implements CordAPI {
     mode: PatchType,
     interaction: RepliableInteraction | undefined,
   ) {
-    // Not gonna deal with the typing headache: any it is.
     interaction ??= this.interactionPatcher.interaction;
 
     if (interaction) {
