@@ -1,12 +1,11 @@
 import { getConfig } from '../../config.js';
 import { extractOwnContext } from '../../lib/contexts/useContext.js';
+import { type Owner } from '../../lib/owners/owner.js';
 import {
   OwnerTraceContext,
   type OwnerTraceNode,
   OwnerTraceType,
 } from '../contexts/ownerTraceContext.js';
-
-import type { Owner } from '../../lib/owners/owner.js';
 
 const COMPONENT_STACK_APPLIED = Symbol('__sigcord.component_stack_applied');
 

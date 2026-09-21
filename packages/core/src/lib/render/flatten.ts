@@ -38,12 +38,12 @@ export function flatten<T extends ViewNodeKindBase>(
         continue;
       }
       if (item instanceof ViewManualComputedElementNode) {
-        const content = item.getFlattened();
+        const content = runWithOwner(owner, () => item.getFlattened());
         stack.push(content);
         continue;
       }
       if (item instanceof ViewComputedElementNode) {
-        const content = item.computer(flatten(item.children, owner));
+        const content = runWithOwner(owner, () => item.computer(flatten(item.children, owner)));
         stack.push(content);
         continue;
       }

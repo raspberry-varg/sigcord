@@ -5,8 +5,10 @@ import { ViewElementNode } from './viewElementNode.js';
 import type { Children } from '../views/viewFlavors.js';
 import type { ViewNodeKindBase } from './viewNodeKind.js';
 
+/** @deprecated */
 export type NodeContentComputer<T, U extends ViewNodeKindBase> = (content: T) => U | Children<U>;
 
+/** @deprecated */
 export class ViewComputedElementNode<
   T_IN,
   T_OUT extends ViewNodeKindBase,
@@ -16,6 +18,7 @@ export class ViewComputedElementNode<
   }
 }
 
+/** @deprecated */
 export function elementComputed<
   T_SOURCE extends Array<ViewNodeKindBase>,
   T_OUT extends ViewNodeKindBase,
