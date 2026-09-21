@@ -3,9 +3,11 @@ import { OwnerTraceContext, OwnerTraceType } from '../../core/contexts/ownerTrac
 import { enhanceErrorWithComponentStack } from '../../core/utils/errorStack.js';
 import { coreLog } from '../../internal/coreLog.js';
 import { provideContextValue } from '../contexts/provideContext.js';
-import { createOwner, getOwner, runWithOwner } from '../owners/owner.js';
+import { extractContext, useContext } from '../contexts/useContext.js';
+import { createOwner, getOwner, getOwnerOrThrow, runWithOwner } from '../owners/owner.js';
 
 export class DeferredComponent<T_RET, T_PROPS extends NonNullable<unknown> = NonNullable<unknown>> {
+  private readonly capturedOwner = createOwner(getOwner());
   constructor(
     private readonly fn: (props: T_PROPS) => T_RET,
     private readonly props: NoInfer<T_PROPS>,
@@ -16,7 +18,7 @@ export class DeferredComponent<T_RET, T_PROPS extends NonNullable<unknown> = Non
       return this.fn(this.props);
     }
 
-    const componentOwner = createOwner(getOwner());
+    const componentOwner = createOwner(this.capturedOwner);
     return runWithOwner(componentOwner, () => {
       provideContextValue(OwnerTraceContext, {
         type: OwnerTraceType.Component,
