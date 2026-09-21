@@ -41,7 +41,7 @@ interface IndexProps<Each extends Iterable<unknown> | Signal<Iterable<unknown>>>
  */
 export function Index<Each extends Iterable<unknown> | Signal<Iterable<unknown>>>(
   props: IndexProps<Each>,
-): ViewElementNode<ViewNodeKind> | ViewNodeKind[] {
+): ViewElementNode | ViewNodeKind[] {
   const each = props.each;
   if (!isSignal(each)) {
     return untracked(() => Array.from(each, (r, i) => props.children(r as any, i)));
@@ -83,10 +83,11 @@ export function Index<Each extends Iterable<unknown> | Signal<Iterable<unknown>>
       let nodes;
       const dispose = owner(
         () => {
+          const debugName = props.debugName ? `name: "${props.debugName}", ` : '';
           provideContextValue(OwnerTraceContext, {
             type: OwnerTraceType.ControlFlow,
             name: 'Iteration',
-            details: `index: ${i}`,
+            details: `${debugName}index: ${i}`,
           });
 
           nodes = renderFragment(() => props.children(get as any, i));

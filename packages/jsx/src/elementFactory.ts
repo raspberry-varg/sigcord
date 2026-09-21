@@ -1,41 +1,37 @@
-import { HeadingLevel } from "discord.js";
+import { DeferredComponent } from '@sigcord/core';
+import { HeadingLevel } from 'discord.js';
 
-import { DeferredComponent } from "@sigcord/core";
-
-import { createAnchor } from "./elements/createAnchor.js";
-import { createBold } from "./elements/createBold.js";
-import { createButton } from "./elements/createButton.js";
-import { createChannel } from "./elements/createChannel.js";
-import { createContainer } from "./elements/createContainer.js";
-import { createHeading } from "./elements/createHeading.js";
-import { createInlineCode } from "./elements/createInlineCode.js";
-import { createItalic } from "./elements/createItalic.js";
-import { createQuote } from "./elements/createQuote.js";
-import { createRole } from "./elements/createRole.js";
-import { createRow } from "./elements/createRow.js";
-import { createSection } from "./elements/createSection.js";
-import { createSeparator } from "./elements/createSeparator.js";
-import { createSpoiler } from "./elements/createSpoiler.js";
-import { createStrikethrough } from "./elements/createStrikethrough.js";
-import { createStringSelectOption } from "./elements/createStringSelectOption.js";
-import { createSubtext } from "./elements/createSubtext.js";
-import { createTextDisplay } from "./elements/createTextDisplay.js";
-import { createTime } from "./elements/createTime.js";
-import { createUnderline } from "./elements/createUnderline.js";
-import { createUser } from "./elements/createUser.js";
-import { type IntrinsicElementProps, JSXElement } from "./index.js";
-import {
-  type Attributes,
-  type FunctionalComponent,
-  JSX,
-} from "./jsx-runtime.js";
+import { createAnchor } from './elements/createAnchor.js';
+import { createBold } from './elements/createBold.js';
+import { createButton } from './elements/createButton.js';
+import { createChannel } from './elements/createChannel.js';
+import { createContainer } from './elements/createContainer.js';
+import { createHeading } from './elements/createHeading.js';
+import { createInlineCode } from './elements/createInlineCode.js';
+import { createItalic } from './elements/createItalic.js';
+import { createQuote } from './elements/createQuote.js';
+import { createRole } from './elements/createRole.js';
+import { createRow } from './elements/createRow.js';
+import { createSection } from './elements/createSection.js';
+import { createSeparator } from './elements/createSeparator.js';
+import { createSpoiler } from './elements/createSpoiler.js';
+import { createStrikethrough } from './elements/createStrikethrough.js';
+import { createStringSelectOption } from './elements/createStringSelectOption.js';
+import { createSubtext } from './elements/createSubtext.js';
+import { createTextDisplay } from './elements/createTextDisplay.js';
+import { createTime } from './elements/createTime.js';
+import { createUnderline } from './elements/createUnderline.js';
+import { createUser } from './elements/createUser.js';
+import { type IntrinsicElementProps, JSXElement } from './index.js';
+import { type Attributes, type FunctionalComponent, JSX } from './jsx-runtime.js';
 
 import IntrinsicElements = JSX.IntrinsicElements;
 
-export function elementFactory<
-  T extends string | FunctionalComponent | undefined,
->(tagName: T, props: Attributes): JSXElement | JSXElement[] {
-  if (typeof tagName === "function") {
+export function elementFactory<T extends string | FunctionalComponent | undefined>(
+  tagName: T,
+  props: Attributes,
+): JSXElement | JSXElement[] {
+  if (typeof tagName === 'function') {
     return new DeferredComponent(tagName, props);
   }
 
@@ -55,29 +51,29 @@ export function elementFactory<
 }
 
 type FactoryRecord = {
-  [x in keyof IntrinsicElements]: (
-    props: IntrinsicElementProps[x],
-  ) => JSX.JSXNode;
+  [x in keyof IntrinsicElements]: (props: IntrinsicElementProps[x]) => JSX.JSXNode;
 };
 
 const EAGER_FACTORIES = new Set<keyof IntrinsicElements>([
-  "a",
-  "br",
-  "b",
-  "i",
-  "u",
-  "pre",
-  "sub",
-  "h1",
-  "h2",
-  "h3",
-  "strike",
-  "spoiler",
-  "quote",
-  "time",
-  "user",
-  "role",
-  "channel",
+  'container',
+  'section',
+  'a',
+  'br',
+  'b',
+  'i',
+  'u',
+  'pre',
+  'sub',
+  'h1',
+  'h2',
+  'h3',
+  'strike',
+  'spoiler',
+  'quote',
+  'time',
+  'user',
+  'role',
+  'channel',
 ]);
 
 const INTRINSIC_FACTORIES = {
@@ -89,7 +85,7 @@ const INTRINSIC_FACTORIES = {
   section: createSection,
   row: createRow,
   stringoption: createStringSelectOption,
-  br: () => "\n",
+  br: () => '\n',
   b: createBold,
   i: createItalic,
   u: createUnderline,
@@ -107,8 +103,6 @@ const INTRINSIC_FACTORIES = {
   channel: createChannel,
 } as const satisfies FactoryRecord;
 
-function getFactory<T extends keyof IntrinsicElements>(
-  tag: T,
-): (typeof INTRINSIC_FACTORIES)[T] {
+function getFactory<T extends keyof IntrinsicElements>(tag: T): (typeof INTRINSIC_FACTORIES)[T] {
   return INTRINSIC_FACTORIES[tag];
 }
