@@ -1,4 +1,5 @@
 import { getConfig } from '../../config.js';
+import { isInternalContext } from '../../core/contexts/createInternalContext.js';
 import { OwnerTraceContext } from '../../core/contexts/ownerTraceContext.js';
 import { getOwner, type Owner } from '../owners/owner.js';
 
@@ -19,7 +20,7 @@ export function setContextValueTo<T>(
   value: NoInfer<T>,
 ): void {
   owner.context[context.id] = value;
-  if (getConfig().componentStacks) {
+  if (getConfig().componentStacks && !isInternalContext(context)) {
     const traceNode = extractContext(owner, OwnerTraceContext);
     if (traceNode) {
       const providesString = `provides: ${context.id.description || context.id.toString()}`;
