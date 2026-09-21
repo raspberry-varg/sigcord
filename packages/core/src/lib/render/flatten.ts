@@ -7,6 +7,8 @@ import { ViewManualComputedElementNode } from '../dom/viewManualComputedElementN
 import { ViewNode } from '../dom/viewNode.js';
 import { type Owner, runWithOwner, setCurrentOwner } from '../owners/owner.js';
 
+import { flattenToContentNodes } from './flattenToContentNodes.js';
+
 import type { ViewNodeKindBase } from '../dom/viewNodeKind.js';
 import type { ReadonlyRecursive } from '../recursive.js';
 import type { ViewComponent } from '../views/viewFlavors.js';
