@@ -1,52 +1,39 @@
 import {
-  ContainerBuilder,
-  type ContainerComponentBuilder,
-  TextDisplayBuilder,
-} from "discord.js";
-
-import {
-  type Owner,
-  ViewManualComputedElementNode,
-  type ViewNode,
+  effect,
   flatten,
   flattenToContentNodes,
-  getOwnerOrThrow,
-  owner,
-  patchEffect,
+  markDirty,
+  type Owner,
   read,
-} from "@sigcord/core";
+  ViewManualComputedElementNode,
+  type ViewNode,
+} from '@sigcord/core';
+import { ContainerBuilder, type ContainerComponentBuilder, TextDisplayBuilder } from 'discord.js';
 
-import type { IntrinsicElementProps } from "../index.js";
+import type { IntrinsicElementProps } from '../index.js';
 
 class ContainerElement extends ViewManualComputedElementNode<ContainerBuilder> {
+  private containerOwner?: Owner;
+
   constructor(
     private readonly container: ContainerBuilder,
-    private readonly containerOwner: Owner,
     private readonly nodes: readonly ViewNode[],
   ) {
     super();
   }
 
   override getFlattened(): ContainerBuilder | undefined {
-    const flattened = flatten(this.nodes, this.containerOwner);
+    const flattened = flatten(this.nodes!, this.containerOwner);
     const content: ContainerComponentBuilder[] = [];
     for (const item of flattened) {
-      if (
-        typeof item === "boolean" ||
-        typeof item === "number" ||
-        typeof item === "string"
-      ) {
+      if (typeof item === 'boolean' || typeof item === 'number' || typeof item === 'string') {
         content.push(new TextDisplayBuilder().setContent(String(item)));
         continue;
       }
 
       content.push(item as ContainerComponentBuilder);
     }
-    this.container.spliceComponents(
-      0,
-      this.container.components.length,
-      content,
-    );
+    this.container.spliceComponents(0, this.container.components.length, content);
     return content.length ? this.container : undefined;
   }
 
@@ -54,39 +41,36 @@ class ContainerElement extends ViewManualComputedElementNode<ContainerBuilder> {
     if (this._disposed) return;
     this._disposed = true;
 
-    this.containerOwner.dispose();
-    for (let i = 0; i < this.nodes.length; i++) {
-      this.nodes[i].dispose();
+    this.containerOwner?.dispose();
+    if (this.nodes) {
+      for (let i = 0; i < this.nodes.length; i++) {
+        this.nodes[i].dispose();
+      }
     }
   }
 }
 
 export function createContainer(
-  props: IntrinsicElementProps["container"],
+  props: IntrinsicElementProps['container'],
 ): ViewNode<ContainerBuilder> {
-  // Render content immediately
-  let nodes!: readonly ViewNode[];
   const container = new ContainerBuilder();
-  const containerOwner = owner(() => {
-    if (props.accent || props.spoiler) {
-      patchEffect(() => {
-        if (props.accent) {
-          const color = read(props.accent);
-          if (color === null || color === undefined || color === false) {
-            container.clearAccentColor();
-          } else {
-            container.setAccentColor(color === true ? 1 : color);
-          }
+  if (props.accent || props.spoiler) {
+    effect(() => {
+      if (props.accent) {
+        const color = read(props.accent);
+        if (color === null || color === undefined || color === false) {
+          container.clearAccentColor();
+        } else {
+          container.setAccentColor(color === true ? 1 : color);
         }
-        if (props.spoiler) {
-          container.setSpoiler(read(props.spoiler));
-        }
-      });
-    }
+      }
+      if (props.spoiler) {
+        container.setSpoiler(read(props.spoiler));
+      }
+      markDirty();
+    });
+  }
 
-    nodes = flattenToContentNodes(props.children);
-    return getOwnerOrThrow();
-  });
-
-  return new ContainerElement(container, containerOwner, nodes);
+  const nodes = flattenToContentNodes(props.children);
+  return new ContainerElement(container, nodes);
 }

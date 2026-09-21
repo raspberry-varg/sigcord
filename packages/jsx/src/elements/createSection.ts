@@ -1,4 +1,13 @@
 import {
+  flatten,
+  flattenToContentNodes,
+  getOwner,
+  type Owner,
+  type Signal,
+  ViewManualComputedElementNode,
+  ViewNode,
+} from '@sigcord/core';
+import {
   type APIButtonComponent,
   type APIThumbnailComponent,
   ButtonBuilder,
@@ -6,31 +15,18 @@ import {
   SectionBuilder,
   TextDisplayBuilder,
   ThumbnailBuilder,
-} from "discord.js";
+} from 'discord.js';
 
-import {
-  type Owner,
-  type Signal,
-  ViewManualComputedElementNode,
-  ViewNode,
-  flatten,
-  flattenToContentNodes,
-  getOwnerOrThrow,
-  owner,
-} from "@sigcord/core";
+import { isButtonData } from '../util/isButtonData.js';
+import { isTextDisplayData } from '../util/isTextDisplayData.js';
+import { isThumbnailData } from '../util/isThumbnailData.js';
 
-import type { IntrinsicElementProps } from "../index.js";
-import { isButtonData } from "../util/isButtonData.js";
-import { isTextDisplayData } from "../util/isTextDisplayData.js";
-import { isThumbnailData } from "../util/isThumbnailData.js";
+import type { IntrinsicElementProps } from '../index.js';
 
-class SectionElement extends ViewManualComputedElementNode<
-  SectionBuilder | TextDisplayBuilder
-> {
+class SectionElement extends ViewManualComputedElementNode<SectionBuilder | TextDisplayBuilder> {
   constructor(
-    private readonly accessoryOwner: Owner,
+    private readonly capturedOwner: Owner | null,
     private readonly accessoryNodes: readonly ViewNode[],
-    private readonly textOwner: Owner,
     private readonly textNodes: readonly ViewNode[],
   ) {
     super();
@@ -39,32 +35,32 @@ class SectionElement extends ViewManualComputedElementNode<
   override dispose(): void {
     if (this.disposed) return;
     this._disposed = true;
-    this.accessoryOwner.dispose();
-    this.textOwner.dispose();
+    for (let node of this.accessoryNodes) {
+      node.dispose();
+    }
+    for (let node of this.textNodes) {
+      node.dispose();
+    }
   }
 
   override getFlattened() {
     const accessory = this.resolveAccessory();
-    const text = flatten(this.textNodes, this.textOwner);
+    const text = flatten(this.textNodes, this.capturedOwner);
     const textBuilders: TextDisplayBuilder[] = [];
-    let currentString: Signal<string> | string = "";
+    let currentString: Signal<string> | string = '';
     for (let t of text) {
       if (!t) {
         continue;
       }
 
-      if (
-        typeof t === "string" ||
-        typeof t === "number" ||
-        typeof t === "boolean"
-      ) {
+      if (typeof t === 'string' || typeof t === 'number' || typeof t === 'boolean') {
         currentString += t;
         continue;
       }
 
       if (currentString) {
         textBuilders.push(new TextDisplayBuilder().setContent(currentString));
-        currentString = "";
+        currentString = '';
       }
 
       if (isTextDisplayData(t)) {
@@ -77,10 +73,7 @@ class SectionElement extends ViewManualComputedElementNode<
         continue;
       }
 
-      throw new Error(
-        "Invalid child type for <section>. " +
-          `Expected TextDisplay kind, got: ${t}`,
-      );
+      throw new Error(`Invalid child type for <section>. Expected TextDisplay kind, got: ${t}`);
     }
     if (currentString) {
       textBuilders.push(new TextDisplayBuilder().setContent(currentString));
@@ -105,23 +98,18 @@ class SectionElement extends ViewManualComputedElementNode<
     | APIButtonComponent
     | APIThumbnailComponent
     | null {
-    const accessoryResult = flatten(this.accessoryNodes, this.accessoryOwner);
+    const accessoryResult = flatten(this.accessoryNodes, this.capturedOwner);
     if (!accessoryResult.length) {
       return null;
     }
 
     if (accessoryResult.length > 1) {
-      throw new Error(
-        `Accessory must only be a single element. Got ${accessoryResult.length}.`,
-      );
+      throw new Error(`Accessory must only be a single element. Got ${accessoryResult.length}.`);
     }
 
     const accessory = accessoryResult[0];
     if (accessory instanceof ComponentBuilder) {
-      if (
-        accessory instanceof ButtonBuilder ||
-        accessory instanceof ThumbnailBuilder
-      ) {
+      if (accessory instanceof ButtonBuilder || accessory instanceof ThumbnailBuilder) {
         return accessory;
       }
     }
@@ -139,29 +127,15 @@ class SectionElement extends ViewManualComputedElementNode<
   }
 }
 
-export function createSection(props: IntrinsicElementProps["section"]) {
+export function createSection(props: IntrinsicElementProps['section']) {
   const accessory = props.accessory;
   const children = props.children;
   if (!accessory) {
     return children;
   }
 
-  let accessoryNodes!: readonly ViewNode[];
-  const accessoryOwner = owner(() => {
-    accessoryNodes = flattenToContentNodes(accessory);
-    return getOwnerOrThrow();
-  });
+  const accessoryNodes = flattenToContentNodes(accessory);
+  const childrenNodes = flattenToContentNodes(children);
 
-  let childrenNodes!: readonly ViewNode[];
-  const childrenOwner = owner(() => {
-    childrenNodes = flattenToContentNodes(children);
-    return getOwnerOrThrow();
-  });
-
-  return new SectionElement(
-    accessoryOwner,
-    accessoryNodes,
-    childrenOwner,
-    childrenNodes,
-  );
+  return new SectionElement(getOwner(), accessoryNodes, childrenNodes);
 }

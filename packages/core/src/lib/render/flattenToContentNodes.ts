@@ -1,7 +1,9 @@
 import { effect, markDirty } from '../../framework/hooks/index.js';
+import { DeferredComponentViewNode } from '../dom/deferredComponentViewNode.js';
 import { ViewContentNode } from '../dom/viewContentNode.js';
 import { ViewElementNode } from '../dom/viewElementNode.js';
 import { ViewNode } from '../dom/viewNode.js';
+import { getOwner } from '../owners/owner.js';
 import { read } from '../reactivity/core/read.js';
 import { isStampedSignal, isWritableSignal } from '../reactivity/core/signals.js';
 import { isSlot, SlotImpl } from '../Slot.js';
@@ -21,7 +23,7 @@ export function flattenToContentNodes<T extends ViewNodeKind>(content: T): Array
   }
 
   if (content instanceof DeferredComponent) {
-    return flattenToContentNodes(content.execute());
+    return [new DeferredComponentViewNode(getOwner(), content)];
   }
 
   if (isStampedSignal(content) || isWritableSignal(content)) {
