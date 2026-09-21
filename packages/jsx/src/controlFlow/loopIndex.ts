@@ -2,14 +2,11 @@ import {
   batch,
   createOwner,
   effect,
-  flattenToContentNodes,
   getConfig,
   getOwner,
-  getOwnerOrThrow,
   isSignal,
   markDirty,
   onCleanup,
-  owner,
   type Owner,
   OwnerBoundaryViewNode,
   OwnerTraceContext,
@@ -48,28 +45,28 @@ interface IndexProps<Each extends Iterable<unknown> | Signal<Iterable<unknown>>>
 export function Index<Each extends Iterable<unknown> | Signal<Iterable<unknown>>>(
   props: IndexProps<Each>,
 ): ViewElementNode | ViewNodeKind[] {
+  const parentOwner = getOwner();
   const each = props.each;
   if (!isSignal(each)) {
     let index = 0;
     return untracked(() => {
-      const out: ViewNodeKind[] = [];
+      const out: ViewNode | ViewNodeKind[] = [];
       for (const item of each as Exclude<Each, Signal<unknown>>) {
         let rendered;
         if (!getConfig().componentStacks) {
           rendered = props.children(item as any, index++);
         } else {
-          rendered = owner(() => {
+          const childOwner = createOwner(parentOwner);
+          const childOut = runWithOwner(childOwner, () => {
             const debugName = props.debugName ? `name: "${props.debugName}", ` : '';
             provideContextValue(OwnerTraceContext, {
               type: OwnerTraceType.ControlFlow,
               name: 'Iteration',
               details: `${debugName}index: ${index}`,
             });
-            return new OwnerBoundaryViewNode(
-              getOwnerOrThrow(),
-              flattenToContentNodes(props.children(item as any, index++)),
-            );
+            return renderFragment(() => props.children(item as any, index++));
           });
+          rendered = new OwnerBoundaryViewNode(childOwner, childOut);
         }
         out.push(rendered);
       }
@@ -89,8 +86,6 @@ export function Index<Each extends Iterable<unknown> | Signal<Iterable<unknown>>
       prevOwners[i].dispose();
     }
   });
-
-  const parentOwner = getOwner();
 
   const effectFn = () => {
     const nextItems: unknown[] = Array.from(each());
