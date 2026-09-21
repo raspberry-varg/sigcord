@@ -1,3 +1,4 @@
+import { DeferredComponentViewNode } from '../dom/deferredComponentViewNode.js';
 import { ViewComputedElementNode } from '../dom/viewComputedElementNode.js';
 import { ViewContentNode } from '../dom/viewContentNode.js';
 import { ViewElementNode } from '../dom/viewElementNode.js';
@@ -47,6 +48,10 @@ export function flatten<T extends ViewNodeKindBase>(
       }
       if (item instanceof ViewElementNode) {
         stack.push(item.children);
+        continue;
+      }
+      if (item instanceof DeferredComponentViewNode) {
+        stack.push(...item.execute());
         continue;
       }
       if (item instanceof ViewNode) {

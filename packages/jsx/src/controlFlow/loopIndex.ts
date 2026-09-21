@@ -1,23 +1,24 @@
 import {
-  type DisposeFn,
-  type Setter,
-  type Signal,
-  ViewElementNode,
-  ViewNode,
-  type ViewNodeKind,
   batch,
+  createOwner,
   effect,
+  getOwner,
   isSignal,
   markDirty,
   onCleanup,
-  owner,
-  renderFragment,
-  signal,
-  untracked,
-  useDisposeOwnerFn,
-  provideContextValue,
+  type Owner,
   OwnerTraceContext,
   OwnerTraceType,
+  provideContextValue,
+  renderFragment,
+  runWithOwner,
+  type Setter,
+  signal,
+  type Signal,
+  untracked,
+  ViewElementNode,
+  ViewNode,
+  type ViewNodeKind,
 } from '@sigcord/core';
 
 interface IndexProps<Each extends Iterable<unknown> | Signal<Iterable<unknown>>> {
@@ -50,19 +51,21 @@ export function Index<Each extends Iterable<unknown> | Signal<Iterable<unknown>>
   const node = new ViewElementNode();
 
   let prevItems: unknown[] = [];
-  let prevDisposeFns: DisposeFn[] = [];
+  let prevOwners: Owner[] = [];
   let prevSetters: Setter<unknown>[] = [];
   let prevNodes: Array<ViewNode[]> = [];
 
   onCleanup(() => {
-    for (let i = 0; i < prevDisposeFns.length; i++) {
-      prevDisposeFns[i]();
+    for (let i = 0; i < prevOwners.length; i++) {
+      prevOwners[i].dispose();
     }
   });
 
+  const parentOwner = getOwner();
+
   const effectFn = () => {
     const nextItems: unknown[] = Array.from(each());
-    const nextDisposeFns = new Array(nextItems.length);
+    const newOwners = new Array(nextItems.length);
     const nextSetters = new Array(nextItems.length);
     const nextNodes: typeof prevNodes = new Array(nextItems.length);
 
@@ -72,7 +75,7 @@ export function Index<Each extends Iterable<unknown> | Signal<Iterable<unknown>>
       prevSetters[i](nextItems[i]);
 
       nextSetters[i] = prevSetters[i];
-      nextDisposeFns[i] = prevDisposeFns[i];
+      newOwners[i] = prevOwners[i];
       nextNodes[i] = prevNodes[i];
     }
 
@@ -81,34 +84,29 @@ export function Index<Each extends Iterable<unknown> | Signal<Iterable<unknown>>
       nextSetters[i] = set;
 
       let nodes;
-      const dispose = owner(
-        () => {
-          const debugName = props.debugName ? `name: "${props.debugName}", ` : '';
-          provideContextValue(OwnerTraceContext, {
-            type: OwnerTraceType.ControlFlow,
-            name: 'Iteration',
-            details: `${debugName}index: ${i}`,
-          });
+      const childOwner = createOwner(parentOwner);
+      runWithOwner(childOwner, () => {
+        const debugName = props.debugName ? `name: "${props.debugName}", ` : '';
+        provideContextValue(OwnerTraceContext, {
+          type: OwnerTraceType.ControlFlow,
+          name: 'Iteration',
+          details: `${debugName}index: ${i}`,
+        });
 
-          nodes = renderFragment(() => props.children(get as any, i));
-          return useDisposeOwnerFn();
-        },
-        {
-          debugName: `[Loop_Index_${i}]${props.debugName ?? '%'}`,
-        },
-      );
+        nodes = renderFragment(() => props.children(get as any, i));
+      });
       nextNodes[i] = nodes!;
       node.addChild(...nextNodes[i]);
-      nextDisposeFns[i] = dispose;
+      newOwners[i] = childOwner;
     }
 
     for (let i = nextItems.length; i < prevItems.length; i++) {
       node.removeMany(prevNodes[i]);
-      prevDisposeFns[i]();
+      prevOwners[i].dispose();
     }
 
     prevItems = nextItems;
-    prevDisposeFns = nextDisposeFns;
+    prevOwners = newOwners;
     prevSetters = nextSetters;
     prevNodes = nextNodes;
   };

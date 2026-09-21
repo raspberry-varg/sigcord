@@ -7,10 +7,9 @@ import {
 } from 'discord.js';
 
 import { getConfig } from '../config.js';
-import { enhanceErrorWithComponentStack } from '../core/utils/errorStack.js';
 import { coreLog } from '../internal/coreLog.js';
 import { onCleanup } from '../lib/hooks/onCleanup.js';
-import { createOwner, getOwner, type Owner, runWithOwner } from '../lib/owners/owner.js';
+import { getOwner, type Owner, runWithOwner } from '../lib/owners/owner.js';
 
 import { InteractionPatcher, PatchType } from './interactionPatcher.js';
 import { PatchTarget, type PatchTargetBitMask } from './patchTarget.js';

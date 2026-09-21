@@ -67,6 +67,7 @@ export {
   getOwner,
   getOwnerOrThrow,
   setCurrentOwner,
+  createOwner,
   useDisposeOwnerFn,
   disposeOwner,
 } from './lib/owners/owner.js';
