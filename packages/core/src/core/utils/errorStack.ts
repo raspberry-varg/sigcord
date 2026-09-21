@@ -1,6 +1,10 @@
 import { getConfig } from '../../config.js';
 import { extractOwnContext } from '../../lib/contexts/useContext.js';
-import { OwnerTraceContext, OwnerTraceType } from '../contexts/ownerTraceContext.js';
+import {
+  OwnerTraceContext,
+  type OwnerTraceNode,
+  OwnerTraceType,
+} from '../contexts/ownerTraceContext.js';
 
 import type { Owner } from '../../lib/owners/owner.js';
 
@@ -19,37 +23,20 @@ export function enhanceErrorWithComponentStack(error: unknown, errorOwner: Owner
     return error;
   }
 
-  const traceLines: string[] = [];
+  const rawTrace: OwnerTraceNode[] = [];
   for (
     let currentOwner: Owner | null = errorOwner;
     currentOwner != null;
     currentOwner = currentOwner.parent
   ) {
     const trace = extractOwnContext(currentOwner, OwnerTraceContext);
-    if (!trace) {
-      continue;
-    }
-
-    const details = trace.details ? ` (${trace.details})` : '';
-    switch (trace.type) {
-      case OwnerTraceType.Component:
-        traceLines.push(`<${trace.name}${details}>`);
-        break;
-      case OwnerTraceType.ControlFlow:
-        traceLines.push(`{${trace.name}${details}}`);
-        break;
-      case OwnerTraceType.Primitive:
-        traceLines.push(`[${trace.name}${details}]`);
-        break;
-      case OwnerTraceType.Handler:
-        traceLines.push(`ƒ ${trace.name}${details}`);
-        break;
+    if (trace) {
+      rawTrace.push(trace);
     }
   }
 
-  if (traceLines.length > 0) {
-    const stackString = `\n\nSigcord Owner Stack:\n  at ${traceLines.join('\n  at ')}`;
-    error.stack = (error.stack || error.message) + stackString;
+  if (rawTrace.length > 0) {
+    const stackString = `\n\n${formatSigcordError(error.message, rawTrace, error.stack ?? '')}`;
     error.message += stackString;
   }
 
@@ -63,4 +50,50 @@ export function enhanceErrorWithComponentStack(error: unknown, errorOwner: Owner
 
 interface WithEnhancement {
   ownerStackApplied?: boolean;
+}
+
+// ANSI Color Codes
+const c = {
+  cyan: (t: string) => `\x1b[36m${t}\x1b[0m`,
+  yellow: (t: string) => `\x1b[33m${t}\x1b[0m`,
+  green: (t: string) => `\x1b[32m${t}\x1b[0m`,
+  dim: (t: string) => `\x1b[90m${t}\x1b[0m`,
+  red: (t: string) => `\x1b[31m${t}\x1b[0m`,
+  reset: '\x1b[0m',
+};
+
+function formatTraceNode(node: OwnerTraceNode): string {
+  const details = node.details ? c.dim(` (${node.details})`) : '';
+
+  switch (node.type) {
+    case OwnerTraceType.Component:
+      return c.cyan(`<${node.name}>`) + details;
+    case OwnerTraceType.ControlFlow:
+      return c.yellow(`{${node.name}}`) + details;
+    case OwnerTraceType.Handler:
+      return c.green(`ƒ ${node.name}`) + details;
+    default:
+      return `[${node.name}]` + details;
+  }
+}
+
+function formatSigcordError(message: string, rawTrace: OwnerTraceNode[], nodeStack: string) {
+  // Component stack trace
+  const componentLines = rawTrace.map((node) => `    at ${formatTraceNode(node)}`).join('\n');
+
+  // Filter out framework internals
+  const cleanedNodeStack = nodeStack
+    .split('\n')
+    .filter((line) => !line.includes('sigcord/packages/core/dist') && !line.includes('async_hooks'))
+    .join('\n');
+
+  return `
+${c.red('Sigcord Error:')} ${message}
+
+${c.dim('--- Component Stack ---')}
+${componentLines}
+
+${c.dim('--- Execution Stack ---')}
+${cleanedNodeStack}
+`;
 }

@@ -2,11 +2,16 @@ import {
   batch,
   createOwner,
   effect,
+  flattenToContentNodes,
+  getConfig,
   getOwner,
+  getOwnerOrThrow,
   isSignal,
   markDirty,
   onCleanup,
+  owner,
   type Owner,
+  OwnerBoundaryViewNode,
   OwnerTraceContext,
   OwnerTraceType,
   provideContextValue,
@@ -45,7 +50,31 @@ export function Index<Each extends Iterable<unknown> | Signal<Iterable<unknown>>
 ): ViewElementNode | ViewNodeKind[] {
   const each = props.each;
   if (!isSignal(each)) {
-    return untracked(() => Array.from(each, (r, i) => props.children(r as any, i)));
+    let index = 0;
+    return untracked(() => {
+      const out: ViewNodeKind[] = [];
+      for (const item of each as Exclude<Each, Signal<unknown>>) {
+        let rendered;
+        if (!getConfig().componentStacks) {
+          rendered = props.children(item as any, index++);
+        } else {
+          rendered = owner(() => {
+            const debugName = props.debugName ? `name: "${props.debugName}", ` : '';
+            provideContextValue(OwnerTraceContext, {
+              type: OwnerTraceType.ControlFlow,
+              name: 'Iteration',
+              details: `${debugName}index: ${index}`,
+            });
+            return new OwnerBoundaryViewNode(
+              getOwnerOrThrow(),
+              flattenToContentNodes(props.children(item as any, index++)),
+            );
+          });
+        }
+        out.push(rendered);
+      }
+      return out;
+    });
   }
 
   const node = new ViewElementNode();
@@ -53,7 +82,7 @@ export function Index<Each extends Iterable<unknown> | Signal<Iterable<unknown>>
   let prevItems: unknown[] = [];
   let prevOwners: Owner[] = [];
   let prevSetters: Setter<unknown>[] = [];
-  let prevNodes: Array<ViewNode[]> = [];
+  let prevNodes: ViewNode[] = [];
 
   onCleanup(() => {
     for (let i = 0; i < prevOwners.length; i++) {
@@ -95,13 +124,13 @@ export function Index<Each extends Iterable<unknown> | Signal<Iterable<unknown>>
 
         nodes = renderFragment(() => props.children(get as any, i));
       });
-      nextNodes[i] = nodes!;
-      node.addChild(...nextNodes[i]);
+      nextNodes[i] = new OwnerBoundaryViewNode(childOwner, nodes!);
+      node.addChild(nextNodes[i]);
       newOwners[i] = childOwner;
     }
 
     for (let i = nextItems.length; i < prevItems.length; i++) {
-      node.removeMany(prevNodes[i]);
+      node.removeChild(prevNodes[i]);
       prevOwners[i].dispose();
     }
 

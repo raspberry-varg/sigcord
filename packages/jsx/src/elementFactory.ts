@@ -23,7 +23,7 @@ import { createTime } from './elements/createTime.js';
 import { createUnderline } from './elements/createUnderline.js';
 import { createUser } from './elements/createUser.js';
 import { type IntrinsicElementProps, JSXElement } from './index.js';
-import { type Attributes, type FunctionalComponent, JSX } from './jsx-runtime.js';
+import { type Attributes, fragmentFactory, type FunctionalComponent, JSX } from './jsx-runtime.js';
 
 import IntrinsicElements = JSX.IntrinsicElements;
 
@@ -32,7 +32,11 @@ export function elementFactory<T extends string | FunctionalComponent | undefine
   props: Attributes,
 ): JSXElement | JSXElement[] {
   if (typeof tagName === 'function') {
-    return new DeferredComponent(tagName, props);
+    if (tagName === (fragmentFactory as any)) {
+      return (tagName as typeof fragmentFactory)(props);
+    } else {
+      return new DeferredComponent(tagName, props);
+    }
   }
 
   if (tagName === undefined) {
@@ -57,6 +61,7 @@ type FactoryRecord = {
 const EAGER_FACTORIES = new Set<keyof IntrinsicElements>([
   'container',
   'section',
+  'separator',
   'a',
   'br',
   'b',

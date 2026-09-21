@@ -2,6 +2,7 @@ import {
   effect,
   flatten,
   flattenToContentNodes,
+  getOwner,
   markDirty,
   type Owner,
   read,
@@ -13,9 +14,8 @@ import { ContainerBuilder, type ContainerComponentBuilder, TextDisplayBuilder } 
 import type { IntrinsicElementProps } from '../index.js';
 
 class ContainerElement extends ViewManualComputedElementNode<ContainerBuilder> {
-  private containerOwner?: Owner;
-
   constructor(
+    private capturedOwner: Owner | null,
     private readonly container: ContainerBuilder,
     private readonly nodes: readonly ViewNode[],
   ) {
@@ -23,7 +23,7 @@ class ContainerElement extends ViewManualComputedElementNode<ContainerBuilder> {
   }
 
   override getFlattened(): ContainerBuilder | undefined {
-    const flattened = flatten(this.nodes!, this.containerOwner);
+    const flattened = flatten(this.nodes!, this.capturedOwner);
     const content: ContainerComponentBuilder[] = [];
     for (const item of flattened) {
       if (typeof item === 'boolean' || typeof item === 'number' || typeof item === 'string') {
@@ -41,7 +41,6 @@ class ContainerElement extends ViewManualComputedElementNode<ContainerBuilder> {
     if (this._disposed) return;
     this._disposed = true;
 
-    this.containerOwner?.dispose();
     if (this.nodes) {
       for (let i = 0; i < this.nodes.length; i++) {
         this.nodes[i].dispose();
@@ -72,5 +71,5 @@ export function createContainer(
   }
 
   const nodes = flattenToContentNodes(props.children);
-  return new ContainerElement(container, nodes);
+  return new ContainerElement(getOwner(), container, nodes);
 }

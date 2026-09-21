@@ -1,10 +1,11 @@
 import { DeferredComponentViewNode } from '../dom/deferredComponentViewNode.js';
+import { OwnerBoundaryViewNode } from '../dom/ownerBoundaryViewNode.js';
 import { ViewComputedElementNode } from '../dom/viewComputedElementNode.js';
 import { ViewContentNode } from '../dom/viewContentNode.js';
 import { ViewElementNode } from '../dom/viewElementNode.js';
 import { ViewManualComputedElementNode } from '../dom/viewManualComputedElementNode.js';
 import { ViewNode } from '../dom/viewNode.js';
-import { type Owner, setCurrentOwner } from '../owners/owner.js';
+import { type Owner, runWithOwner, setCurrentOwner } from '../owners/owner.js';
 
 import type { ViewNodeKindBase } from '../dom/viewNodeKind.js';
 import type { ReadonlyRecursive } from '../recursive.js';
@@ -14,13 +15,13 @@ type ExcludeEmptyTypes<T> = NonNullable<Exclude<T, boolean>>;
 
 export function flatten<T extends ViewNodeKindBase>(
   root: ViewNode<T> | ReadonlyArray<ViewNode<T>>,
-  owner: Owner | null | undefined,
+  owner: Owner | null,
 ): Array<ExcludeEmptyTypes<T>> {
   const flattened: Array<ExcludeEmptyTypes<T>> = [];
   const stack: ReadonlyRecursive<ViewComponent | ViewNode<ViewComponent>>[] = Array.isArray(root)
     ? [...root]
     : [root];
-  const prevOwner = setCurrentOwner(owner ?? null);
+  const prevOwner = setCurrentOwner(owner);
   try {
     while (stack.length) {
       const item = stack.pop();
@@ -50,8 +51,12 @@ export function flatten<T extends ViewNodeKindBase>(
         stack.push(item.children);
         continue;
       }
+      if (item instanceof OwnerBoundaryViewNode) {
+        stack.push(flatten(item.children, item.owner) as any);
+        continue;
+      }
       if (item instanceof DeferredComponentViewNode) {
-        stack.push(...item.execute());
+        stack.push(...runWithOwner(owner, () => item.execute()));
         continue;
       }
       if (item instanceof ViewNode) {

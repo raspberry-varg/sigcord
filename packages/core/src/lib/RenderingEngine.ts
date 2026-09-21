@@ -250,7 +250,7 @@ export class RenderingEngine {
                 instance.dispose = () => rootOwner.dispose();
               }
 
-              const flattened = flatten(instance.root, instance.owner);
+              const flattened = flatten(instance.root, instance.owner ?? null);
               instance.lastRender = payload.components = flattened;
 
               if (this.queuedComponents) {
@@ -329,7 +329,7 @@ export class RenderingEngine {
             payload.embeds = [];
           } else {
             const embedsRoot = roots.embeds;
-            payload.embeds = flatten(embedsRoot, instance.owner);
+            payload.embeds = flatten(embedsRoot, instance.owner ?? null);
             coreLog.verbose('flattened embeds', payload.embeds);
           }
         }
@@ -338,7 +338,7 @@ export class RenderingEngine {
             payload.components = [];
           } else {
             const componentsRoot = roots.components;
-            payload.components = flatten(componentsRoot, instance.owner);
+            payload.components = flatten(componentsRoot, instance.owner ?? null);
             coreLog.verbose('flattened components', payload.components);
           }
         }
