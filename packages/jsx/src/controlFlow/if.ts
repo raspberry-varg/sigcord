@@ -15,6 +15,8 @@ import {
   provideContextValue,
   OwnerTraceContext,
   OwnerTraceType,
+  OwnerBoundaryViewNode,
+  getOwnerOrThrow,
 } from '@sigcord/core';
 
 type Then<Condition, T_TRUE> = (
@@ -77,7 +79,7 @@ export function If<Condition, T_TRUE, T_FALSE>(
           details: `${debugName}active: ${res ? 'then' : 'else'}`,
         });
         const nodes = renderFragment(renderFn);
-        node.setChildren(...nodes);
+        node.setChildren(new OwnerBoundaryViewNode(getOwnerOrThrow(), nodes));
         return useDisposeOwnerFn();
       },
       {

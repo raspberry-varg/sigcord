@@ -3,9 +3,11 @@ import {
   type DisposeFn,
   effect,
   getConfig,
+  getOwnerOrThrow,
   markDirty,
   onCleanup,
   owner,
+  OwnerBoundaryViewNode,
   OwnerTraceContext,
   OwnerTraceType,
   provideContextValue,
@@ -121,7 +123,7 @@ export function Match(...props: [MatchProps] | JSXElement[]): ViewElementNode<Vi
         }
 
         const nodes = renderFragment(thisCase.content as () => ViewNodeKindBase);
-        node.setChildren(...nodes);
+        node.setChildren(new OwnerBoundaryViewNode(getOwnerOrThrow(), nodes));
         return useDisposeOwnerFn();
       },
       {
