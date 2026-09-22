@@ -1,10 +1,10 @@
 import { coreLog } from '../../internal/coreLog.js';
 
-import { ViewNode } from './viewNode.js';
+import { ViewNodeLegacy } from './viewNodeLegacy.js';
 
 import type { ViewNodeKind } from './viewNodeKind.js';
 
-export class ViewContentNode<T extends ViewNodeKind> extends ViewNode<T> {
+export class ViewContentNode<T extends ViewNodeKind> extends ViewNodeLegacy<T> {
   private content?: T;
 
   constructor(initialVal?: T) {

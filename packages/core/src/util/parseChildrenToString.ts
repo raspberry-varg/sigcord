@@ -1,27 +1,25 @@
-import { type Signal, computed, isSignal, type Primitive } from '@sigcord/core';
-
-import { JSX, type JSXChildren } from '../index.js';
+import { type Signal, computed, isSignal } from '@sigcord/core';
 
 import { resolveString } from './resolveString.js';
 import { tryPromoteToSignal } from './tryPromoteToSignal.js';
 import { upgradeStringSequenceToReactive } from './upgradeStringSequenceToReactive.js';
 
-export function parseChildrenToString(children: JSXChildren['children']): string | Signal<string> {
-  let finalString: Signal<JSX.JSXNode> | Primitive = '';
+export function parseChildrenToString(children: unknown | unknown[]): string | Signal<string> {
+  let finalString: Signal<unknown> | unknown = '';
   if (!Array.isArray(children)) {
     finalString = isSignal(children) ? children : resolveString(children);
   } else {
     for (let i = 0; i < children.length; i++) {
       const child = tryPromoteToSignal(children[i]);
       if (isSignal(child)) {
-        finalString = upgradeStringSequenceToReactive(finalString, children, i);
+        finalString = upgradeStringSequenceToReactive(String(finalString), children, i);
         break;
       }
       finalString += resolveString(children[i]);
     }
   }
 
-  return typeof finalString === 'string'
-    ? finalString
+  return typeof finalString !== 'function'
+    ? String(finalString)
     : computed(() => resolveString(finalString()));
 }

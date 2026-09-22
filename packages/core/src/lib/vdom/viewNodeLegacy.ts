@@ -1,7 +1,7 @@
 import type { ViewElementNode } from './viewElementNode.js';
 import type { ViewNodeKind } from './viewNodeKind.js';
 
-export abstract class ViewNode<T extends ViewNodeKind = ViewNodeKind> implements Disposable {
+export abstract class ViewNodeLegacy<T extends ViewNodeKind = ViewNodeKind> implements Disposable {
   protected _disposed = false;
   private parentInternal: ViewElementNode<T> | null = null;
 

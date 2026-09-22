@@ -1,20 +1,12 @@
 import {
-  type APISelectMenuOption,
-  type SelectMenuComponentOptionData,
-  StringSelectMenuBuilder,
-  type StringSelectMenuInteraction,
-  StringSelectMenuOptionBuilder,
-} from "discord.js";
-
-import {
   type Owner,
   type Setter,
   type Signal,
   ViewManualComputedElementNode,
-  ViewNode,
+  ViewNodeLegacy,
   component,
   computed,
-  flatten,
+  flattenLegacy,
   flattenToContentNodes,
   getCurrentSynapseOrDefault,
   getNextUniqueComponentId,
@@ -23,14 +15,20 @@ import {
   read,
   signal,
   useComponentHandler,
-} from "@sigcord/core";
-
-import type { JSXElement } from "../index.js";
-import { clamp } from "../util/clamp.js";
+} from '@sigcord/core';
 import {
-  type BaseSelectMenuProps,
-  applyPatchEffect,
-} from "./baseSelectMenuProps.js";
+  type APISelectMenuOption,
+  type SelectMenuComponentOptionData,
+  StringSelectMenuBuilder,
+  type StringSelectMenuInteraction,
+  StringSelectMenuOptionBuilder,
+} from 'discord.js';
+
+import { clamp } from '../util/clamp.js';
+
+import { type BaseSelectMenuProps, applyPatchEffect } from './baseSelectMenuProps.js';
+
+import type { JSXElement } from '../index.js';
 
 type OptionObj = SelectMenuComponentOptionData | APISelectMenuOption;
 
@@ -53,9 +51,9 @@ interface StringSelectProps extends BaseSelectMenuProps<StringSelectMenuInteract
  */
 export function StringSelect(props: StringSelectProps) {
   // Render content immediately
-  let nodes!: readonly ViewNode[];
+  let nodes!: readonly ViewNodeLegacy[];
   const contentOwner = owner(() => {
-    nodes = flattenToContentNodes(props.children);
+    nodes = flattenToContentNodes(props.children as any);
     return getOwnerOrThrow();
   });
 
@@ -71,7 +69,7 @@ class StringSelectNode extends ViewManualComputedElementNode<StringSelectMenuBui
   constructor(
     props: StringSelectProps,
     private readonly contentOwner: Owner,
-    private readonly nodes: readonly ViewNode[],
+    private readonly nodes: readonly ViewNodeLegacy[],
   ) {
     super();
     this.id = props.id || getNextUniqueComponentId();
@@ -82,12 +80,12 @@ class StringSelectNode extends ViewManualComputedElementNode<StringSelectMenuBui
       this.stringSelect = component({
         id: this.id,
         component: this.stringSelect,
-        handler: props["on:select"],
+        handler: props['on:select'],
       });
     } else {
       useComponentHandler(this.id, (select) => {
         if (select.isStringSelectMenu()) {
-          return props["on:select"](select);
+          return props['on:select'](select);
         }
       });
     }
@@ -112,14 +110,11 @@ class StringSelectNode extends ViewManualComputedElementNode<StringSelectMenuBui
   }
 
   override getFlattened(): StringSelectMenuBuilder {
-    const content = flatten(this.nodes, this.contentOwner);
+    const content = flattenLegacy(this.nodes, this.contentOwner);
     const updatedOptions: Option[] = [];
     for (let i = 0; i < content.length; i++) {
       const item = content[i];
-      if (
-        item instanceof StringSelectMenuOptionBuilder ||
-        isOptionObjectLike(item)
-      ) {
+      if (item instanceof StringSelectMenuOptionBuilder || isOptionObjectLike(item)) {
         updatedOptions.push(item);
       } else {
         throw new Error(`Unhandled option type: ${typeof item}`);
@@ -129,9 +124,7 @@ class StringSelectNode extends ViewManualComputedElementNode<StringSelectMenuBui
     const providedCount = updatedOptions.length;
     const empty = providedCount === 0;
     if (empty) {
-      updatedOptions.push(
-        new StringSelectMenuOptionBuilder(fallbackOption(this.id)),
-      );
+      updatedOptions.push(new StringSelectMenuOptionBuilder(fallbackOption(this.id)));
     }
 
     this.stringSelect.setOptions(updatedOptions);
@@ -153,7 +146,7 @@ class StringSelectNode extends ViewManualComputedElementNode<StringSelectMenuBui
 function isOptionObjectLike(val: unknown): val is OptionObj {
   return (
     val != null &&
-    typeof val === "object" &&
+    typeof val === 'object' &&
     (val as OptionObj).value != null &&
     (val as OptionObj).label != null
   );

@@ -48,67 +48,73 @@ would look something like:
 
 ### Example Usage
 
-> *Full documentation is planned, but with no set timeline.*
+> _Full documentation is planned, but with no set timeline._
 
 Menus are made of views, but a view can be used standalone. Since the library has evolved to being
 functional-component-forward, abandoning the original class-based architecture, let's look at defining and using views
 alone.
 
-Views support V1 and V2 components with `defineView` and `defineViewV2` respectively; *you cannot mix-and-match*. Views
+Views support V1 and V2 components with `defineView` and `defineViewV2` respectively; _you cannot mix-and-match_. Views
 take a single type parameter defining the props it accepts, which is useful for dynamically setting up initial state.
 Each view takes an `id`, followed by the factory function, and lastly some default options (i.e. `flags` for ephemeral).
 
 ```tsx
-import {defineView, defineViewV2} from "./defineReactiveView";
-import {ActionRowBuilder, ButtonBuilder, EmbedBuilder, MessageFlags} from "discord.js";
+import { defineView, defineViewV2 } from './defineReactiveView';
+import { ActionRowBuilder, ButtonBuilder, EmbedBuilder, MessageFlags } from 'discord.js';
 
 interface Props {
   name: string;
 }
 
-const HelloWorldV2 = defineViewV2('hello-world-v2', (props) => {
-  return (
-    <container>
-      <h1>Hello World</h1>
-      <text>
-        Hello, {props.name}, it's great to have you here!
-      </text>
-      <row>
-        <button>{/* ... */}</button>
-      </row>
-    </container>
-  )
-}, {flags: MessageFlags.Ephemeral}); // default attributes
+const HelloWorldV2 = defineViewV2(
+  'hello-world-v2',
+  (props) => {
+    return (
+      <container>
+        <h1>Hello World</h1>
+        <text>Hello, {props.name}, it's great to have you here!</text>
+        <actionRow>
+          <button>{/* ... */}</button>
+        </actionRow>
+      </container>
+    );
+  },
+  { flags: MessageFlags.Ephemeral },
+); // default attributes
 
-const HelloWorld = defineView('hello-world', (props) => {
-  return {
-    content: 'Some text content',
-    embeds: [
-      new EmbedBuilder()
-        .setTitle('Hello World')
-        .setDescription(`Hello, ${props.name}, it's great to have you here!`),
-    ],
-    components: [
-      new ActionRowBuilder().setComponents(
-        new ButtonBuilder() //...
-      ),
-    ],
-  };
-}, {flags: MessageFlags.Ephemeral}); // default attributes
+const HelloWorld = defineView(
+  'hello-world',
+  (props) => {
+    return {
+      content: 'Some text content',
+      embeds: [
+        new EmbedBuilder()
+          .setTitle('Hello World')
+          .setDescription(`Hello, ${props.name}, it's great to have you here!`),
+      ],
+      components: [
+        new ActionRowBuilder().setComponents(
+          new ButtonBuilder(), //...
+        ),
+      ],
+    };
+  },
+  { flags: MessageFlags.Ephemeral },
+); // default attributes
 ```
 
 These view functions return a factory that can be invoked directly. It accepts an interaction, followed by an object
 that accepts common attributes like `flags` (i.e., `MessageFlags.Ephemeral`) and any props the view accepts:
 
 ```ts
-import {HelloWorld} from './helloWorld.js';
-import type {ChatInputCommandInteraction} from "discord.js";
+import { HelloWorld } from './helloWorld.js';
+import type { ChatInputCommandInteraction } from 'discord.js';
 
 async function handleInteraction(interaction: ChatInputCommandInteraction): Promise<void> {
   const menuInstance = HelloWorld(interaction, {
     // props
     name: interaction.member.displayName,
-    
+
     // attributes; these override any defaults defined by the view itself.
     flags: MessageFlags.Ephemeral,
   });
@@ -126,11 +132,11 @@ const menu = SheetEditorV2(lastInteraction, {
   viewer: interaction.member,
   author: target,
   wantEdit: true,
-  
+
   // attributes
   renderAfterHandledInteraction: true,
   initialMessage: message,
-  flags: MessageFlags.Ephemeral
+  flags: MessageFlags.Ephemeral,
 });
 await menu.start();
 ```
@@ -143,38 +149,39 @@ JSX comes preloaded with all available Discord components (including V2 componen
 updates are handled by the library itself, no need to define your own `effect()` calls!
 
 ```tsx
-import {signal} from "sigcord";
-import {type ButtonInteraction, ButtonStyle} from "discord.js";
-import {computed} from "./computed";
+import { signal } from 'sigcord';
+import { type ButtonInteraction, ButtonStyle } from 'discord.js';
+import { computed } from './computed';
 
 const ButtonMenu = defineViewV2('button-menu', () => {
   return (
     <>
       <h1>Button Clicker!!!</h1>
       <container>
-        <row>
+        <actionRow>
           <ClicksButton style={ButtonStyle.Primary} />
           <HotButton hotCount={100} />
-        </row>
+        </actionRow>
       </container>
     </>
   );
 });
 
-function ClicksButton({style}: { style: ButtonStyle }) {
+function ClicksButton({ style }: { style: ButtonStyle }) {
   const [clicks, setClicks] = signal(0);
 
   return (
     <button
       id={'click-button'} // optional
       style={style}
-      on:click={(b) => setClicks(clicks() + 1)}>
+      on:click={(b) => setClicks(clicks() + 1)}
+    >
       You have clicked me {clicks} times.
     </button>
   );
 }
 
-function HotButton({hotCount}: { hotCount: number }) {
+function HotButton({ hotCount }: { hotCount: number }) {
   const [clicks, setClicks] = signal(0);
   const isHot = computed(() => clicks() >= hotCount);
   const onClick = (b: ButtonInteraction) => {
@@ -182,17 +189,12 @@ function HotButton({hotCount}: { hotCount: number }) {
   };
 
   return (
-    <button
-      style={() => isHot() ? ButtonStyle.Danger : ButtonStyle.Primary}
-      on:click={onClick}
-    >
+    <button style={() => (isHot() ? ButtonStyle.Danger : ButtonStyle.Primary)} on:click={onClick}>
       {() =>
-        isHot()
-          ? `${clicks()} is a lot of clicks!`
-          : `You have clicked me ${clicks()} times.`
+        isHot() ? `${clicks()} is a lot of clicks!` : `You have clicked me ${clicks()} times.`
       }
     </button>
-  )
+  );
 }
 ```
 
@@ -211,11 +213,11 @@ than reexecuting the entire component!
 There is a non-patch version `effect()` that may be useful for logging.
 
 ```ts
-import {ButtonBuilder, ButtonStyle} from "discord.js";
-import {patchEffect} from "./builtins";
-import {computed} from "./computed";
+import { ButtonBuilder, ButtonStyle } from 'discord.js';
+import { patchEffect } from './builtins';
+import { computed } from './computed';
 
-function HotButton({hotCount}: { hotCount: number }) {
+function HotButton({ hotCount }: { hotCount: number }) {
   const [clicks, setClicks] = signal(0);
   const isHot = computed(() => clicks() >= hotCount);
 
@@ -224,10 +226,8 @@ function HotButton({hotCount}: { hotCount: number }) {
     button
       .setStyle(isHot() ? ButtonStyle.Danger : ButtonStyle.Primary)
       .setLabel(
-        isHot()
-          ? `${clicks()} is a lot of clicks!`
-          : `You have clicked me ${clicks()} times.`
-      )
+        isHot() ? `${clicks()} is a lot of clicks!` : `You have clicked me ${clicks()} times.`,
+      );
   });
 
   return component({
@@ -236,7 +236,6 @@ function HotButton({hotCount}: { hotCount: number }) {
   });
 }
 ```
-
 
 ## Help
 

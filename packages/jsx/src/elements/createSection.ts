@@ -1,11 +1,11 @@
 import {
-  flatten,
+  flattenLegacy,
   flattenToContentNodes,
   getOwner,
   type Owner,
   type Signal,
   ViewManualComputedElementNode,
-  ViewNode,
+  ViewNodeLegacy,
 } from '@sigcord/core';
 import {
   type APIButtonComponent,
@@ -26,8 +26,8 @@ import type { IntrinsicElementProps } from '../index.js';
 class SectionElement extends ViewManualComputedElementNode<SectionBuilder | TextDisplayBuilder> {
   constructor(
     private readonly capturedOwner: Owner | null,
-    private readonly accessoryNodes: readonly ViewNode[],
-    private readonly textNodes: readonly ViewNode[],
+    private readonly accessoryNodes: readonly ViewNodeLegacy[],
+    private readonly textNodes: readonly ViewNodeLegacy[],
   ) {
     super();
   }
@@ -45,7 +45,7 @@ class SectionElement extends ViewManualComputedElementNode<SectionBuilder | Text
 
   override getFlattened() {
     const accessory = this.resolveAccessory();
-    const text = flatten(this.textNodes, this.capturedOwner);
+    const text = flattenLegacy(this.textNodes, this.capturedOwner);
     const textBuilders: TextDisplayBuilder[] = [];
     let currentString: Signal<string> | string = '';
     for (let t of text) {
@@ -98,7 +98,7 @@ class SectionElement extends ViewManualComputedElementNode<SectionBuilder | Text
     | APIButtonComponent
     | APIThumbnailComponent
     | null {
-    const accessoryResult = flatten(this.accessoryNodes, this.capturedOwner);
+    const accessoryResult = flattenLegacy(this.accessoryNodes, this.capturedOwner);
     if (!accessoryResult.length) {
       return null;
     }

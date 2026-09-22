@@ -1,11 +1,11 @@
-import { ViewNode } from './viewNode.js';
+import { ViewNodeLegacy } from './viewNodeLegacy.js';
 
 import type { Owner } from '../owners/owner.js';
 
-export class OwnerBoundaryViewNode extends ViewNode {
+export class OwnerBoundaryViewNode extends ViewNodeLegacy {
   constructor(
     readonly owner: Owner,
-    readonly children: ViewNode[],
+    readonly children: ViewNodeLegacy[],
   ) {
     super();
   }

@@ -6,14 +6,26 @@ import { provideContextValue } from '../contexts/provideContext.js';
 import { extractContext, useContext } from '../contexts/useContext.js';
 import { createOwner, getOwner, getOwnerOrThrow, runWithOwner } from '../owners/owner.js';
 
-export class DeferredComponent<T_RET, T_PROPS extends NonNullable<unknown> = NonNullable<unknown>> {
+export class DeferredComponentLegacy<
+  T_RET,
+  T_PROPS extends NonNullable<unknown> = NonNullable<unknown>,
+> {
   private readonly capturedOwner = createOwner(getOwner());
   constructor(
     private readonly fn: (props: T_PROPS) => T_RET,
     private readonly props: NoInfer<T_PROPS>,
-  ) {}
+  ) {
+    console.log('! INITIALIZED A NEW DEFERRED COMPONENT', {
+      fn: this.fn.name,
+      capturedOwnerStackTrace: extractContext(this.capturedOwner, OwnerTraceContext),
+    });
+  }
 
   execute(): T_RET {
+    console.log('executing deferred component:', {
+      name: this.fn.name,
+      ownerStackTrace: extractContext(getOwnerOrThrow(), OwnerTraceContext),
+    });
     if (!getConfig().componentStacks) {
       return this.fn(this.props);
     }
@@ -25,6 +37,10 @@ export class DeferredComponent<T_RET, T_PROPS extends NonNullable<unknown> = Non
         name: this.fn.name || 'AnonymousComponent',
       });
       try {
+        console.log(
+          `>>> Executing ${this.fn.name} with the context value`,
+          useContext(OwnerTraceContext),
+        );
         return this.fn(this.props);
       } catch (e: unknown) {
         coreLog.error(
@@ -32,6 +48,8 @@ export class DeferredComponent<T_RET, T_PROPS extends NonNullable<unknown> = Non
           e,
         );
         throw enhanceErrorWithComponentStack(e, componentOwner);
+      } finally {
+        console.log('>> DONE, exiting');
       }
     });
   }

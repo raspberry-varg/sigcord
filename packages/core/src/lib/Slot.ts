@@ -3,10 +3,10 @@ import { markDirty } from '../framework/hooks/markDirty.js';
 import { PatchTarget } from '../framework/patchTarget.js';
 
 import { getCurrentPatchTarget } from './builtins/builtins.js';
-import { ViewManualComputedElementNode } from './dom/viewManualComputedElementNode.js';
+import { ViewManualComputedElementNode } from './vdom/viewManualComputedElementNode.js';
 
-import type { ViewNodeKindBase } from './dom/viewNodeKind.js';
 import type { WritableSignal } from './reactivity/core/signals.js';
+import type { ViewNodeKindBase } from './vdom/viewNodeKind.js';
 import type { ViewComponent } from './views/viewFlavors.js';
 
 const isTruthy = (x: unknown) => !!x;

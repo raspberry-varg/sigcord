@@ -1,10 +1,10 @@
 import {
-  flatten,
+  flattenLegacy,
   flattenToContentNodes,
   getOwner,
   type Owner,
   ViewManualComputedElementNode,
-  ViewNode,
+  ViewNodeLegacy,
 } from '@sigcord/core';
 import { ActionRowBuilder, type MessageActionRowComponentBuilder } from 'discord.js';
 
@@ -14,13 +14,13 @@ class RowNode extends ViewManualComputedElementNode<ActionRowBuilder | null> {
   constructor(
     private capturedOwner: Owner | null,
     private readonly actionRow: ActionRowBuilder,
-    private readonly nodes: readonly ViewNode[],
+    private readonly nodes: readonly ViewNodeLegacy[],
   ) {
     super();
   }
 
   override getFlattened() {
-    const content = flatten(this.nodes, this.capturedOwner);
+    const content = flattenLegacy(this.nodes, this.capturedOwner);
     if (!content.length) {
       return null;
     }
@@ -39,7 +39,7 @@ class RowNode extends ViewManualComputedElementNode<ActionRowBuilder | null> {
   }
 }
 
-export function createRow(props: IntrinsicElementProps['row']) {
+export function createRow(props: IntrinsicElementProps['actionRow']) {
   const actionRow = new ActionRowBuilder();
   const nodes = flattenToContentNodes(props.children);
   return new RowNode(getOwner(), actionRow, nodes);

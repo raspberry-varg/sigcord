@@ -10,14 +10,15 @@ import {
   type TopLevelComponentData,
 } from 'discord.js';
 
-import type { ViewElementNode } from '../dom/viewElementNode.js';
-import type { ViewNode } from '../dom/viewNode.js';
-import type { ViewNodeKind, ViewNodeKindBase } from '../dom/viewNodeKind.js';
 import type { Owner } from '../owners/owner.js';
 import type { Signalish, WritableSignal } from '../reactivity/core/signals.js';
-import type { DeferredComponent } from '../render/deferredComponent.js';
+import type { DeferredComponentLegacy } from '../render/deferredComponent.js';
 import type { DisposeFn } from '../render/dispose.js';
 import type { Slot } from '../Slot.js';
+import type { Primitive } from '../vdom/index.js';
+import type { ViewElementNode } from '../vdom/viewElementNode.js';
+import type { ViewNodeKind, ViewNodeKindBase } from '../vdom/viewNodeKind.js';
+import type { ViewNodeLegacy } from '../vdom/viewNodeLegacy.js';
 import type { REACTIVE_VIEW_SYMBOL } from './reactive/reactiveViewSymbol.js';
 
 export type EmbedComponent = EmbedBuilder;
@@ -101,14 +102,12 @@ export interface IntrinsicViewProps {
   flags?: MessageFlags;
 }
 
-export type Primitive = string | number | boolean | null | undefined;
-
 export type Children<T extends ViewNodeKindBase> =
   | Children<T>[]
   | (() => Children<T>)
-  | DeferredComponent<Children<T>>
+  | DeferredComponentLegacy<Children<T>>
   | WritableSignal<Children<T>>
-  | ViewNode<T>
+  | ViewNodeLegacy<T>
   | Slot<T>
   | T[]
   | T

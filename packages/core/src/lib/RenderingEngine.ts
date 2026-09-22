@@ -14,7 +14,6 @@ import {
 import { coreLog } from '../internal/coreLog.js';
 import { assert } from '../util/Assertions.js';
 
-import { ViewElementNode } from './dom/viewElementNode.js';
 import {
   type ReactiveViewInstance,
   instantiateReactiveView,
@@ -22,7 +21,8 @@ import {
 import { owner } from './owners/owner.js';
 import { read } from './reactivity/core/read.js';
 import { createUntracked } from './reactivity/core/signals.js';
-import { flatten } from './render/flatten.js';
+import { flattenLegacy } from './render/flatten.js';
+import { ViewElementNode } from './vdom/viewElementNode.js';
 import { instantiateClassView, isClassViewInstance } from './views/classic/classViewInstance.js';
 import { isReactiveViewDefinition } from './views/reactive/reactiveViewDefinition.js';
 import { isReactiveViewInstance } from './views/reactive/reactiveViewInstance.js';
@@ -250,7 +250,7 @@ export class RenderingEngine {
                 instance.dispose = () => rootOwner.dispose();
               }
 
-              const flattened = flatten(instance.root, instance.owner ?? null);
+              const flattened = flattenLegacy(instance.root, instance.owner ?? null);
               instance.lastRender = payload.components = flattened;
 
               if (this.queuedComponents) {
@@ -329,7 +329,7 @@ export class RenderingEngine {
             payload.embeds = [];
           } else {
             const embedsRoot = roots.embeds;
-            payload.embeds = flatten(embedsRoot, instance.owner ?? null);
+            payload.embeds = flattenLegacy(embedsRoot, instance.owner ?? null);
             coreLog.verbose('flattened embeds', payload.embeds);
           }
         }
@@ -338,7 +338,7 @@ export class RenderingEngine {
             payload.components = [];
           } else {
             const componentsRoot = roots.components;
-            payload.components = flatten(componentsRoot, instance.owner ?? null);
+            payload.components = flattenLegacy(componentsRoot, instance.owner ?? null);
             coreLog.verbose('flattened components', payload.components);
           }
         }

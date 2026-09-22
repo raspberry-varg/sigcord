@@ -19,7 +19,7 @@ import {
   type Signal,
   untracked,
   ViewElementNode,
-  ViewNode,
+  ViewNodeLegacy,
   type ViewNodeKind,
 } from '@sigcord/core';
 
@@ -50,7 +50,7 @@ export function Index<Each extends Iterable<unknown> | Signal<Iterable<unknown>>
   if (!isSignal(each)) {
     let index = 0;
     return untracked(() => {
-      const out: ViewNode | ViewNodeKind[] = [];
+      const out: ViewNodeLegacy | ViewNodeKind[] = [];
       for (const item of each as Exclude<Each, Signal<unknown>>) {
         let rendered;
         if (!getConfig().componentStacks) {
@@ -79,7 +79,7 @@ export function Index<Each extends Iterable<unknown> | Signal<Iterable<unknown>>
   let prevItems: unknown[] = [];
   let prevOwners: Owner[] = [];
   let prevSetters: Setter<unknown>[] = [];
-  let prevNodes: ViewNode[] = [];
+  let prevNodes: ViewNodeLegacy[] = [];
 
   onCleanup(() => {
     for (let i = 0; i < prevOwners.length; i++) {
