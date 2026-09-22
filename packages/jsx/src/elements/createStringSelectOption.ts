@@ -1,11 +1,10 @@
-import { StringSelectMenuOptionBuilder } from "discord.js";
+import { isSignal, patchEffect } from '@sigcord/core';
+import { StringSelectMenuOptionBuilder } from 'discord.js';
 
-import { isSignal, patchEffect } from "@sigcord/core";
-
-import type { IntrinsicElementProps } from "../index.js";
+import type { IntrinsicElementProps } from '../index.js';
 
 export function createStringSelectOption(
-  props: IntrinsicElementProps["stringoption"],
+  props: IntrinsicElementProps['stringOption'],
 ): StringSelectMenuOptionBuilder {
   const option = new StringSelectMenuOptionBuilder();
 

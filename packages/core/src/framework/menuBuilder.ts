@@ -2,7 +2,7 @@ import { Cord } from './cord.js';
 import { ComponentsV1Strand, type ComponentsV1ViewFactory } from './strands/componentsV1Strand.js';
 import { ComponentsV2Strand } from './strands/componentsV2Strand.js';
 
-import type { ViewNodeKind } from '../lib/dom/viewNodeKind.js';
+import type { ViewNodeKind } from '../lib/vdom/viewNodeKind.js';
 import type { InteractionMiddleware } from './interactionMiddleware.js';
 import type { RepliableInteraction } from 'discord.js';
 

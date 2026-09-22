@@ -4,6 +4,8 @@ export { MenuBuilder } from './framework/menuBuilder.js';
 export * from './framework/hooks/index.js';
 export * from './framework/interactionMiddleware.js';
 
+export * from './lib/vdom/index.js';
+
 export { OwnerTraceContext, OwnerTraceType } from './core/contexts/ownerTraceContext.js';
 
 export { patchEffect } from './framework/hooks/legacy/patchEffect.js';
@@ -81,14 +83,14 @@ export {
   configureAutoComponent,
 } from './lib/components/autocomponents.js';
 export { flattenToContentNodes } from './lib/render/flattenToContentNodes.js';
-export { flatten } from './lib/render/flatten.js';
-export { ViewNodeKind, ViewNodeKindBase } from './lib/dom/viewNodeKind.js';
-export { ViewNode } from './lib/dom/viewNode.js';
-export { ViewContentNode } from './lib/dom/viewContentNode.js';
-export { ViewElementNode } from './lib/dom/viewElementNode.js';
-export { ViewManualComputedElementNode } from './lib/dom/viewManualComputedElementNode.js';
-export { OwnerBoundaryViewNode } from './lib/dom/ownerBoundaryViewNode.js';
-export { DeferredComponent } from './lib/render/deferredComponent.js';
+export { flattenLegacy } from './lib/render/flatten.js';
+export { ViewNodeKind, ViewNodeKindBase } from './lib/vdom/viewNodeKind.js';
+export { ViewNodeLegacy } from './lib/vdom/viewNodeLegacy.js';
+export { ViewContentNode } from './lib/vdom/viewContentNode.js';
+export { ViewElementNode } from './lib/vdom/viewElementNode.js';
+export { ViewManualComputedElementNode } from './lib/vdom/viewManualComputedElementNode.js';
+export { OwnerBoundaryViewNode } from './lib/vdom/ownerBoundaryViewNode.js';
+export { DeferredComponentLegacy } from './lib/render/deferredComponent.js';
 export {
   MessageComponentCallback,
   MessageComponentCallbackFor,
@@ -97,8 +99,8 @@ export {
   ViewComputedElementNode,
   elementComputed,
   NodeContentComputer,
-} from './lib/dom/viewComputedElementNode.js';
-export { getViewNodeContent } from './lib/dom/getViewNodeContent.js';
+} from './lib/vdom/viewComputedElementNode.js';
+export { getViewNodeContent } from './lib/vdom/getViewNodeContent.js';
 export { staticRender } from './lib/render/staticRender.js';
 export { render, renderFragment } from './lib/render/render.js';
 export * from './core/primitives/index.js';

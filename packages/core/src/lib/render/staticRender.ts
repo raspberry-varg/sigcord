@@ -1,13 +1,13 @@
 import { provideContextValue } from '../contexts/provideContext.js';
-import { ViewElementNode } from '../dom/viewElementNode.js';
 import { SynapseContext } from '../menu/instance/synapse.js';
 import { createRootOwner, runWithOwner } from '../owners/owner.js';
+import { ViewElementNode } from '../vdom/viewElementNode.js';
 
-import { flatten } from './flatten.js';
+import { flattenLegacy } from './flatten.js';
 import { renderFragment } from './render.js';
 import { STATIC_RENDER_SYNAPSE } from './staticRenderSynapse.js';
 
-import type { ViewNodeKind, ViewNodeKindBase } from '../dom/viewNodeKind.js';
+import type { ViewNodeKind, ViewNodeKindBase } from '../vdom/viewNodeKind.js';
 
 type StaticRenderFn<T extends ViewNodeKindBase> = () => ViewNodeKind<T>;
 
@@ -29,7 +29,7 @@ export function staticRender<T extends ViewNodeKindBase>(
 
   const root = new ViewElementNode();
   root.setChildren(...nodes);
-  const flattened = flatten(root, rootOwner);
+  const flattened = flattenLegacy(root, rootOwner);
 
   rootOwner.dispose();
   return flattened as T[];

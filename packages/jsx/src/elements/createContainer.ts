@@ -1,13 +1,13 @@
 import {
   effect,
-  flatten,
+  flattenLegacy,
   flattenToContentNodes,
   getOwner,
   markDirty,
   type Owner,
   read,
   ViewManualComputedElementNode,
-  type ViewNode,
+  type ViewNodeLegacy,
 } from '@sigcord/core';
 import { ContainerBuilder, type ContainerComponentBuilder, TextDisplayBuilder } from 'discord.js';
 
@@ -17,13 +17,13 @@ class ContainerElement extends ViewManualComputedElementNode<ContainerBuilder> {
   constructor(
     private capturedOwner: Owner | null,
     private readonly container: ContainerBuilder,
-    private readonly nodes: readonly ViewNode[],
+    private readonly nodes: readonly ViewNodeLegacy[],
   ) {
     super();
   }
 
   override getFlattened(): ContainerBuilder | undefined {
-    const flattened = flatten(this.nodes!, this.capturedOwner);
+    const flattened = flattenLegacy(this.nodes!, this.capturedOwner);
     const content: ContainerComponentBuilder[] = [];
     for (const item of flattened) {
       if (typeof item === 'boolean' || typeof item === 'number' || typeof item === 'string') {
@@ -51,7 +51,7 @@ class ContainerElement extends ViewManualComputedElementNode<ContainerBuilder> {
 
 export function createContainer(
   props: IntrinsicElementProps['container'],
-): ViewNode<ContainerBuilder> {
+): ViewNodeLegacy<ContainerBuilder> {
   const container = new ContainerBuilder();
   if (props.accent || props.spoiler) {
     effect(() => {

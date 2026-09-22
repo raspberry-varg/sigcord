@@ -1,7 +1,6 @@
 import { type EmbedBuilder, type TopLevelComponent } from 'discord.js';
 
 import { provideContextValue } from '../../lib/contexts/provideContext.js';
-import { ViewElementNode } from '../../lib/dom/viewElementNode.js';
 import {
   createRootOwner,
   getOwnerOrThrow,
@@ -9,15 +8,16 @@ import {
   type Owner,
   runWithOwner,
 } from '../../lib/owners/owner.js';
-import { flatten } from '../../lib/render/flatten.js';
+import { flattenLegacy } from '../../lib/render/flatten.js';
 import { renderFragment } from '../../lib/render/render.js';
+import { ViewElementNode } from '../../lib/vdom/viewElementNode.js';
 import { CordContext } from '../cordContext.js';
 import { PatchTargetContext } from '../hooks/usePatchTarget.js';
 import { PatchTarget, type PatchTargetBitMask } from '../patchTarget.js';
 
 import { Strand } from './strand.js';
 
-import type { ViewNodeKind } from '../../lib/dom/viewNodeKind.js';
+import type { ViewNodeKind } from '../../lib/vdom/viewNodeKind.js';
 import type { Cord } from '../cord.js';
 import type { Payload } from '../payload.js';
 
@@ -125,14 +125,17 @@ export class ComponentsV1Strand extends Strand {
     }
 
     if (this.content && (dirty & PatchTarget.Content) !== 0) {
-      payload.content = flatten<string>(this.content.root, this.content.owner).join(' ');
+      payload.content = flattenLegacy<string>(this.content.root, this.content.owner).join(' ');
     }
     if (this.embeds && (dirty & PatchTarget.Embeds) !== 0) {
-      payload.embeds = flatten<EmbedBuilder>(this.embeds.root, this.embeds.owner);
+      payload.embeds = flattenLegacy<EmbedBuilder>(this.embeds.root, this.embeds.owner);
       payload.embeds.push(...this.queuedEmbeds);
     }
     if (this.components && (dirty & PatchTarget.Components) !== 0) {
-      payload.components = flatten<TopLevelComponent>(this.components.root, this.components.owner);
+      payload.components = flattenLegacy<TopLevelComponent>(
+        this.components.root,
+        this.components.owner,
+      );
       payload.components.push(...this.queuedComponents);
     }
 

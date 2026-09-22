@@ -1,17 +1,15 @@
 import { MessageFlags, type TopLevelComponent } from 'discord.js';
 
 import { provideContextValue } from '../../lib/contexts/provideContext.js';
-import { ViewElementNode } from '../../lib/dom/viewElementNode.js';
 import { createRootOwner, runWithOwner } from '../../lib/owners/owner.js';
 import { flatten } from '../../lib/render/flatten.js';
-import { renderFragment } from '../../lib/render/render.js';
+import { disposeNode } from '../../lib/vdom/index.js';
 import { CordContext } from '../cordContext.js';
 import { PatchTargetContext } from '../hooks/usePatchTarget.js';
 import { PatchTarget } from '../patchTarget.js';
 
 import { Strand } from './strand.js';
 
-import type { ViewNodeKind } from '../../lib/dom/viewNodeKind.js';
 import type { Cord } from '../cord.js';
 import type { Payload } from '../payload.js';
 
@@ -19,7 +17,7 @@ type UncheckedFactory = () => unknown;
 
 export class ComponentsV2Strand extends Strand {
   private readonly rootOwner = createRootOwner();
-  private rootElement?: ViewElementNode;
+  private vdom?: unknown;
 
   constructor(
     cord: Cord,
@@ -29,24 +27,22 @@ export class ComponentsV2Strand extends Strand {
   }
 
   override render(): Payload {
-    if (!this.rootElement) {
-      this.rootElement = new ViewElementNode();
-      const children = runWithOwner(this.rootOwner, () => {
+    if (!this.vdom) {
+      this.vdom = runWithOwner(this.rootOwner, () => {
         provideContextValue(CordContext, this.cord);
         provideContextValue(PatchTargetContext, PatchTarget.Components);
-        return renderFragment(this.factory as () => ViewNodeKind);
+        return this.factory();
       });
-      this.rootElement.setChildren(...children);
     }
     return {
       flags: MessageFlags.IsComponentsV2,
-      components: flatten<TopLevelComponent>(this.rootElement, this.rootOwner),
+      components: flatten(this.vdom, this.rootOwner) as TopLevelComponent[],
     };
   }
 
   override destroy() {
     this.rootOwner.dispose();
-    this.rootElement?.dispose();
+    disposeNode(this.vdom);
     super.destroy();
   }
 

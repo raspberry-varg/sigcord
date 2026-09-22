@@ -47,7 +47,7 @@ export function If<Condition, T_TRUE, T_FALSE>(
   props: Readonly<IfProps<Condition, T_TRUE, T_FALSE>>,
 ): T_TRUE & T_FALSE extends Children<infer C>
   ? ViewElementNode<C> | C
-  : ViewElementNode<ViewNodeKind> | ViewNodeKind {
+  : ViewElementNode | ViewNodeKind {
   const cond = props.cond;
   const then = 'then' in props ? props.then : props.children;
   if (!isSignal(cond)) {

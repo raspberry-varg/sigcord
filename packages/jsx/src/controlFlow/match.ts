@@ -1,5 +1,5 @@
 import {
-  DeferredComponent,
+  DeferredComponentLegacy,
   type DisposeFn,
   effect,
   getConfig,
@@ -49,7 +49,7 @@ export function Match(...props: [MatchProps] | JSXElement[]): ViewElementNode<Vi
       ? (props[0] as unknown as MatchProps).children
       : props
   ).map((child, index) => {
-    if (child instanceof DeferredComponent) {
+    if (child instanceof DeferredComponentLegacy) {
       child = child.execute();
     }
 
