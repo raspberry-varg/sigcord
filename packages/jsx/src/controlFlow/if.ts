@@ -59,7 +59,6 @@ export function If<Condition>(props: Readonly<IfProps<Condition>>): ViewNode[] {
           details: `${debugName}active: ${res ? 'then' : 'else'}`,
         });
 
-        branchContainer.length = 0;
         let newVDOM: unknown = null;
         if (res) {
           newVDOM = then(cond as Parameters<typeof then>[0]);
@@ -67,7 +66,6 @@ export function If<Condition>(props: Readonly<IfProps<Condition>>): ViewNode[] {
           newVDOM = props.else();
         }
 
-        // Mutate the stable array pointer in-place!
         branchContainer.length = 0;
         if (newVDOM != null && newVDOM !== false) {
           if (Array.isArray(newVDOM)) {
