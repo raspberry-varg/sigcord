@@ -1,25 +1,26 @@
 import {
-  type MaybeSignal,
   component,
-  getNextUniqueComponentId,
-  read,
-  getCurrentSynapseOrDefault,
-  useComponentHandler,
   effect,
+  getCurrentSynapseOrDefault,
+  getNextUniqueComponentId,
   markDirty,
+  type MaybeSignal,
+  read,
+  useComponentHandler,
 } from '@sigcord/core';
 import {
+  APIChannelSelectComponent,
+  APISelectMenuDefaultValue,
   ChannelSelectMenuBuilder,
   type ChannelSelectMenuInteraction,
   type ChannelType,
+  ComponentType,
+  SelectMenuDefaultValueType,
 } from 'discord.js';
 
 import { isNonNullable } from '../util/guards/isNonNullable.js';
 
-import {
-  type BaseSelectMenuProps,
-  applyPatchEffect as applySelectMenuSignals,
-} from './baseSelectMenuProps.js';
+import { type BaseSelectMenuProps } from './baseSelectMenuProps.js';
 
 const MIN_DEFAULT = 0;
 const MAX_DEFAULT = 1;
@@ -36,12 +37,15 @@ interface ChannelSelectMenuProps extends BaseSelectMenuProps<ChannelSelectMenuIn
 export function ChannelSelect(props: ChannelSelectMenuProps) {
   const id = props.id || getNextUniqueComponentId();
 
-  let selectMenu = new ChannelSelectMenuBuilder().setCustomId(id);
+  const selectMenu: APIChannelSelectComponent = {
+    type: ComponentType.ChannelSelect,
+    custom_id: id,
+  };
   const legacy = getCurrentSynapseOrDefault();
   if (legacy) {
-    selectMenu = component({
+    component({
       id,
-      component: selectMenu,
+      component: new ChannelSelectMenuBuilder(),
       handler: props['on:select'],
     });
   } else {
@@ -55,8 +59,13 @@ export function ChannelSelect(props: ChannelSelectMenuProps) {
   const selected = props.selected;
   if (selected) {
     effect(() => {
-      const defaults = read(selected).map(read).filter(isNonNullable);
-      selectMenu.setDefaultChannels(defaults);
+      selectMenu.default_values = read(selected)
+        .map(read)
+        .filter(isNonNullable)
+        .map((selectedId): APISelectMenuDefaultValue<SelectMenuDefaultValueType.Channel> => ({
+          type: SelectMenuDefaultValueType.Channel,
+          id: selectedId,
+        }));
       markDirty();
     });
   }
@@ -64,17 +73,17 @@ export function ChannelSelect(props: ChannelSelectMenuProps) {
   const types = props.types;
   if (types) {
     effect(() => {
-      const resolved = read(types).map(read).filter(isNonNullable);
-      selectMenu.setChannelTypes(resolved);
+      selectMenu.channel_types = read(types).map(read).filter(isNonNullable);
       markDirty();
     });
   }
 
-  applySelectMenuSignals(selectMenu, {
-    min: () => read(props.min) ?? MIN_DEFAULT,
-    max: () => read(props.max) ?? MAX_DEFAULT,
-    placeholder: props.placeholder,
-    disabled: props.disabled,
+  effect(() => {
+    selectMenu.min_values = read(props.min) ?? MIN_DEFAULT;
+    selectMenu.max_values = read(props.max) ?? MAX_DEFAULT;
+    selectMenu.placeholder = read(props.placeholder);
+    selectMenu.disabled = read(props.disabled);
+    markDirty();
   });
 
   return selectMenu;
