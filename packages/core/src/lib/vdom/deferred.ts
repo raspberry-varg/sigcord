@@ -7,35 +7,8 @@ import { coreLog } from '../../internal/coreLog.js';
 import { provideContextValue } from '../contexts/provideContext.js';
 import { useContext } from '../contexts/useContext.js';
 import { createOwner, getOwner, runWithOwner } from '../owners/owner.js';
-import { type DeferredComponentLegacy } from '../render/deferredComponent.js';
-import { flattenToContentNodes } from '../render/flattenToContentNodes.js';
 
 import { type DeferredNode, NodeType } from './types.js';
-import { ViewNodeLegacy } from './viewNodeLegacy.js';
-
-export class DeferredComponentViewNodeLegacy extends ViewNodeLegacy {
-  private content?: ViewNodeLegacy[];
-
-  constructor(readonly deferredComponent: DeferredComponentLegacy<any>) {
-    super();
-  }
-
-  execute() {
-    if (!this.content) {
-      this.content = flattenToContentNodes(this.deferredComponent.execute()) as any;
-    }
-    return this.content;
-  }
-
-  dispose(): void {
-    if (this.content) {
-      for (let i = 0; i < this.content.length; i++) {
-        this.content[i].dispose();
-      }
-      this.content = undefined;
-    }
-  }
-}
 
 export function createDeferredNode(
   componentFn: DeferredNode['componentFn'],
@@ -73,10 +46,11 @@ export function executeDeferredNode(node: DeferredNode): unknown {
       );
       return node.componentFn(node.props ?? {});
     } catch (e: unknown) {
-      coreLog.error('Error occurred while executing deferred component, enhancing error stack', e);
+      coreLog.error('Error occurred while executing deferred component, enhancing error stack');
       throw enhanceErrorWithComponentStack(e, componentOwner);
     } finally {
       console.log('>> DONE, exiting');
     }
   });
+  return node._resolvedContent;
 }

@@ -11,7 +11,7 @@ export type NodeTypeValue = (typeof NodeType)[keyof typeof NodeType];
 
 export interface DeferredNode {
   $$typeof: typeof NodeType.Deferred;
-  componentFn: (props: Record<string, unknown>) => ViewNode | ViewNode[];
+  componentFn: (props: Record<string, unknown>) => unknown;
   props: Record<string, unknown> | undefined;
   capturedOwner: Owner | null;
 
@@ -21,7 +21,7 @@ export interface DeferredNode {
 export interface BoundaryNode {
   $$typeof: typeof NodeType.Boundary;
   boundaryOwner: Owner;
-  children: ViewNode[];
+  children: unknown[];
 }
 
 export interface IntrinsicNode {

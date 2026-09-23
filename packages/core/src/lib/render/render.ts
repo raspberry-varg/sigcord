@@ -2,13 +2,15 @@ import { owner, useDisposeOwnerFn } from '../owners/owner.js';
 import { untracked } from '../reactivity/untracked.js';
 import { ViewElementNode } from '../vdom/viewElementNode.js';
 
-import { flattenToContentNodes } from './flattenToContentNodes.js';
-
 import type { Recursive } from '../recursive.js';
 import type { ViewNodeKind, ViewNodeKindBase } from '../vdom/viewNodeKind.js';
-import type { ViewNodeLegacy } from '../vdom/viewNodeLegacy.js';
 import type { DisposeFn } from './dispose.js';
 
+/**
+ * @deprecated Replacement pending.
+ * @param into
+ * @param renderFn
+ */
 export function render<T extends ViewNodeKindBase>(
   into: ViewElementNode<T>,
   renderFn: () => ViewNodeKind<T>,
@@ -19,9 +21,10 @@ export function render<T extends ViewNodeKindBase>(
   });
 }
 
-export function renderFragment<T extends ViewNodeKindBase>(
-  renderFn: () => ViewNodeKind<T>,
-): Array<ViewNodeLegacy<T>> {
-  const content = untracked(renderFn) as Recursive<T>;
-  return flattenToContentNodes(content);
+/**
+ * @deprecated Replacement pending.
+ * @param renderFn
+ */
+export function renderFragment<T extends ViewNodeKindBase>(renderFn: () => ViewNodeKind<T>): any {
+  return untracked(renderFn) as Recursive<T>;
 }

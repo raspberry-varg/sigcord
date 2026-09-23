@@ -1,152 +1,76 @@
-import { update } from '../framework/hooks/index.js';
-import { markDirty } from '../framework/hooks/markDirty.js';
-import { PatchTarget } from '../framework/patchTarget.js';
+import { markDirty, update } from '../framework/hooks/index.js';
 
-import { getCurrentPatchTarget } from './builtins/builtins.js';
-import { ViewManualComputedElementNode } from './vdom/viewManualComputedElementNode.js';
-
-import type { WritableSignal } from './reactivity/core/signals.js';
-import type { ViewNodeKindBase } from './vdom/viewNodeKind.js';
-import type { ViewComponent } from './views/viewFlavors.js';
+import { getOwner, runWithOwner } from './owners/owner.js';
 
 const isTruthy = (x: unknown) => !!x;
 
-class SlotNode extends ViewManualComputedElementNode<ViewNodeKindBase> {
-  private readonly items: ViewNodeKindBase[] = [];
-  private readonly patchTarget: PatchTarget;
-
-  constructor(public ephemeral: boolean) {
-    super();
-    this.patchTarget = getCurrentPatchTarget() ?? PatchTarget.None;
-  }
-
-  dirty(): void {
-    markDirty(this.patchTarget);
-    update();
-  }
-
-  clear(): void {
-    if (this.items.length !== 0) {
-      this.items.length = 0;
-      this.dirty();
-    }
-  }
-
-  append(items: readonly ViewNodeKindBase[]) {
-    const filtered = items.filter(isTruthy);
-    if (!filtered.length) {
-      return;
-    }
-    this.items.push(...filtered);
-    this.dirty();
-  }
-
-  unshift(items: readonly ViewNodeKindBase[]) {
-    const filtered = items.filter(isTruthy);
-    if (!filtered.length) {
-      return;
-    }
-    this.items.unshift(...filtered);
-    this.dirty();
-  }
-
-  set(items: readonly ViewNodeKindBase[]) {
-    const currentlyEmpty = this.items.length === 0;
-    if (!currentlyEmpty) {
-      this.items.length = 0;
-    }
-
-    const filtered = items.filter(isTruthy);
-    if (currentlyEmpty && !filtered.length) {
-      return;
-    }
-
-    this.items.push(...items);
-    this.dirty();
-  }
-
-  override dispose(): void {
-    if (this.disposed) return;
-    this._disposed = true;
-    this.items.length = 0;
-  }
-
-  override getFlattened() {
-    if (!this.ephemeral) {
-      return this.items;
-    }
-
-    const copy = [...this.items];
-    this.items.length = 0;
-    return copy;
-  }
+export interface Slot<_T = any> {
+  setEphemeral(isEphemeral: boolean): void;
+  set(items: readonly unknown[]): void;
+  append(items: readonly unknown[]): void;
+  unshift(items: readonly unknown[]): void;
+  clear(): void;
 }
-
-export class SlotImpl<T extends ViewNodeKindBase> {
-  private writable?: WritableSignal<readonly T[]>;
-
-  readonly node;
-
-  constructor(ephemeral: boolean) {
-    this.node = new SlotNode(ephemeral);
-  }
-
-  /**
-   * Set if slot items should be cleared after being displayed.
-   */
-  setEphemeral(ephemeral: boolean) {
-    this.node.ephemeral = ephemeral;
-  }
-
-  /**
-   * Set the current list of elements in this slot.
-   */
-  set(...items: T[]): void {
-    this.node.set(items.filter((item) => !!item));
-  }
-
-  /**
-   * Appends a list of elements to this slot.
-   */
-  push(...elements: readonly T[]) {
-    this.node.append(elements);
-  }
-
-  /**
-   * Prepends a list of elements to this slot.
-   */
-  unshift(...elements: readonly T[]) {
-    this.node.unshift(elements);
-  }
-
-  /**
-   * Clears the current batch of elements in this slot.
-   */
-  clear(): void {
-    if (!this.writable) return;
-
-    if (this.writable.peek().length !== 0) {
-      this.writable.set([]);
-    }
-  }
-}
-
-export type Slot<T extends ViewNodeKindBase> = Omit<SlotImpl<T>, 'node'>;
 
 export interface SlotOptions {
   /**
-   * Clear items list after items have been displayed.
+   * Clear item list after items have been displayed.
    * @default false
    */
   ephemeral: boolean;
 }
 
-export function slot<T extends ViewNodeKindBase = ViewComponent>(
-  options?: Partial<SlotOptions>,
-): Slot<T> {
-  return new SlotImpl(!!options?.ephemeral);
-}
+export function slot<T = any>(options?: Partial<SlotOptions>): Slot<T> {
+  let items: unknown[] = [];
+  let ephemeral = !!options?.ephemeral;
 
-export function isSlot(value: unknown): value is Slot<ViewComponent> {
-  return value instanceof SlotImpl;
+  const capturedOwner = getOwner();
+
+  const dirty = () => {
+    runWithOwner(capturedOwner, () => {
+      markDirty();
+      update();
+    });
+  };
+
+  const slotFn = () => {
+    if (!ephemeral) return items;
+
+    // Ephemeral is read-once.
+    const copy = [...items];
+    items = [];
+    return copy;
+  };
+
+  slotFn.setEphemeral = ((isEphemeral: boolean) => {
+    ephemeral = isEphemeral;
+  }) satisfies Slot['setEphemeral'];
+
+  slotFn.set = ((newItems: unknown[]) => {
+    items = newItems.filter(isTruthy);
+    dirty();
+  }) satisfies Slot['set'];
+
+  slotFn.append = ((newItems: readonly unknown[]) => {
+    const filtered = newItems.filter(isTruthy);
+    if (!filtered.length) return;
+    items.push(...filtered);
+    dirty();
+  }) satisfies Slot['append'];
+
+  slotFn.unshift = ((newItems: readonly unknown[]) => {
+    const filtered = newItems.filter(isTruthy);
+    if (!filtered.length) return;
+    items.unshift(...filtered);
+    dirty();
+  }) satisfies Slot['unshift'];
+
+  slotFn.clear = (() => {
+    if (items.length !== 0) {
+      items = [];
+      dirty();
+    }
+  }) satisfies Slot['clear'];
+
+  return slotFn satisfies Slot;
 }

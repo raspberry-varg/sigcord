@@ -1,7 +1,7 @@
-import { createDeferredNode, createIntrinsicNode, h, type IntrinsicPropsMap } from '@sigcord/core';
+import { createDeferredNode, h, type IntrinsicPropsMap } from '@sigcord/core';
 
 import { JSXElement } from './index.js';
-import { type Attributes, fragmentFactory, type FunctionalComponent, JSX } from './jsx-runtime.js';
+import { type Attributes, fragmentFactory, type FunctionalComponent } from './jsx-runtime.js';
 
 export function elementFactory<T extends string | FunctionalComponent | undefined>(
   tagName: T,

@@ -21,7 +21,7 @@ export declare namespace JSX {
   interface IntrinsicElements extends IntrinsicPropsMap {}
 
   type Element = JSXNode;
-  type JSXNode = ViewNode;
+  type JSXNode = ViewNode | ViewNode[];
 
   interface ElementChildrenAttribute {
     children: {};

@@ -65,6 +65,7 @@
   "packageManager": "pnpm@10.11.0",
   "nx": {
     "targets": {
+      "build": {},
       "typecheck": {},
       "lint": {},
       "format": {},

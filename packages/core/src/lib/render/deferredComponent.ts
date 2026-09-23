@@ -43,10 +43,7 @@ export class DeferredComponentLegacy<
         );
         return this.fn(this.props);
       } catch (e: unknown) {
-        coreLog.error(
-          'Error occurred while executing deferred component, enhancing error stack',
-          e,
-        );
+        coreLog.error('Error occurred while executing deferred component, enhancing error stack');
         throw enhanceErrorWithComponentStack(e, componentOwner);
       } finally {
         console.log('>> DONE, exiting');

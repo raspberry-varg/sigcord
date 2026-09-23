@@ -1,4 +1,5 @@
-import { type Signal, computed, isSignal } from '@sigcord/core';
+import { computed } from '../core/primitives/index.js';
+import { isSignal, type Signal } from '../lib/reactivity/core/signals.js';
 
 import { resolveString } from './resolveString.js';
 import { tryPromoteToSignal } from './tryPromoteToSignal.js';

@@ -164,6 +164,7 @@ export class InteractionPatcher {
         await activeDeferUpdate;
         this.logger.debug('Resolved active defer.');
       }
+      console.dir({ payload }, { depth: 30 });
       this.message =
         (await (this.activePatchPromise = safeRender(this.interaction, payload, {
           retrieveMessage: options.type === PatchType.Create,
