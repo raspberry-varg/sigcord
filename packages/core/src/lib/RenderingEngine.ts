@@ -4,37 +4,34 @@ import { EmbedBuilder, MessageFlags, MessageFlagsBitField } from 'discord.js';
 import { PatchTargetContext } from '../framework/hooks/usePatchTarget.js';
 import { PatchTarget, type PatchTargetBitMask } from '../framework/patchTarget.js';
 import {
+  flatten,
+  getOwnerOrThrow,
   type Owner,
   type Props,
-  getOwnerOrThrow,
   provideContextValue,
-  renderFragment,
   runWithOwner,
 } from '../index.js';
 import { coreLog } from '../internal/coreLog.js';
 import { assert } from '../util/Assertions.js';
 
 import {
-  type ReactiveViewInstance,
   instantiateReactiveView,
+  type ReactiveViewInstance,
 } from './menu/instance/instantiateReactiveView.js';
 import { owner } from './owners/owner.js';
 import { read } from './reactivity/core/read.js';
 import { createUntracked } from './reactivity/core/signals.js';
-import { flattenLegacy } from './render/flatten.js';
-import { ViewElementNode } from './vdom/viewElementNode.js';
 import { instantiateClassView, isClassViewInstance } from './views/classic/classViewInstance.js';
 import { isReactiveViewDefinition } from './views/reactive/reactiveViewDefinition.js';
 import { isReactiveViewInstance } from './views/reactive/reactiveViewInstance.js';
 import { type View, type ViewInstance } from './views/view.js';
 import { type PropsBase } from './views/viewDefinitionBase.js';
 import {
-  type EmbedComponent,
   IS_V2,
+  isRenderedReactiveViewV2,
   type RenderedReactiveView,
   type ViewComponent,
   type ViewMessagePayload,
-  isRenderedReactiveViewV2,
 } from './views/viewFlavors.js';
 
 import type { NavigationPayload } from './Navigation.js';
@@ -233,12 +230,12 @@ export class RenderingEngine {
               payload.components = [];
             } else {
               if (!instance.root) {
-                const root = new ViewElementNode();
+                let root: unknown[] = [];
                 const rootOwner = owner(
                   () => {
                     provideContextValue(PatchTargetContext, patchTarget);
-                    const children = renderFragment(instance.factory);
-                    root.setChildren(...children);
+                    const vdom = instance.factory();
+                    root = Array.isArray(vdom) ? vdom : [vdom];
                     return getOwnerOrThrow();
                   },
                   {
@@ -250,8 +247,10 @@ export class RenderingEngine {
                 instance.dispose = () => rootOwner.dispose();
               }
 
-              const flattened = flattenLegacy(instance.root, instance.owner ?? null);
-              instance.lastRender = payload.components = flattened;
+              const flattened = runWithOwner(instance.owner!, () => flatten(instance.root));
+              instance.lastRender = payload.components = Array.isArray(flattened)
+                ? flattened
+                : [flattened];
 
               if (this.queuedComponents) {
                 payload.components = this.resolveWithQueuedItems(
@@ -270,12 +269,12 @@ export class RenderingEngine {
               instance.roots = {};
               const result = (instance.lastRender = instance.factory());
               if (result.embeds) {
-                const embedsRoot = (instance.roots.embeds = new ViewElementNode<EmbedComponent>());
-                owner(
+                instance.roots.embeds = owner(
                   () => {
                     provideContextValue(PatchTargetContext, PatchTarget.Embeds);
-                    const children = renderFragment(result.embeds as () => EmbedBuilder[]);
-                    embedsRoot.setChildren(...children);
+                    const vdom =
+                      typeof result.embeds === 'function' ? result.embeds() : result.embeds;
+                    return Array.isArray(vdom) ? vdom : [vdom];
                   },
                   {
                     debugName: 'V1_embeds_root',
@@ -283,13 +282,14 @@ export class RenderingEngine {
                 );
               }
               if (result.components) {
-                const componentsRoot = (instance.roots.components =
-                  new ViewElementNode<ViewComponent>());
-                owner(
+                instance.roots.components = owner(
                   () => {
                     provideContextValue(PatchTargetContext, PatchTarget.Components);
-                    const children = renderFragment(result.components as () => ViewComponent[]);
-                    componentsRoot.setChildren(...children);
+                    const vdom =
+                      typeof result.components === 'function'
+                        ? result.components()
+                        : result.components;
+                    return Array.isArray(vdom) ? vdom : [vdom];
                   },
                   {
                     debugName: 'V1_components_root',
@@ -329,7 +329,9 @@ export class RenderingEngine {
             payload.embeds = [];
           } else {
             const embedsRoot = roots.embeds;
-            payload.embeds = flattenLegacy(embedsRoot, instance.owner ?? null);
+            // TODO: We should be using the embeds owner, not the instance root's.
+            const flattened = runWithOwner(instance.owner!, () => flatten(embedsRoot));
+            payload.embeds = Array.isArray(flattened) ? flattened : [flattened];
             coreLog.verbose('flattened embeds', payload.embeds);
           }
         }
@@ -338,7 +340,9 @@ export class RenderingEngine {
             payload.components = [];
           } else {
             const componentsRoot = roots.components;
-            payload.components = flattenLegacy(componentsRoot, instance.owner ?? null);
+            // TODO: We should be using the components owner, not the instance root's.
+            const flattened = runWithOwner(instance.owner!, () => flatten(componentsRoot));
+            payload.components = Array.isArray(flattened) ? flattened : [flattened];
             coreLog.verbose('flattened components', payload.components);
           }
         }

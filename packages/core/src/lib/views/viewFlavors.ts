@@ -16,7 +16,6 @@ import type { DeferredComponentLegacy } from '../render/deferredComponent.js';
 import type { DisposeFn } from '../render/dispose.js';
 import type { Slot } from '../Slot.js';
 import type { Primitive } from '../vdom/index.js';
-import type { ViewElementNode } from '../vdom/viewElementNode.js';
 import type { ViewNodeKind, ViewNodeKindBase } from '../vdom/viewNodeKind.js';
 import type { ViewNodeLegacy } from '../vdom/viewNodeLegacy.js';
 import type { REACTIVE_VIEW_SYMBOL } from './reactive/reactiveViewSymbol.js';
@@ -47,8 +46,8 @@ interface RenderedReactiveViewBase {
 
 interface RenderedReactiveViewV1 extends RenderedReactiveViewBase {
   roots?: {
-    embeds?: ViewElementNode<EmbedComponent>;
-    components?: ViewElementNode<ViewComponent>;
+    embeds?: unknown[];
+    components?: unknown[];
   };
   lastRender?: ReactiveViewPayloadV1;
   factory: () => ReactiveViewPayloadV1;
@@ -56,7 +55,7 @@ interface RenderedReactiveViewV1 extends RenderedReactiveViewBase {
 
 interface RenderedReactiveViewV2 extends RenderedReactiveViewBase {
   [IS_V2]: true;
-  root?: ViewElementNode<ViewComponent>;
+  root?: unknown[];
   owner?: Owner;
   lastRender?: ReactiveViewPayloadV2;
   factory: () => ReactiveViewPayloadV2;
