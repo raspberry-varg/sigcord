@@ -1,4 +1,7 @@
-import { type MaybeSignal, type Signal, computed, read } from '@sigcord/core';
+import { computed } from '../core/primitives/index.js';
+import { read } from '../lib/reactivity/core/read.js';
+
+import type { MaybeSignal, Signal } from '../lib/reactivity/core/signals.js';
 
 export function upgradeStringSequenceToReactive(
   partialString: string,

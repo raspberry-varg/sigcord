@@ -110,6 +110,7 @@ export function updateIntrinsicChildren<K extends keyof IntrinsicPropsMap>(
           section.accessory = validAccessory;
           break;
         default:
+          console.dir(validAccessory, { depth: 3 });
           throw new Error(`Invalid accessory type: ${validAccessory.type}`);
       }
 

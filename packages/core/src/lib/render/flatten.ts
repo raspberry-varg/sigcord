@@ -1,16 +1,15 @@
 // oxlint-disable no-underscore-dangle
 
 import { type Owner, runWithOwner, setCurrentOwner } from '../owners/owner.js';
-import { DeferredComponentViewNodeLegacy, executeDeferredNode } from '../vdom/deferred.js';
+import { executeDeferredNode } from '../vdom/deferred.js';
 import { isVDOMNode, NodeType } from '../vdom/index.js';
-import { OwnerBoundaryViewNode } from '../vdom/ownerBoundaryViewNode.js';
+import { OwnerBoundaryViewNodeLegacy } from '../vdom/ownerBoundary.js';
 import { ViewComputedElementNode } from '../vdom/viewComputedElementNode.js';
 import { ViewContentNode } from '../vdom/viewContentNode.js';
 import { ViewElementNode } from '../vdom/viewElementNode.js';
 import { ViewManualComputedElementNode } from '../vdom/viewManualComputedElementNode.js';
 import { ViewNodeLegacy } from '../vdom/viewNodeLegacy.js';
 
-import { flattenToContentNodes } from './flattenToContentNodes.js';
 import { formatTextIntrinsic, isTextIntrinsic } from './formatTextIntrinsic.js';
 import { mountIntrinsic } from './mountIntrinsic.js';
 import { updateIntrinsicChildren } from './updateIntrinsicChildren.js';
@@ -63,12 +62,8 @@ export function flattenLegacy<T extends ViewNodeKindBase>(
         stack.push(item.children);
         continue;
       }
-      if (item instanceof OwnerBoundaryViewNode) {
+      if (item instanceof OwnerBoundaryViewNodeLegacy) {
         stack.push(flattenLegacy(item.children, item.owner) as any);
-        continue;
-      }
-      if (item instanceof DeferredComponentViewNodeLegacy) {
-        stack.push(flattenToContentNodes(item.execute()));
         continue;
       }
       if (item instanceof ViewNodeLegacy) {
@@ -83,9 +78,11 @@ export function flattenLegacy<T extends ViewNodeKindBase>(
   return flattened.toReversed();
 }
 
-export function flatten(node: unknown, currentOwner: Owner | null): unknown {
+export function flatten(node: unknown, debugStack?: string): unknown {
   if (Array.isArray(node)) {
-    return node.flatMap((n) => flatten(n, currentOwner));
+    return node
+      .flatMap((n) => flatten(n, debugStack))
+      .filter((r) => r != null && typeof r !== 'boolean');
   }
 
   if (node == null || typeof node === 'boolean') {
@@ -96,6 +93,10 @@ export function flatten(node: unknown, currentOwner: Owner | null): unknown {
     return String(node);
   }
 
+  if (typeof node === 'function') {
+    return flatten(node(), debugStack);
+  }
+
   if (typeof (node as { toJSON?: unknown }).toJSON === 'function') {
     // Support Discord.js builders.
     return (node as { toJSON: () => unknown }).toJSON();
@@ -103,21 +104,37 @@ export function flatten(node: unknown, currentOwner: Owner | null): unknown {
 
   if (isVDOMNode(node)) {
     switch (node.$$typeof) {
-      case NodeType.Deferred:
+      case NodeType.Boundary: {
+        return runWithOwner(node.boundaryOwner, () => {
+          const nextDebugStack = debugStack ? `${debugStack} > {BoundaryOwner}` : undefined;
+          return flatten(node.children, nextDebugStack);
+        });
+      }
+      case NodeType.Deferred: {
         if (!node._resolvedContent) {
           node._resolvedContent = executeDeferredNode(node);
         }
-        return node._resolvedContent;
-      case NodeType.Intrinsic:
+        const nextDebugStack = debugStack
+          ? `${debugStack} > <${node.componentFn.name || 'Anonymous'}>`
+          : undefined;
+        return flatten(node._resolvedContent, nextDebugStack);
+      }
+      case NodeType.Intrinsic: {
+        const nextDebugStack = debugStack ? `${debugStack} > <${node.type}>` : undefined;
         if (isTextIntrinsic(node.type)) {
           if (!node._cached) {
             node._cached = formatTextIntrinsic(node.type, node.props);
           }
-          return typeof node._cached === 'function' ? node._cached() : node._cached;
+          return flatten(node._cached, nextDebugStack);
         }
 
-        const resolve = (values: unknown) => flatten(values, currentOwner);
-        const resolvedChildren = node.props.children ? resolve(node.props.children) : [];
+        const resolve = (values: unknown) => flatten(values, nextDebugStack);
+
+        let resolvedChildren: unknown[] = [];
+        if (node.props.children) {
+          const res = resolve(node.props.children);
+          resolvedChildren = Array.isArray(res) ? res : [res];
+        }
 
         if (!node._cached) {
           node._cached = mountIntrinsic(node.type, node.props);
@@ -130,6 +147,19 @@ export function flatten(node: unknown, currentOwner: Owner | null): unknown {
           resolvedChildren,
           resolve,
         );
+      }
     }
   }
+
+  if (typeof node === 'object' && node.constructor !== Object) {
+    console.error(node);
+    console.error(debugStack);
+    throw new Error(
+      `[Framework Error] VDOM Leak Detected!\n\n` +
+        `Trace: ${debugStack || 'Unknown (Prod Mode)'}\n\n` +
+        `A class instance (${node.constructor.name}) tried to leak into the Discord payload. ` +
+        `This usually means an un-migrated legacy component returned a ViewNode.`,
+    );
+  }
+  return node;
 }

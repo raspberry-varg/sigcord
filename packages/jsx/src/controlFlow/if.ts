@@ -1,75 +1,55 @@
 import {
-  type Children,
-  type Signal,
-  ViewElementNode,
-  type ViewNodeKind,
   computed,
   effect,
   isSignal,
   markDirty,
   owner,
-  read,
-  renderFragment,
-  untracked,
-  useDisposeOwnerFn,
-  provideContextValue,
   OwnerTraceContext,
   OwnerTraceType,
-  OwnerBoundaryViewNode,
-  getOwnerOrThrow,
+  provideContextValue,
+  read,
+  type Signal,
+  untracked,
+  useDisposeOwnerFn,
+  type ViewNode,
 } from '@sigcord/core';
 
-type Then<Condition, T_TRUE> = (
+type Then<Condition> = (
   result: Condition extends Signal<infer C> | (() => infer C)
     ? Signal<NonNullable<C>>
     : NonNullable<Condition>,
-) => T_TRUE;
+) => unknown;
 
 interface BaseProps<Condition> {
   cond: Condition;
   debugName?: string;
 }
 
-interface WithChildren<Condition, T_TRUE> extends BaseProps<Condition> {
-  children: Then<Condition, T_TRUE>;
+interface WithChildren<Condition> extends BaseProps<Condition> {
+  children: Then<Condition>;
 }
 
-interface WithAttributes<Condition, T_TRUE, T_FALSE> extends BaseProps<Condition> {
-  then: Then<Condition, T_TRUE>;
-  else?: () => T_FALSE;
+interface WithAttributes<Condition> extends BaseProps<Condition> {
+  then: Then<Condition>;
+  else?: () => unknown;
 }
 
-type IfProps<Condition, T_TRUE, T_FALSE> =
-  | WithChildren<Condition, T_TRUE>
-  | WithAttributes<Condition, T_TRUE, T_FALSE>;
+type IfProps<Condition> = WithChildren<Condition> | WithAttributes<Condition>;
 
-export function If<Condition, T_TRUE, T_FALSE>(
-  props: Readonly<IfProps<Condition, T_TRUE, T_FALSE>>,
-): T_TRUE & T_FALSE extends Children<infer C>
-  ? ViewElementNode<C> | C
-  : ViewElementNode | ViewNodeKind {
+export function If<Condition>(props: Readonly<IfProps<Condition>>): ViewNode[] {
   const cond = props.cond;
   const then = 'then' in props ? props.then : props.children;
   if (!isSignal(cond)) {
     return untracked(() =>
       cond ? then(cond as Parameters<typeof then>[0]) : 'else' in props ? props.else : null,
-    ) as any;
+    ) as ViewNode[];
   }
 
-  const node = new ViewElementNode();
+  const branchContainer: unknown[] = [];
+
   const truthy = computed(() => !!read<Condition>(cond as Condition));
   effect(() => {
-    let renderFn: () => ViewNodeKind;
     const res = truthy();
-    if (res) {
-      const then = 'then' in props ? props.then : props.children;
-      renderFn = () => then(cond as Parameters<typeof then>[0]) as ViewNodeKind;
-    } else if ('else' in props) {
-      renderFn = () => props.else?.() as ViewNodeKind;
-    } else {
-      renderFn = () => null;
-    }
-
     const dispose = owner(
       () => {
         const debugName = props.debugName ? `name: "${props.debugName}", ` : '';
@@ -78,17 +58,35 @@ export function If<Condition, T_TRUE, T_FALSE>(
           name: 'Branch',
           details: `${debugName}active: ${res ? 'then' : 'else'}`,
         });
-        const nodes = renderFragment(renderFn);
-        node.setChildren(new OwnerBoundaryViewNode(getOwnerOrThrow(), nodes));
+
+        branchContainer.length = 0;
+        let newVDOM: unknown = null;
+        if (res) {
+          newVDOM = then(cond as Parameters<typeof then>[0]);
+        } else if ('else' in props && props.else) {
+          newVDOM = props.else();
+        }
+
+        // Mutate the stable array pointer in-place!
+        branchContainer.length = 0;
+        if (newVDOM != null && newVDOM !== false) {
+          if (Array.isArray(newVDOM)) {
+            branchContainer.push(...newVDOM);
+          } else {
+            branchContainer.push(newVDOM);
+          }
+        }
+
         return useDisposeOwnerFn();
       },
       {
         debugName: `[If_${res ? 'True' : 'False'}_Branch]${props.debugName ?? '%'}`,
       },
     );
+
     markDirty();
     return dispose;
   });
 
-  return node as any;
+  return branchContainer as ViewNode[];
 }

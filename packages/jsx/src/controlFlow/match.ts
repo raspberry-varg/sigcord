@@ -1,22 +1,16 @@
 import {
-  DeferredComponentLegacy,
-  type DisposeFn,
   effect,
   getConfig,
-  getOwnerOrThrow,
+  isVDOMNode,
   markDirty,
+  NodeType,
   onCleanup,
   owner,
-  OwnerBoundaryViewNode,
   OwnerTraceContext,
   OwnerTraceType,
   provideContextValue,
-  renderFragment,
   type Signal,
   useDisposeOwnerFn,
-  ViewElementNode,
-  type ViewNodeKind,
-  type ViewNodeKindBase,
 } from '@sigcord/core';
 
 import { type JSXElement, type JSXNode } from '../index.js';
@@ -26,13 +20,13 @@ interface BaseProps {
 }
 
 interface CaseData<Condition = unknown, T = unknown> extends BaseProps {
-  when: () => Condition | Signal<Condition>;
+  when: Condition | Signal<Condition> | (() => Condition | Signal<Condition>);
   content: () => T;
 }
 
 interface DefaultData extends BaseProps {
   isDefault: true;
-  content: () => ViewNodeKind;
+  content: () => unknown;
 }
 
 type Case = CaseData | DefaultData;
@@ -41,75 +35,89 @@ interface MatchProps {
   children: JSXElement[];
 }
 
-export function Match(...props: [MatchProps] | JSXElement[]): ViewElementNode<ViewNodeKind> {
-  const node = new ViewElementNode<ViewNodeKind>();
-  let dispose: DisposeFn | undefined;
-  const cases = (
+export function Match(...props: [MatchProps] | JSXElement[]): () => unknown {
+  const rawChildren =
     props.length === 1 && !!props[0] && typeof props[0] === 'object' && 'children' in props[0]
       ? (props[0] as unknown as MatchProps).children
-      : props
-  ).map((child, index) => {
-    if (child instanceof DeferredComponentLegacy) {
-      child = child.execute();
+      : props;
+
+  const cases: Array<CaseData | DefaultData> = [];
+  for (let i = 0; i < rawChildren.length; i++) {
+    let resolved: unknown = rawChildren[i];
+    if (isVDOMNode(resolved) && resolved.$$typeof === NodeType.Deferred) {
+      resolved = resolved.componentFn(resolved.props ?? {});
     }
 
-    if (!child || typeof child !== 'object') {
-      throw new Error(
-        `(Match[${index}]) Provided child to <Match> was not an object. Was <Case> or <Default> used?`,
-      );
+    if (resolved == null || typeof resolved === 'boolean') {
+      // Prune.
+      continue;
     }
 
-    if (!('when' in child && 'content' in child)) {
-      throw new Error(
-        `(Match[${index}]) Match expects one or more <Case> children, and an optional <Default> child. Got: ${JSON.stringify(child, null, 2)}`,
-      );
+    if (
+      !(
+        typeof resolved === 'object' &&
+        'content' in resolved &&
+        typeof resolved.content === 'function'
+      )
+    ) {
+      throwValidationError(i, resolved);
     }
 
-    return child as unknown as Case;
-  });
+    if ('isDefault' in resolved && resolved.isDefault === true) {
+      cases.push({
+        isDefault: true,
+        content: resolved.content as () => unknown,
+      });
+      continue;
+    }
 
+    if ('when' in resolved) {
+      cases.push({
+        when: resolved.when as any,
+        content: resolved.content as () => unknown,
+      });
+      continue;
+    }
+
+    throwValidationError(i, resolved);
+  }
+
+  let defaultIndex = -1;
+  for (let i = 0; i < cases.length; i++) {
+    if (cases[i].isDefault) {
+      if (i !== cases.length - 1) throw new Error('<Default> must be the last child.');
+      if (defaultIndex !== -1) throw new Error('Only one <Default> is allowed.');
+      defaultIndex = i;
+    }
+  }
+
+  let cachedBranchVDOM: unknown;
+  let prevDispose: (() => void) | undefined;
   effect(() => {
-    let i = 0;
-    let activeCaseIndex = -1;
-    let defaultIndex = -1;
-    for (const c of cases) {
-      if (c.isDefault) {
-        if (i !== cases.length - 1) {
-          throw new Error('Default case must be at the end.');
-        }
-        if (defaultIndex !== -1) {
-          throw new Error('A Default case has already been defined.');
-        }
-        defaultIndex = i;
-        continue;
-      }
-      const result = c.when();
-      if (result) {
-        activeCaseIndex = i;
-        break;
-      }
-
-      i++;
+    if (prevDispose) {
+      prevDispose();
+      prevDispose = undefined;
     }
 
-    let finalIndex = activeCaseIndex;
+    const activeIndex = cases.findIndex(
+      (c) => !c.isDefault && (typeof c.when === 'function' ? c.when() : c.when),
+    );
+    const finalIndex = activeIndex !== -1 ? activeIndex : defaultIndex;
     if (finalIndex === -1) {
-      if (defaultIndex === -1) {
-        dispose?.();
-        dispose = undefined;
-        return;
-      }
-      finalIndex = defaultIndex;
+      cachedBranchVDOM = undefined;
+      markDirty();
+      return;
     }
 
-    dispose = owner(
+    const activeCase = cases[finalIndex];
+    owner(
       () => {
-        const thisCase = cases[finalIndex];
+        prevDispose = useDisposeOwnerFn();
 
         if (getConfig().componentStacks) {
           provideContextValue(
             OwnerTraceContext,
-            thisCase.isDefault
+            activeCase.isDefault
               ? {
                   type: OwnerTraceType.ControlFlow,
                   name: 'Default',
@@ -117,17 +125,17 @@ export function Match(...props: [MatchProps] | JSXElement[]): ViewElementNode<Vi
               : {
                   type: OwnerTraceType.ControlFlow,
                   name: 'Case',
-                  details: `when: ${String(thisCase.when).slice(0, 100)}`,
+                  details: `when: ${String(activeCase.when).slice(0, 100)}`,
                 },
           );
         }
 
-        const nodes = renderFragment(thisCase.content as () => ViewNodeKindBase);
-        node.setChildren(new OwnerBoundaryViewNode(getOwnerOrThrow(), nodes));
-        return useDisposeOwnerFn();
+        // Execute the VDOM getter (or just grab the static VDOM)
+        cachedBranchVDOM =
+          typeof activeCase.content === 'function' ? activeCase.content() : activeCase.content;
       },
       {
-        debugName: `[Match_${finalIndex === defaultIndex ? 'Default' : finalIndex}_Branch]%`,
+        debugName: `[Match_${finalIndex === defaultIndex ? 'Default' : finalIndex}_Branch]`,
       },
     );
 
@@ -135,10 +143,10 @@ export function Match(...props: [MatchProps] | JSXElement[]): ViewElementNode<Vi
   });
 
   onCleanup(() => {
-    dispose?.();
+    prevDispose?.();
   });
 
-  return node;
+  return () => cachedBranchVDOM;
 }
 
 interface CaseProps<Condition = unknown> {
@@ -164,9 +172,15 @@ export function Case<Condition = unknown>(
   } satisfies CaseData<Condition> as unknown as JSXNode;
 }
 
-export function Default(show: () => ViewNodeKind): JSXNode {
+export function Default(show: () => unknown): JSXNode {
   return {
     isDefault: true,
     content: show,
   } satisfies DefaultData as unknown as JSXNode;
+}
+
+function throwValidationError(index: number, value: unknown): never {
+  throw new Error(
+    `(Match[${index}]) Invalid child. Expected <Case> or <Default>. Got: ${JSON.stringify(value)}`,
+  );
 }

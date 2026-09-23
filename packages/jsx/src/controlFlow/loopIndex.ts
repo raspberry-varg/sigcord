@@ -1,6 +1,7 @@
 import {
   batch,
   createOwner,
+  createOwnerBoundary,
   effect,
   getConfig,
   getOwner,
@@ -8,19 +9,15 @@ import {
   markDirty,
   onCleanup,
   type Owner,
-  OwnerBoundaryViewNode,
   OwnerTraceContext,
   OwnerTraceType,
   provideContextValue,
-  renderFragment,
   runWithOwner,
   type Setter,
   signal,
   type Signal,
   untracked,
-  ViewElementNode,
-  ViewNodeLegacy,
-  type ViewNodeKind,
+  type ViewNode,
 } from '@sigcord/core';
 
 interface IndexProps<Each extends Iterable<unknown> | Signal<Iterable<unknown>>> {
@@ -32,7 +29,7 @@ interface IndexProps<Each extends Iterable<unknown> | Signal<Iterable<unknown>>>
         ? U
         : never,
     index: number,
-  ) => ViewNodeKind;
+  ) => unknown;
   debugName?: string;
 }
 
@@ -44,13 +41,13 @@ interface IndexProps<Each extends Iterable<unknown> | Signal<Iterable<unknown>>>
  */
 export function Index<Each extends Iterable<unknown> | Signal<Iterable<unknown>>>(
   props: IndexProps<Each>,
-): ViewElementNode | ViewNodeKind[] {
+): ViewNode[] {
   const parentOwner = getOwner();
   const each = props.each;
   if (!isSignal(each)) {
     let index = 0;
     return untracked(() => {
-      const out: ViewNodeLegacy | ViewNodeKind[] = [];
+      const out: unknown[] = [];
       for (const item of each as Exclude<Each, Signal<unknown>>) {
         let rendered;
         if (!getConfig().componentStacks) {
@@ -64,22 +61,25 @@ export function Index<Each extends Iterable<unknown> | Signal<Iterable<unknown>>
               name: 'Iteration',
               details: `${debugName}index: ${index}`,
             });
-            return renderFragment(() => props.children(item as any, index++));
+            return props.children(item as any, index++);
           });
-          rendered = new OwnerBoundaryViewNode(childOwner, childOut);
+          rendered = createOwnerBoundary(
+            childOwner,
+            Array.isArray(childOut) ? childOut : [childOut],
+          );
         }
         out.push(rendered);
       }
-      return out;
+      return out as ViewNode[];
     });
   }
 
-  const node = new ViewElementNode();
+  const outputBuffer: unknown[] = [];
 
   let prevItems: unknown[] = [];
   let prevOwners: Owner[] = [];
   let prevSetters: Setter<unknown>[] = [];
-  let prevNodes: ViewNodeLegacy[] = [];
+  let prevNodes: unknown[] = [];
 
   onCleanup(() => {
     for (let i = 0; i < prevOwners.length; i++) {
@@ -117,15 +117,13 @@ export function Index<Each extends Iterable<unknown> | Signal<Iterable<unknown>>
           details: `${debugName}index: ${i}`,
         });
 
-        nodes = renderFragment(() => props.children(get as any, i));
+        nodes = props.children(get as any, i);
       });
-      nextNodes[i] = new OwnerBoundaryViewNode(childOwner, nodes!);
-      node.addChild(nextNodes[i]);
+      nextNodes[i] = createOwnerBoundary(childOwner, Array.isArray(nodes) ? nodes : [nodes]);
       newOwners[i] = childOwner;
     }
 
     for (let i = nextItems.length; i < prevItems.length; i++) {
-      node.removeChild(prevNodes[i]);
       prevOwners[i].dispose();
     }
 
@@ -133,11 +131,14 @@ export function Index<Each extends Iterable<unknown> | Signal<Iterable<unknown>>
     prevOwners = newOwners;
     prevSetters = nextSetters;
     prevNodes = nextNodes;
+
+    outputBuffer.length = 0;
+    outputBuffer.push(...nextNodes);
   };
   effect(() => {
     batch(effectFn);
     markDirty();
   });
 
-  return node;
+  return outputBuffer as ViewNode[];
 }

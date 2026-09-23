@@ -1,8 +1,9 @@
 import {
   type Context as CoreContext,
-  createDeferredNode,
+  getOwnerOrThrow,
   owner,
   provideContextValue,
+  createOwnerBoundary,
 } from '@sigcord/core';
 
 import type { JSXChildren } from '../jsx-runtime.js';
@@ -40,7 +41,10 @@ export function createContext<T>(
     Provider: (props: ProviderProps<T | undefined>) => {
       return owner(() => {
         provideContextValue(context, props.value);
-        return createDeferredNode(() => props.children, {});
+        return createOwnerBoundary(
+          getOwnerOrThrow(),
+          Array.isArray(props.children) ? props.children : [props.children],
+        );
       });
     },
   };

@@ -13,6 +13,8 @@ import { Strand } from './strand.js';
 import type { Cord } from '../cord.js';
 import type { Payload } from '../payload.js';
 
+const isDev = process.env.NODE_ENV !== 'production';
+
 type UncheckedFactory = () => unknown;
 
 export class ComponentsV2Strand extends Strand {
@@ -36,7 +38,10 @@ export class ComponentsV2Strand extends Strand {
     }
     return {
       flags: MessageFlags.IsComponentsV2,
-      components: flatten(this.vdom, this.rootOwner) as TopLevelComponent[],
+      components: runWithOwner(
+        this.rootOwner,
+        () => flatten(this.vdom, isDev ? 'Root' : undefined) as TopLevelComponent[],
+      ),
     };
   }
 

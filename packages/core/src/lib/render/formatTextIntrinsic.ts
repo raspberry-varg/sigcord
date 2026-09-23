@@ -1,8 +1,25 @@
-import { channelLink, channelMention, hyperlink, roleMention, userMention } from 'discord.js';
+import {
+  HeadingLevel,
+  channelLink,
+  channelMention,
+  heading,
+  hyperlink,
+  inlineCode,
+  italic,
+  quote,
+  roleMention,
+  spoiler,
+  strikethrough,
+  subtext,
+  time,
+  underline,
+  userMention,
+} from 'discord.js';
 
 import { effect, markDirty } from '../../framework/hooks/index.js';
 import { parseChildrenToString } from '../../util/parseChildrenToString.js';
 import { resolveString } from '../../util/resolveString.js';
+import { resolveToConditionalFormatter } from '../../util/resolveToConditionalFormatter.js';
 import { read } from '../reactivity/core/read.js';
 import { isSignal } from '../reactivity/core/signals.js';
 import { type IntrinsicPropsMap } from '../vdom/index.js';
@@ -86,40 +103,61 @@ export function formatTextIntrinsic(
     }
     case 'br':
       cast<'br'>(props);
-      throw new Error(`Unimplemented text intrinsic: ${type}`);
+      return '\n';
     case 'i':
       cast<'i'>(props);
-      throw new Error(`Unimplemented text intrinsic: ${type}`);
+      return resolveToConditionalFormatter(italic, props.children);
     case 'u':
       cast<'u'>(props);
-      throw new Error(`Unimplemented text intrinsic: ${type}`);
+      return resolveToConditionalFormatter(underline, props.children);
     case 'pre':
       cast<'pre'>(props);
-      throw new Error(`Unimplemented text intrinsic: ${type}`);
+      return resolveToConditionalFormatter(inlineCode, props.children);
     case 'sub':
       cast<'sub'>(props);
-      throw new Error(`Unimplemented text intrinsic: ${type}`);
+      return resolveToConditionalFormatter(subtext, props.children, true);
     case 'h1':
       cast<'h1'>(props);
-      throw new Error(`Unimplemented text intrinsic: ${type}`);
+      return resolveToConditionalFormatter(
+        (text) => heading(text, HeadingLevel.One),
+        props.children,
+        true,
+      );
     case 'h2':
       cast<'h2'>(props);
-      throw new Error(`Unimplemented text intrinsic: ${type}`);
+      return resolveToConditionalFormatter(
+        (text) => heading(text, HeadingLevel.Two),
+        props.children,
+        true,
+      );
     case 'h3':
       cast<'h3'>(props);
-      throw new Error(`Unimplemented text intrinsic: ${type}`);
+      return resolveToConditionalFormatter(
+        (text) => heading(text, HeadingLevel.Three),
+        props.children,
+        true,
+      );
     case 'strike':
       cast<'strike'>(props);
-      throw new Error(`Unimplemented text intrinsic: ${type}`);
+      return resolveToConditionalFormatter(strikethrough, props.children, true);
     case 'spoiler':
       cast<'spoiler'>(props);
-      throw new Error(`Unimplemented text intrinsic: ${type}`);
+      return resolveToConditionalFormatter(spoiler, props.children, true);
     case 'quote':
       cast<'quote'>(props);
-      throw new Error(`Unimplemented text intrinsic: ${type}`);
+      return resolveToConditionalFormatter(quote, props.children, true);
     case 'time':
       cast<'time'>(props);
-      throw new Error(`Unimplemented text intrinsic: ${type}`);
+      if (!isSignal(props.time) && !isSignal(props.style)) {
+        return time(props.time as Exclude<typeof props.time, Date>, props.style);
+      }
+
+      let timestamp = '';
+      effect(() => {
+        timestamp = time(read(props.time) as number, read(props.style));
+      });
+
+      return () => timestamp;
     case 'user': {
       cast<'user'>(props);
       const id = props.id;

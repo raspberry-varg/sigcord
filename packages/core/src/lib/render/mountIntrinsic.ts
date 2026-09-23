@@ -1,6 +1,9 @@
 import {
+  type APIActionRowComponent,
   type APIButtonComponentWithCustomId,
+  APIComponentInActionRow,
   type APIContainerComponent,
+  APISectionComponent,
   type APISelectMenuOption,
   type APISeparatorComponent,
   type APIStringSelectComponent,
@@ -124,10 +127,17 @@ export function mountIntrinsic(
     }
     case 'section':
       cast<'section'>(props);
-      break;
-    case 'actionRow':
+      return {
+        type: ComponentType.Section,
+        components: [],
+      } satisfies Partial<APISectionComponent>;
+    case 'actionRow': {
       cast<'actionRow'>(props);
-      break;
+      return {
+        type: ComponentType.ActionRow,
+        components: [],
+      } satisfies APIActionRowComponent<APIComponentInActionRow>;
+    }
     case 'stringOption': {
       cast<'stringOption'>(props);
       const option: Partial<APISelectMenuOption> = {};
@@ -204,6 +214,7 @@ export function mountIntrinsic(
 
       const button: Partial<APIButtonComponentWithCustomId> = {
         type: ComponentType.Button,
+        custom_id: id,
       };
 
       const onClick = props['on:click'];
@@ -309,6 +320,7 @@ export function mountIntrinsic(
 
       const stringSelect: Partial<APIStringSelectComponent> = {
         type: ComponentType.StringSelect,
+        custom_id: id,
       };
 
       const legacy = getCurrentSynapseOrDefault();

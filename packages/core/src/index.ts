@@ -58,7 +58,7 @@ export {
 } from './lib/builtins/builtins.js';
 export { defineView, defineViewV2 } from './lib/views/reactive/defineReactiveView.js';
 export { ViewClass, defineClassView } from './lib/views/classic/defineClassicView.js';
-export { SlotOptions, Slot, slot, isSlot } from './lib/Slot.js';
+export { SlotOptions, Slot, slot } from './lib/Slot.js';
 export { onCleanup } from './lib/hooks/onCleanup.js';
 export { batch } from '@preact/signals-core';
 export { ComponentDefinition } from './lib/components/componentDefinition.js';
@@ -83,13 +83,13 @@ export {
   configureAutoComponent,
 } from './lib/components/autocomponents.js';
 export { flattenToContentNodes } from './lib/render/flattenToContentNodes.js';
-export { flattenLegacy } from './lib/render/flatten.js';
+export { flattenLegacy, flatten } from './lib/render/flatten.js';
 export { ViewNodeKind, ViewNodeKindBase } from './lib/vdom/viewNodeKind.js';
 export { ViewNodeLegacy } from './lib/vdom/viewNodeLegacy.js';
 export { ViewContentNode } from './lib/vdom/viewContentNode.js';
 export { ViewElementNode } from './lib/vdom/viewElementNode.js';
 export { ViewManualComputedElementNode } from './lib/vdom/viewManualComputedElementNode.js';
-export { OwnerBoundaryViewNode } from './lib/vdom/ownerBoundaryViewNode.js';
+export { OwnerBoundaryViewNodeLegacy } from './lib/vdom/ownerBoundary.js';
 export { DeferredComponentLegacy } from './lib/render/deferredComponent.js';
 export {
   MessageComponentCallback,

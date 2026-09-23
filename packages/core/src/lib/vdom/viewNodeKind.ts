@@ -1,6 +1,9 @@
-import type { Children, EmbedComponent, ViewComponent } from '../views/viewFlavors.js';
-import type { Primitive } from './props.js';
+/**
+ * @deprecated Please use {@link import('@sigcord/core').ViewNode} instead.
+ */
+export type ViewNodeKind<_T extends ViewNodeKindBase = ViewNodeKindBase> = any; // For migration to ViewNode
 
-export type ViewNodeKind<T extends ViewNodeKindBase = ViewNodeKindBase> = T | Children<T>;
-
-export type ViewNodeKindBase = EmbedComponent | ViewComponent | Primitive;
+/**
+ * @deprecated Please use `unknown` instead.
+ */
+export type ViewNodeKindBase = any;

@@ -1,20 +1,22 @@
 import {
+  component,
+  effect,
+  getCurrentSynapseOrDefault,
+  getNextUniqueComponentId,
+  markDirty,
+  type MaybeSignal,
+  read,
+  useComponentHandler,
+} from '@sigcord/core';
+import {
+  type APIUserSelectComponent,
+  ComponentType,
+  SelectMenuDefaultValueType,
   UserSelectMenuBuilder,
   type UserSelectMenuInteraction,
-} from "discord.js";
+} from 'discord.js';
 
-import {
-  type MaybeSignal,
-  component,
-  getNextUniqueComponentId,
-  patchEffect,
-  read,
-} from "@sigcord/core";
-
-import {
-  type BaseSelectMenuProps,
-  applyPatchEffect as applySelectMenuSignals,
-} from "./baseSelectMenuProps.js";
+import { type BaseSelectMenuProps } from './baseSelectMenuProps.js';
 
 const MIN_DEFAULT = 0;
 const MAX_DEFAULT = 1;
@@ -29,28 +31,43 @@ interface UserSelectProps extends BaseSelectMenuProps<UserSelectMenuInteraction>
 export function UserSelect(props: UserSelectProps) {
   const id = props.id || getNextUniqueComponentId();
 
-  const selectMenu = new UserSelectMenuBuilder();
+  const selectMenu: APIUserSelectComponent = {
+    type: ComponentType.UserSelect,
+    custom_id: id,
+  };
 
   const selected = props.selected;
   if (selected) {
-    patchEffect(() => {
-      const defaults = read(selected)
+    effect(() => {
+      selectMenu.default_values = read(selected)
         .map((s) => read(s))
-        .filter((s): s is NonNullable<typeof s> => !!s);
-      selectMenu.setDefaultUsers(defaults);
+        .filter((s): s is NonNullable<typeof s> => !!s)
+        .map((s) => ({ type: SelectMenuDefaultValueType.User, id: s }));
+      markDirty();
     });
   }
 
-  applySelectMenuSignals(selectMenu, {
-    min: () => read(props.min) ?? MIN_DEFAULT,
-    max: () => read(props.max) ?? MAX_DEFAULT,
-    placeholder: props.placeholder,
-    disabled: props.disabled,
+  effect(() => {
+    selectMenu.min_values = read(props.min) ?? MIN_DEFAULT;
+    selectMenu.max_values = read(props.max) ?? MAX_DEFAULT;
+    selectMenu.placeholder = read(props.placeholder);
+    selectMenu.disabled = read(props.disabled);
   });
 
-  return component({
-    id,
-    component: selectMenu,
-    handler: props["on:select"],
-  });
+  const legacy = getCurrentSynapseOrDefault();
+  if (legacy) {
+    component({
+      id,
+      component: new UserSelectMenuBuilder(),
+      handler: props['on:select'],
+    });
+  } else {
+    useComponentHandler(id, (collectedInteraction) => {
+      if (collectedInteraction.isUserSelectMenu()) {
+        return props['on:select'];
+      }
+    });
+  }
+
+  return selectMenu;
 }

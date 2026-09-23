@@ -5,6 +5,9 @@ import { ViewNodeLegacy } from './viewNodeLegacy.js';
 
 import type { ViewNodeKind } from './viewNodeKind.js';
 
+/**
+ * @deprecated Please use {@link import('@sigcord/core').h} instead.
+ */
 export class ViewElementNode<T extends ViewNodeKind = ViewNodeKind> extends ViewNodeLegacy<T> {
   private readonly _children: ViewNodeLegacy<T>[] = [];
   private readonly childrenSet: Set<ViewNodeLegacy<T>> = new Set();
