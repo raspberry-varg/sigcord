@@ -6,9 +6,9 @@ const isTruthy = (x: unknown) => !!x;
 
 export interface Slot<_T = any> {
   setEphemeral(isEphemeral: boolean): void;
-  set(items: readonly unknown[]): void;
-  append(items: readonly unknown[]): void;
-  unshift(items: readonly unknown[]): void;
+  set(...items: unknown[]): void;
+  push(...items: unknown[]): void;
+  unshift(...items: unknown[]): void;
   clear(): void;
 }
 
@@ -46,19 +46,19 @@ export function slot<T = any>(options?: Partial<SlotOptions>): Slot<T> {
     ephemeral = isEphemeral;
   }) satisfies Slot['setEphemeral'];
 
-  slotFn.set = ((newItems: unknown[]) => {
+  slotFn.set = ((...newItems: unknown[]) => {
     items = newItems.filter(isTruthy);
     dirty();
   }) satisfies Slot['set'];
 
-  slotFn.append = ((newItems: readonly unknown[]) => {
+  slotFn.push = ((...newItems: unknown[]) => {
     const filtered = newItems.filter(isTruthy);
     if (!filtered.length) return;
     items.push(...filtered);
     dirty();
-  }) satisfies Slot['append'];
+  }) satisfies Slot['push'];
 
-  slotFn.unshift = ((newItems: readonly unknown[]) => {
+  slotFn.unshift = ((...newItems: unknown[]) => {
     const filtered = newItems.filter(isTruthy);
     if (!filtered.length) return;
     items.unshift(...filtered);
