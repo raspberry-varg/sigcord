@@ -9,6 +9,7 @@ import {
   useComponentHandler,
 } from '@sigcord/core';
 import {
+  APISelectMenuDefaultValue,
   type APIUserSelectComponent,
   ComponentType,
   SelectMenuDefaultValueType,
@@ -40,9 +41,12 @@ export function UserSelect(props: UserSelectProps) {
   if (selected) {
     effect(() => {
       selectMenu.default_values = read(selected)
-        .map((s) => read(s))
-        .filter((s): s is NonNullable<typeof s> => !!s)
-        .map((s) => ({ type: SelectMenuDefaultValueType.User, id: s }));
+        .map((selectedId) => read(selectedId))
+        .filter((selectedId): selectedId is NonNullable<typeof selectedId> => !!selectedId)
+        .map((selectedId): APISelectMenuDefaultValue<SelectMenuDefaultValueType.User> => ({
+          type: SelectMenuDefaultValueType.User,
+          id: selectedId,
+        }));
       markDirty();
     });
   }
@@ -52,6 +56,7 @@ export function UserSelect(props: UserSelectProps) {
     selectMenu.max_values = read(props.max) ?? MAX_DEFAULT;
     selectMenu.placeholder = read(props.placeholder);
     selectMenu.disabled = read(props.disabled);
+    markDirty();
   });
 
   const legacy = getCurrentSynapseOrDefault();
