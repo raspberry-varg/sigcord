@@ -11,6 +11,7 @@ import {
   provideContextValue,
   type Signal,
   useDisposeOwnerFn,
+  type ViewNode,
 } from '@sigcord/core';
 
 import { type JSXElement, type JSXNode } from '../index.js';
@@ -35,7 +36,7 @@ interface MatchProps {
   children: JSXElement[];
 }
 
-export function Match(...props: [MatchProps] | JSXElement[]): () => unknown {
+export function Match(...props: [MatchProps] | JSXElement[]): ViewNode[] {
   const rawChildren =
     props.length === 1 && !!props[0] && typeof props[0] === 'object' && 'children' in props[0]
       ? (props[0] as unknown as MatchProps).children
@@ -91,7 +92,7 @@ export function Match(...props: [MatchProps] | JSXElement[]): () => unknown {
     }
   }
 
-  let cachedBranchVDOM: unknown;
+  const branchContainer: unknown[] = [];
   let prevDispose: (() => void) | undefined;
   effect(() => {
     if (prevDispose) {
@@ -104,7 +105,7 @@ export function Match(...props: [MatchProps] | JSXElement[]): () => unknown {
     );
     const finalIndex = activeIndex !== -1 ? activeIndex : defaultIndex;
     if (finalIndex === -1) {
-      cachedBranchVDOM = undefined;
+      branchContainer.length = 0;
       markDirty();
       return;
     }
@@ -130,9 +131,16 @@ export function Match(...props: [MatchProps] | JSXElement[]): () => unknown {
           );
         }
 
-        // Execute the VDOM getter (or just grab the static VDOM)
-        cachedBranchVDOM =
+        const result =
           typeof activeCase.content === 'function' ? activeCase.content() : activeCase.content;
+        branchContainer.length = 0;
+        if (result != null && result !== false) {
+          if (Array.isArray(result)) {
+            branchContainer.push(...result);
+          } else {
+            branchContainer.push(result);
+          }
+        }
       },
       {
         debugName: `[Match_${finalIndex === defaultIndex ? 'Default' : finalIndex}_Branch]`,
@@ -146,7 +154,7 @@ export function Match(...props: [MatchProps] | JSXElement[]): () => unknown {
     prevDispose?.();
   });
 
-  return () => cachedBranchVDOM;
+  return branchContainer as ViewNode[];
 }
 
 interface CaseProps<Condition = unknown> {
