@@ -1,6 +1,8 @@
 import {
+  createOwnerBoundary,
   effect,
   getConfig,
+  getOwnerOrThrow,
   isVDOMNode,
   markDirty,
   NodeType,
@@ -135,11 +137,10 @@ export function Match(...props: [MatchProps] | JSXElement[]): ViewNode[] {
           typeof activeCase.content === 'function' ? activeCase.content() : activeCase.content;
         branchContainer.length = 0;
         if (result != null && result !== false) {
-          if (Array.isArray(result)) {
-            branchContainer.push(...result);
-          } else {
-            branchContainer.push(result);
-          }
+          branchContainer[0] = createOwnerBoundary(
+            getOwnerOrThrow(),
+            Array.isArray(result) ? result : [result],
+          );
         }
       },
       {
