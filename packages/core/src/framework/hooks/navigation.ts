@@ -28,9 +28,9 @@ export const canNavigateBack: Synapse['canGoBack'] = () => getCurrentSynapse().c
  * Collection of navigation hooks bound to the current {@link Cord}.
  */
 export interface Navigation {
-  push(factory: () => ViewFactory): void;
+  push(factory: ViewFactory): void;
   pop(): void;
-  replace(factory: () => ViewFactory): void;
+  replace(factory: ViewFactory): void;
   canGoBack(): boolean;
 }
 

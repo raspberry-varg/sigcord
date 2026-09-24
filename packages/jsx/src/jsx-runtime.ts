@@ -29,7 +29,7 @@ export declare namespace JSX {
 }
 
 export interface JSXChildren {
-  children?: JSXNode | JSXNode[] | undefined;
+  children?: unknown;
 }
 
 export const jsx = elementFactory;
