@@ -1,8 +1,48 @@
-import { markDirty, update } from '../framework/hooks/index.js';
+import { signal } from '../core/primitives/index.js';
+import { effect, markDirty } from '../framework/hooks/index.js';
 
-import { getOwner, runWithOwner } from './owners/owner.js';
+import { owner, useDisposeOwnerFn } from './owners/owner.js';
+import { untracked } from './reactivity/untracked.js';
+import { type DeferredNode, h } from './vdom/index.js';
+
+import type { DisposeFn } from './render/dispose.js';
 
 const isTruthy = (x: unknown) => !!x;
+
+interface SlotProps {
+  items: unknown[];
+  ephemeral: boolean;
+  subscribe: () => void;
+}
+
+function Slot({ items, ephemeral, subscribe }: SlotProps): unknown[] {
+  const branchContainer: unknown[] = [];
+  let prevDispose: DisposeFn | undefined;
+
+  effect(() => {
+    subscribe();
+
+    if (prevDispose) {
+      prevDispose();
+      prevDispose = undefined;
+    }
+
+    prevDispose = owner(() => {
+      branchContainer.length = 0;
+      const toRender = [...items];
+      if (ephemeral) {
+        // Ephemeral is read-once.
+        items.length = 0;
+      }
+      branchContainer.push(...toRender);
+      return useDisposeOwnerFn();
+    });
+
+    markDirty();
+  });
+
+  return branchContainer;
+}
 
 export interface Slot<_T = any> {
   setEphemeral(isEphemeral: boolean): void;
@@ -24,22 +64,14 @@ export function slot<T = any>(options?: Partial<SlotOptions>): Slot<T> {
   let items: unknown[] = [];
   let ephemeral = !!options?.ephemeral;
 
-  const capturedOwner = getOwner();
-
+  const [version, setVersion] = signal(0);
   const dirty = () => {
-    runWithOwner(capturedOwner, () => {
-      markDirty();
-      update();
-    });
+    setVersion(untracked(version) + 1);
   };
 
+  let cachedNode: DeferredNode | undefined;
   const slotFn = () => {
-    if (!ephemeral) return items;
-
-    // Ephemeral is read-once.
-    const copy = [...items];
-    items = [];
-    return copy;
+    return (cachedNode ??= h(Slot, { items, ephemeral, subscribe: version }));
   };
 
   slotFn.setEphemeral = ((isEphemeral: boolean) => {

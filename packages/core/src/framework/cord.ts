@@ -8,6 +8,7 @@ import {
 
 import { getConfig } from '../config.js';
 import { coreLog } from '../internal/coreLog.js';
+import { AutoComponentId } from '../lib/components/autocomponents.js';
 import { onCleanup } from '../lib/hooks/onCleanup.js';
 import { getOwner, type Owner, runWithOwner } from '../lib/owners/owner.js';
 
@@ -303,10 +304,17 @@ export class Cord implements CordAPI {
   }
 
   async handleInteraction(interaction: CollectedInteraction) {
+    if (interaction.isButton() && interaction.customId === AutoComponentId.CloseMenuButton) {
+      // TODO: Maybe the CloseButton auto-component should be... a normal component with a default
+      //       handler?
+      await this.close();
+      return;
+    }
+
     let index = -1;
 
     // TODO: Modal components should map their *original* customId since we
-    // clobbered it.
+    //       clobbered it.
 
     const strand = this.currentStrand;
     const dispatch = async (i: number): Promise<void> => {

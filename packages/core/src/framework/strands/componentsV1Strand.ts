@@ -1,5 +1,6 @@
 import { type EmbedBuilder, type TopLevelComponent } from 'discord.js';
 
+import { ComponentsV1ImperativeAPIContext } from '../../core/contexts/componentsV1ImperativeAPIContext.js';
 import { provideContextValue } from '../../lib/contexts/provideContext.js';
 import {
   createRootOwner,
@@ -9,6 +10,7 @@ import {
   runWithOwner,
 } from '../../lib/owners/owner.js';
 import { flatten } from '../../lib/render/flatten.js';
+import { type Slot, slot } from '../../lib/Slot.js';
 import { CordContext } from '../cordContext.js';
 import { PatchTargetContext } from '../hooks/usePatchTarget.js';
 import { PatchTarget, type PatchTargetBitMask } from '../patchTarget.js';
@@ -41,8 +43,8 @@ export class ComponentsV1Strand extends Strand {
   private embeds?: Branch;
   private components?: Branch;
 
-  private readonly queuedEmbeds: EmbedBuilder[] = [];
-  private readonly queuedComponents: TopLevelComponent[] = [];
+  private queuedEmbeds?: Slot;
+  private queuedComponents?: Slot;
 
   constructor(
     cord: Cord,
@@ -57,6 +59,22 @@ export class ComponentsV1Strand extends Strand {
       const unchecked = runWithOwner(this.rootOwner, () => {
         provideContextValue(CordContext, this.cord);
         provideContextValue(PatchTargetContext, PatchTarget.All);
+        provideContextValue(ComponentsV1ImperativeAPIContext, {
+          queueEmbeds: (...embeds: unknown[]) => {
+            this.queuedEmbeds!.push(...embeds);
+          },
+          prependEmbeds: (...embeds: unknown[]) => {
+            this.queuedEmbeds!.unshift(...embeds);
+          },
+          queueComponents: (...components: unknown[]) => {
+            this.queuedComponents!.push(...components);
+          },
+          prependComponents: (...components: unknown[]) => {
+            this.queuedComponents!.unshift(...components);
+          },
+        });
+        this.queuedEmbeds = slot({ ephemeral: true });
+        this.queuedComponents = slot({ ephemeral: true });
         return this.factory();
       });
       // TODO: Strict flag to toggle these tests?
@@ -113,14 +131,7 @@ export class ComponentsV1Strand extends Strand {
       );
     }
 
-    let dirty: PatchTargetBitMask = firstTime ? PatchTarget.All : this.cord.dirty;
-    if (this.queuedEmbeds.length) {
-      dirty |= PatchTarget.Embeds;
-    }
-    if (this.queuedComponents.length) {
-      dirty |= PatchTarget.Components;
-    }
-
+    const dirty: PatchTargetBitMask = firstTime ? PatchTarget.All : this.cord.dirty;
     if (this.content && (dirty & PatchTarget.Content) !== 0) {
       const content = this.content;
       const flattened = runWithOwner(content.owner, () =>
@@ -131,19 +142,15 @@ export class ComponentsV1Strand extends Strand {
     if (this.embeds && (dirty & PatchTarget.Embeds) !== 0) {
       const embeds = this.embeds;
       payload.embeds = runWithOwner(embeds.owner, () =>
-        flatten([embeds.vdom, ...this.queuedEmbeds], isDev ? 'Root > Embeds' : undefined),
+        flatten([embeds.vdom, this.queuedEmbeds], isDev ? 'Root > Embeds' : undefined),
       ) as EmbedBuilder[];
     }
     if (this.components && (dirty & PatchTarget.Components) !== 0) {
       const components = this.components;
       payload.components = runWithOwner(components.owner, () =>
-        flatten(components.vdom, isDev ? 'Root > Components' : undefined),
+        flatten([components.vdom, this.queuedComponents], isDev ? 'Root > Components' : undefined),
       ) as TopLevelComponent[];
-      payload.components.push(...this.queuedComponents);
     }
-
-    this.queuedEmbeds.length = 0;
-    this.queuedComponents.length = 0;
 
     return payload;
   }
