@@ -152,13 +152,6 @@ export class MenuInstance<ViewId extends string = string, AllProps extends Props
       get lastCollectedInteraction() {
         return t.collector.lastCollected;
       },
-      get activeInteraction(): RepliableInteraction {
-        return t.patcher.interaction!;
-      },
-      get isActivelyPatching(): boolean {
-        return t.patcher.isPatching();
-      },
-      initialInteraction: interaction,
       get idleTimeMs(): number {
         return t.idle;
       },
