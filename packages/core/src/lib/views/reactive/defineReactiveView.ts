@@ -85,7 +85,10 @@ export function defineViewV2<Props extends PropsBase = PropsBase>(
     [REACTIVE_VIEW_SYMBOL]: true,
     [IS_V2]: true,
   };
-  const menuFactory: MenuFactory<Props> = (interaction, props): MenuInstanceActions => {
+  const menuFactory: MenuFactory<Props> = (
+    interaction,
+    props = {} as Props,
+  ): MenuInstanceActions => {
     const flags: MessageFlagsResolvable[] = [];
     if (defaults.flags != null) flags.push(defaults.flags);
     if (props.flags != null) flags.push(props.flags);

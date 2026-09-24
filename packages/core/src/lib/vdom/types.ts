@@ -36,7 +36,13 @@ export interface IntrinsicNode {
 
 export type VDOMObjectNode = DeferredNode | BoundaryNode | IntrinsicNode;
 
-export type ViewNode = VDOMObjectNode | string | null | undefined | { toJSON: () => unknown };
+export type ViewNode =
+  | VDOMObjectNode
+  | string
+  | null
+  | undefined
+  | { toJSON: () => unknown }
+  | unknown;
 
 export function isVDOMNode(node: unknown): node is VDOMObjectNode {
   return typeof node === 'object' && typeof (node as { $$typeof?: unknown }).$$typeof === 'number';

@@ -4,11 +4,12 @@ import {
   owner,
   provideContextValue,
   createOwnerBoundary,
+  type ViewNode,
 } from '@sigcord/core';
 
 import type { JSXChildren } from '../jsx-runtime.js';
 
-interface ProviderProps<T> extends Required<JSXChildren> {
+interface ProviderProps<T> extends JSXChildren {
   value: T;
 }
 
@@ -16,7 +17,7 @@ interface ProviderProps<T> extends Required<JSXChildren> {
  * Context with a Provider.
  */
 export interface Context<T> extends CoreContext<T> {
-  Provider: (props: ProviderProps<T>) => (typeof props)['children'];
+  Provider: (props: ProviderProps<T>) => ViewNode | ViewNode[];
 }
 
 interface CreateContextOptions {
