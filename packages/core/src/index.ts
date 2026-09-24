@@ -82,7 +82,6 @@ export {
   AutoComponents,
   configureAutoComponent,
 } from './lib/components/autocomponents.js';
-export { flattenToContentNodes } from './lib/render/flattenToContentNodes.js';
 export { flattenLegacy, flatten } from './lib/render/flatten.js';
 export { ViewNodeKind, ViewNodeKindBase } from './lib/vdom/viewNodeKind.js';
 export { ViewNodeLegacy } from './lib/vdom/viewNodeLegacy.js';
@@ -100,7 +99,6 @@ export {
   elementComputed,
   NodeContentComputer,
 } from './lib/vdom/viewComputedElementNode.js';
-export { getViewNodeContent } from './lib/vdom/getViewNodeContent.js';
 export { staticRender } from './lib/render/staticRender.js';
 export { render, renderFragment } from './lib/render/render.js';
 export * from './core/primitives/index.js';
