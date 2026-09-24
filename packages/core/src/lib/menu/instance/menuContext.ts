@@ -1,5 +1,8 @@
 import type { CollectedMessageInteraction, RepliableInteraction } from 'discord.js';
 
+/**
+ * @deprecated Please migrate away from these context values.
+ */
 export interface MenuContext {
   /**
    * The latest interaction this menu is bound to.
@@ -10,16 +13,6 @@ export interface MenuContext {
   interaction: RepliableInteraction;
   /** @internal */
   lastCollectedInteraction?: CollectedMessageInteraction;
-  /** @internal */
-  activeInteraction: RepliableInteraction;
-  /** @internal */
-  isActivelyPatching: boolean;
-  /**
-   * The reaction provided when initializing this menu.
-   *
-   * Useful if `props.renderAfterHandledInteraction` is set to `true`.
-   */
-  readonly initialInteraction: RepliableInteraction;
   /**
    * The current menu idle time in milliseconds.
    */
