@@ -8,28 +8,27 @@ import {
   type Owner,
   runWithOwner,
 } from '../../lib/owners/owner.js';
-import { flattenLegacy } from '../../lib/render/flatten.js';
-import { renderFragment } from '../../lib/render/render.js';
-import { ViewElementNode } from '../../lib/vdom/viewElementNode.js';
+import { flatten } from '../../lib/render/flatten.js';
 import { CordContext } from '../cordContext.js';
 import { PatchTargetContext } from '../hooks/usePatchTarget.js';
 import { PatchTarget, type PatchTargetBitMask } from '../patchTarget.js';
 
 import { Strand } from './strand.js';
 
-import type { ViewNodeKind } from '../../lib/vdom/viewNodeKind.js';
 import type { Cord } from '../cord.js';
 import type { Payload } from '../payload.js';
 
+const isDev = process.env.NODE_ENV !== 'production';
+
 interface Branch {
-  root: ViewElementNode;
+  vdom: unknown[];
   owner: Owner;
 }
 
 export interface V1Payload {
   content?: string | (() => string);
-  embeds?: ViewNodeKind;
-  components?: ViewNodeKind;
+  embeds?: unknown;
+  components?: unknown;
 }
 
 export type ComponentsV1ViewFactory = () => V1Payload;
@@ -82,12 +81,10 @@ export class ComponentsV1Strand extends Strand {
       this.content = runWithOwner(this.rootOwner, () =>
         owner(() => {
           provideContextValue(PatchTargetContext, PatchTarget.Content);
-          const rendered = renderFragment(() =>
-            typeof shape.content === 'string' ? shape.content : shape.content?.(),
-          );
-          const root = new ViewElementNode();
-          root.setChildren(...rendered);
-          return { owner: getOwnerOrThrow(), root };
+          return {
+            owner: getOwnerOrThrow(),
+            vdom: [typeof shape.content === 'function' ? shape.content() : shape.content],
+          };
         }),
       );
     }
@@ -96,10 +93,10 @@ export class ComponentsV1Strand extends Strand {
       this.embeds = runWithOwner(this.rootOwner, () =>
         owner(() => {
           provideContextValue(PatchTargetContext, PatchTarget.Embeds);
-          const rendered = renderFragment(() => shape.embeds);
-          const root = new ViewElementNode();
-          root.setChildren(...rendered);
-          return { owner: getOwnerOrThrow(), root };
+          return {
+            owner: getOwnerOrThrow(),
+            vdom: [typeof shape.embeds === 'function' ? shape.embeds() : shape.embeds],
+          };
         }),
       );
     }
@@ -108,10 +105,10 @@ export class ComponentsV1Strand extends Strand {
       this.components = runWithOwner(this.rootOwner, () =>
         owner(() => {
           provideContextValue(PatchTargetContext, PatchTarget.Components);
-          const rendered = renderFragment(() => shape.components);
-          const root = new ViewElementNode();
-          root.setChildren(...rendered);
-          return { owner: getOwnerOrThrow(), root };
+          return {
+            owner: getOwnerOrThrow(),
+            vdom: [typeof shape.components === 'function' ? shape.components() : shape.components],
+          };
         }),
       );
     }
@@ -125,17 +122,23 @@ export class ComponentsV1Strand extends Strand {
     }
 
     if (this.content && (dirty & PatchTarget.Content) !== 0) {
-      payload.content = flattenLegacy<string>(this.content.root, this.content.owner).join(' ');
+      const content = this.content;
+      const flattened = runWithOwner(content.owner, () =>
+        flatten(content.vdom, isDev ? 'Root > Content' : undefined),
+      );
+      payload.content = Array.isArray(flattened) ? flattened.join(' ') : String(flattened);
     }
     if (this.embeds && (dirty & PatchTarget.Embeds) !== 0) {
-      payload.embeds = flattenLegacy<EmbedBuilder>(this.embeds.root, this.embeds.owner);
-      payload.embeds.push(...this.queuedEmbeds);
+      const embeds = this.embeds;
+      payload.embeds = runWithOwner(embeds.owner, () =>
+        flatten([embeds.vdom, ...this.queuedEmbeds], isDev ? 'Root > Embeds' : undefined),
+      ) as EmbedBuilder[];
     }
     if (this.components && (dirty & PatchTarget.Components) !== 0) {
-      payload.components = flattenLegacy<TopLevelComponent>(
-        this.components.root,
-        this.components.owner,
-      );
+      const components = this.components;
+      payload.components = runWithOwner(components.owner, () =>
+        flatten(components.vdom, isDev ? 'Root > Components' : undefined),
+      ) as TopLevelComponent[];
       payload.components.push(...this.queuedComponents);
     }
 
