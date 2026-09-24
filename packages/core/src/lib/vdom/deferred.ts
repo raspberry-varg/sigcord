@@ -5,7 +5,6 @@ import { OwnerTraceContext, OwnerTraceType } from '../../core/contexts/ownerTrac
 import { enhanceErrorWithComponentStack } from '../../core/utils/errorStack.js';
 import { coreLog } from '../../internal/coreLog.js';
 import { provideContextValue } from '../contexts/provideContext.js';
-import { useContext } from '../contexts/useContext.js';
 import { createOwner, getOwner, runWithOwner } from '../owners/owner.js';
 
 import { type DeferredNode, NodeType } from './types.js';
@@ -40,16 +39,10 @@ export function executeDeferredNode(node: DeferredNode): unknown {
       name: node.componentFn.name || 'AnonymousComponent',
     });
     try {
-      console.log(
-        `>>> Executing ${node.componentFn.name} with the context value`,
-        useContext(OwnerTraceContext),
-      );
       return node.componentFn(node.props ?? {});
     } catch (e: unknown) {
       coreLog.error('Error occurred while executing deferred component, enhancing error stack');
       throw enhanceErrorWithComponentStack(e, componentOwner);
-    } finally {
-      console.log('>> DONE, exiting');
     }
   });
   return node._resolvedContent;

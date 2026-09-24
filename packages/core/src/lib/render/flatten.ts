@@ -157,8 +157,6 @@ export function flatten(node: unknown, debugStack?: string): unknown {
   }
 
   if (typeof node === 'object' && node.constructor !== Object) {
-    console.error(node);
-    console.error(debugStack);
     throw new Error(
       `[Framework Error] VDOM Leak Detected!\n\n` +
         `Trace: ${debugStack || 'Unknown (Prod Mode)'}\n\n` +
