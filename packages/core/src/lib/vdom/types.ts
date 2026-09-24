@@ -13,8 +13,11 @@ export interface DeferredNode {
   $$typeof: typeof NodeType.Deferred;
   componentFn: (props: Record<string, unknown>) => unknown;
   props: Record<string, unknown> | undefined;
-  capturedOwner: Owner | null;
 
+  /**
+   * Only used for creating a stack trace in debug mode.
+   */
+  _owner: Owner | null;
   _resolvedContent?: unknown;
 }
 

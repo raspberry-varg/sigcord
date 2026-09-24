@@ -18,7 +18,7 @@ export function createDeferredNode(
     $$typeof: NodeType.Deferred,
     componentFn,
     props,
-    capturedOwner: getOwner(),
+    _owner: null,
     _resolvedContent: undefined,
   };
 }
@@ -33,7 +33,7 @@ export function executeDeferredNode(node: DeferredNode): unknown {
     return node._resolvedContent;
   }
 
-  const componentOwner = createOwner(node.capturedOwner);
+  const componentOwner = (node._owner ??= createOwner(getOwner()));
   node._resolvedContent = runWithOwner(componentOwner, () => {
     provideContextValue(OwnerTraceContext, {
       type: OwnerTraceType.Component,
