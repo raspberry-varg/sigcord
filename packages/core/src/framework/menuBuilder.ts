@@ -2,13 +2,12 @@ import { Cord } from './cord.js';
 import { ComponentsV1Strand, type ComponentsV1ViewFactory } from './strands/componentsV1Strand.js';
 import { ComponentsV2Strand } from './strands/componentsV2Strand.js';
 
-import type { ViewNodeKind } from '../lib/vdom/viewNodeKind.js';
 import type { InteractionMiddleware } from './interactionMiddleware.js';
 import type { RepliableInteraction } from 'discord.js';
 
 export type ViewFactory = () => unknown;
 
-export type Wrapper = (children: ViewFactory) => ViewNodeKind;
+export type Wrapper = (children: ViewFactory) => unknown;
 
 /**
  * Fluent builder for interactive menus. This is the entry point for all menus
