@@ -117,7 +117,12 @@ export function flatten(node: unknown, debugStack?: string): unknown {
         const nextDebugStack = debugStack
           ? `${debugStack} > <${node.componentFn.name || 'Anonymous'}>`
           : undefined;
-        return flatten(node._resolvedContent, nextDebugStack);
+
+        if (node._owner) {
+          return runWithOwner(node._owner, () => flatten(node._resolvedContent, nextDebugStack));
+        } else {
+          return flatten(node._resolvedContent, nextDebugStack);
+        }
       }
       case NodeType.Intrinsic: {
         const nextDebugStack = debugStack ? `${debugStack} > <${node.type}>` : undefined;
