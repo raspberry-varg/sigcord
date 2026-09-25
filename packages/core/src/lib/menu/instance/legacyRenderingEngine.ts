@@ -1,8 +1,8 @@
 import { batch } from '@preact/signals-core';
 import { EmbedBuilder, MessageFlags, MessageFlagsBitField } from 'discord.js';
 
-import { PatchTargetContext } from '../framework/hooks/usePatchTarget.js';
-import { PatchTarget, type PatchTargetBitMask } from '../framework/patchTarget.js';
+import { PatchTargetContext } from '../../../framework/hooks/usePatchTarget.js';
+import { PatchTarget, type PatchTargetBitMask } from '../../../framework/patchTarget.js';
 import {
   flatten,
   getOwnerOrThrow,
@@ -10,31 +10,31 @@ import {
   type Props,
   provideContextValue,
   runWithOwner,
-} from '../index.js';
-import { coreLog } from '../internal/coreLog.js';
-import { assert } from '../util/asserts.js';
-
+} from '../../../index.js';
+import { coreLog } from '../../../internal/coreLog.js';
+import { assert } from '../../../util/asserts.js';
+import { owner } from '../../owners/owner.js';
+import { read } from '../../reactivity/core/read.js';
+import { createUntracked } from '../../reactivity/core/signals.js';
 import {
-  instantiateReactiveView,
-  type ReactiveViewInstance,
-} from './menu/instance/instantiateReactiveView.js';
-import { owner } from './owners/owner.js';
-import { read } from './reactivity/core/read.js';
-import { createUntracked } from './reactivity/core/signals.js';
-import { instantiateClassView, isClassViewInstance } from './views/classic/classViewInstance.js';
-import { isReactiveViewDefinition } from './views/reactive/reactiveViewDefinition.js';
-import { isReactiveViewInstance } from './views/reactive/reactiveViewInstance.js';
-import { type View, type ViewInstance } from './views/view.js';
-import { type PropsBase } from './views/viewDefinitionBase.js';
+  instantiateClassView,
+  isClassViewInstance,
+} from '../../views/classic/classViewInstance.js';
+import { isReactiveViewDefinition } from '../../views/reactive/reactiveViewDefinition.js';
+import { isReactiveViewInstance } from '../../views/reactive/reactiveViewInstance.js';
+import { type View, type ViewInstance } from '../../views/view.js';
+import { type PropsBase } from '../../views/viewDefinitionBase.js';
 import {
   IS_V2,
   isRenderedReactiveViewV2,
   type RenderedReactiveView,
   type ViewComponent,
   type ViewMessagePayload,
-} from './views/viewFlavors.js';
+} from '../../views/viewFlavors.js';
 
-import type { NavigationPayload } from './Navigation.js';
+import { instantiateReactiveView, type ReactiveViewInstance } from './instantiateReactiveView.js';
+
+import type { NavigationPayload } from './legacyViewNavigation.js';
 
 type QueuedView = {
   view: View;
@@ -56,7 +56,7 @@ interface QueuedMessagePart<T> {
 type QueuedEmbeds = QueuedMessagePart<EmbedBuilder>;
 type QueuedComponents = QueuedMessagePart<ViewComponent>;
 
-export class RenderingEngine {
+export class LegacyRenderingEngine {
   viewDefinition?: View;
   private queuedView?: QueuedView;
   private instances = new Map<string, ViewInstance>();

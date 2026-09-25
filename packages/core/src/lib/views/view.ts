@@ -1,7 +1,7 @@
-import type { ClassViewDefinition } from '../FunctionalMenuView.js';
 import type { MenuFactory } from '../menu/defineMenu.js';
 import type { ReactiveViewInstance } from '../menu/instance/instantiateReactiveView.js';
 import type { ClassicViewInstance } from './classic/classViewInstance.js';
+import type { ClassViewDefinition } from './classic/functionalClassViewDefinition.js';
 import type { ReactiveViewDefinition } from './reactive/reactiveViewDefinition.js';
 import type { PropsBase } from './viewDefinitionBase.js';
 

@@ -1,4 +1,4 @@
-import { ClassViewProps } from '../../FunctionalMenuView.js';
+import { ClassViewProps } from '../../views/classic/functionalClassViewDefinition.js';
 import {
   type ReactiveViewDefinition,
   isReactiveViewDefinitionV2,

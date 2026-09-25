@@ -16,6 +16,9 @@ interface RenderOptions {
   replyToComponentOnFirstRender: boolean;
 }
 
+/**
+ * @deprecated No longer maintained and will be removed.
+ */
 export class Renderable {
   public message?: Message;
 

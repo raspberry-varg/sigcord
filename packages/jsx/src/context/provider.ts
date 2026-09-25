@@ -3,7 +3,7 @@ import {
   getOwnerOrThrow,
   owner,
   provideContextValue,
-  createOwnerBoundary,
+  createBoundaryNode,
   type ViewNode,
 } from '@sigcord/core';
 
@@ -42,7 +42,7 @@ export function createContext<T>(
     Provider: (props: ProviderProps<T | undefined>) => {
       return owner(() => {
         provideContextValue(context, props.value);
-        return createOwnerBoundary(
+        return createBoundaryNode(
           getOwnerOrThrow(),
           Array.isArray(props.children) ? props.children : [props.children],
         );
