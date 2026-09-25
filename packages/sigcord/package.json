@@ -56,8 +56,7 @@
     "@sigcord/core": "workspace:*"
   },
   "devDependencies": {
-    "@sigcord/jsx": "workspace:*",
-    "typescript": "catalog:"
+    "@sigcord/jsx": "workspace:*"
   },
   "peerDependencies": {
     "@sigcord/jsx": "workspace:*"
@@ -67,8 +66,16 @@
     "targets": {
       "build": {},
       "typecheck": {},
-      "lint": {},
-      "format": {},
+      "lint": {
+        "dependsOn": [
+          "^lint"
+        ]
+      },
+      "format": {
+        "dependsOn": [
+          "^format"
+        ]
+      },
       "test": {
         "dependsOn": [
           "^test"
