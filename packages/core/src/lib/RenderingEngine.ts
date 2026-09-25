@@ -12,7 +12,7 @@ import {
   runWithOwner,
 } from '../index.js';
 import { coreLog } from '../internal/coreLog.js';
-import { assert } from '../util/Assertions.js';
+import { assert } from '../util/asserts.js';
 
 import {
   instantiateReactiveView,

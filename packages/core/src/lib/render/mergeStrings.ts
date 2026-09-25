@@ -1,6 +1,6 @@
 import { ComponentType } from 'discord.js';
 
-import { isDiscordAPIComponentType } from '../../util/isDiscordAPIComponentType.js';
+import { isDiscordAPIComponentType } from '../../util/discord/isDiscordAPIComponentType.js';
 
 export function mergeStrings(out: unknown[], next: unknown): void {
   if (Array.isArray(next)) {

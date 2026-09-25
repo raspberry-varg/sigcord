@@ -7,9 +7,9 @@ import {
 } from 'discord.js';
 
 import { coreLog } from '../../../internal/coreLog.js';
-import { discordMessageComponentListenerEndIsTimeout } from '../../../util/CollectorUtil.js';
+import { discordMessageComponentListenerEndIsTimeout } from '../../../util/discord/messageComponentListener.js';
 
-import type { Listener } from '../../../util/Listener.js';
+import type { SingleEvent } from '../../../util/singleEvent.js';
 import type { MessageComponentCallback } from '../../views/viewFlavors.js';
 
 type ComponentId = string;
@@ -25,9 +25,9 @@ interface CollectorOptions {
 }
 
 interface Listeners {
-  onEnd: Listener<string | null>;
-  onStop: Listener<string | null>;
-  onTimeout: Listener<void>;
+  onEnd: SingleEvent<string | null>;
+  onStop: SingleEvent<string | null>;
+  onTimeout: SingleEvent<void>;
 }
 
 export class CollectorService {

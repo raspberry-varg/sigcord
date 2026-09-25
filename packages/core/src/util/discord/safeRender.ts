@@ -6,15 +6,9 @@ import {
   RepliableInteraction,
 } from 'discord.js';
 
-import { TimeoutEmbed } from '../lib/PrebuiltEmbeds.js';
-import { ViewMessagePayload } from '../lib/views/viewFlavors.js';
+import { ViewMessagePayload } from '../../lib/views/viewFlavors.js';
 
-import type { Payload } from '../framework/payload.js';
-
-export function appendTimeoutEmbed(payload: ViewMessagePayload) {
-  payload.embeds = [...(payload.embeds ?? []).splice(0, 10), TimeoutEmbed];
-  return payload;
-}
+import type { Payload } from '../../framework/payload.js';
 
 export interface SafeRenderOptions {
   preferReplyForComponent?: boolean;

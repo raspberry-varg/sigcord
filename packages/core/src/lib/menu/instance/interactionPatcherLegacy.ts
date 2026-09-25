@@ -7,7 +7,7 @@ import {
 } from 'discord.js';
 
 import { coreLog } from '../../../internal/coreLog.js';
-import { safeRender } from '../../../util/RenderingUtil.js';
+import { safeRender } from '../../../util/discord/safeRender.js';
 
 import type { ModalRepliableInteraction } from '../../interactivity/modalHandling.js';
 import type { ViewMessagePayload } from '../../views/viewFlavors.js';

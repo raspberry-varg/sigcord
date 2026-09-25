@@ -1,13 +1,13 @@
 type PromiseResolver<T> = (value: T | PromiseLike<T>) => void;
 type ListenerCallback<T> = (value: T) => unknown;
 
-export class Listener<ResolveType = unknown> {
-  private oncely?: ListenerCallback<ResolveType>[];
+export class SingleEvent<ResolveType = unknown> {
+  private once?: ListenerCallback<ResolveType>[];
   private subscribed?: ListenerCallback<ResolveType>[];
   private waiting?: PromiseResolver<ResolveType>[];
 
   doOnce(callback: ListenerCallback<ResolveType>) {
-    (this.oncely ??= []).push(callback);
+    (this.once ??= []).push(callback);
   }
 
   do(callback: ListenerCallback<ResolveType>, once = false) {
@@ -27,11 +27,14 @@ export class Listener<ResolveType = unknown> {
   fire(resolveResult: ResolveType) {
     const callWithResult = (cb: PromiseResolver<ResolveType> | ListenerCallback<ResolveType>) =>
       cb(resolveResult);
-    if (this.oncely) {
-      this.oncely.forEach(callWithResult);
-      this.oncely.length = 0;
+    if (this.once) {
+      this.once.forEach(callWithResult);
+      this.once.length = 0;
     }
     this.subscribed?.forEach(callWithResult);
-    this.waiting?.forEach(callWithResult);
+    if (this.waiting) {
+      this.waiting.forEach(callWithResult);
+      this.waiting.length = 0;
+    }
   }
 }

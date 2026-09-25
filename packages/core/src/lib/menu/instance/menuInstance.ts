@@ -13,8 +13,8 @@ import {
 
 import { PatchTarget, type PatchTargetBitMask } from '../../../framework/patchTarget.js';
 import { coreLog } from '../../../internal/coreLog.js';
-import { assert, assertAndReturn } from '../../../util/Assertions.js';
-import { Listener } from '../../../util/Listener.js';
+import { assert, assertAndReturn } from '../../../util/asserts.js';
+import { SingleEvent } from '../../../util/singleEvent.js';
 import { SYNAPSE_CONTEXT_ID } from '../../builtins/currentSynapse.js';
 import { AutoComponentId } from '../../components/autocomponents.js';
 import { ComponentDefinition } from '../../components/componentDefinition.js';
@@ -65,10 +65,10 @@ const DefaultRenderOptions: RenderOptions = {
 } as const;
 
 interface MenuControllerListeners {
-  onRender: Listener<void>;
-  onEnd: Listener<string | null>;
-  onStop: Listener<string | null>;
-  onTimeout: Listener<void>;
+  onRender: SingleEvent<void>;
+  onEnd: SingleEvent<string | null>;
+  onStop: SingleEvent<string | null>;
+  onTimeout: SingleEvent<void>;
 }
 
 export interface RenderOptions<ViewIds extends string = string> {
@@ -101,10 +101,10 @@ export class MenuInstance<ViewId extends string = string, AllProps extends Props
   private readonly modalTracker = new ModalTracker();
   private readonly renderer = new RenderingEngine(this.rootOwner);
   private readonly listeners: Readonly<MenuControllerListeners> = {
-    onRender: new Listener(),
-    onEnd: new Listener(),
-    onStop: new Listener(),
-    onTimeout: new Listener(),
+    onRender: new SingleEvent(),
+    onEnd: new SingleEvent(),
+    onStop: new SingleEvent(),
+    onTimeout: new SingleEvent(),
   };
 
   private readonly updateMicrotask: MicrotaskQueuer;
