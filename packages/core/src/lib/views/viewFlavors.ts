@@ -10,11 +10,11 @@ import {
   type TopLevelComponentData,
 } from 'discord.js';
 
+import type { Slot } from '../../core/primitives/slot.js';
 import type { Owner } from '../owners/owner.js';
 import type { Signalish, WritableSignal } from '../reactivity/core/signals.js';
 import type { DeferredComponentLegacy } from '../render/deferredComponent.js';
 import type { DisposeFn } from '../render/dispose.js';
-import type { Slot } from '../Slot.js';
 import type { Primitive } from '../vdom/index.js';
 import type { ViewNodeKind, ViewNodeKindBase } from '../vdom/viewNodeKind.js';
 import type { ViewNodeLegacy } from '../vdom/viewNodeLegacy.js';

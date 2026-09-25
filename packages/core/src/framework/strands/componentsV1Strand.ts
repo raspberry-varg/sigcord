@@ -1,6 +1,7 @@
 import { type EmbedBuilder, type TopLevelComponent } from 'discord.js';
 
 import { ComponentsV1ImperativeAPIContext } from '../../core/contexts/componentsV1ImperativeAPIContext.js';
+import { type Slot, slot } from '../../core/primitives/slot.js';
 import { provideContextValue } from '../../lib/contexts/provideContext.js';
 import {
   createRootOwner,
@@ -10,7 +11,6 @@ import {
   runWithOwner,
 } from '../../lib/owners/owner.js';
 import { flatten } from '../../lib/render/flatten.js';
-import { type Slot, slot } from '../../lib/Slot.js';
 import { CordContext } from '../cordContext.js';
 import { PatchTargetContext } from '../hooks/usePatchTarget.js';
 import { PatchTarget, type PatchTargetBitMask } from '../patchTarget.js';
