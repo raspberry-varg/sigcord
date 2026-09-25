@@ -4,6 +4,7 @@ import {
   effect,
   getOwnerOrThrow,
   isSignal,
+  isWritableSignal,
   markDirty,
   owner,
   OwnerTraceContext,
@@ -41,7 +42,7 @@ type IfProps<Condition> = WithChildren<Condition> | WithAttributes<Condition>;
 export function If<Condition>(props: Readonly<IfProps<Condition>>): ViewNode[] {
   const cond = props.cond;
   const then = 'then' in props ? props.then : props.children;
-  if (!isSignal(cond)) {
+  if (!isSignal(cond) && !isWritableSignal(cond)) {
     return untracked(() =>
       cond ? then(cond as Parameters<typeof then>[0]) : 'else' in props ? props.else : null,
     ) as ViewNode[];
