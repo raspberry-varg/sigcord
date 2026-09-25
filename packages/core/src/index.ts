@@ -3,6 +3,7 @@ export { routeInteraction } from './framework/router.js';
 export { MenuBuilder } from './framework/menuBuilder.js';
 export * from './framework/hooks/index.js';
 export * from './framework/interactionMiddleware.js';
+export * from './core/primitives/index.js';
 
 export * from './lib/vdom/index.js';
 
@@ -58,7 +59,6 @@ export {
 } from './lib/builtins/builtins.js';
 export { defineView, defineViewV2 } from './lib/views/reactive/defineReactiveView.js';
 export { ViewClass, defineClassView } from './lib/views/classic/defineClassicView.js';
-export { SlotOptions, Slot, slot } from './lib/Slot.js';
 export { onCleanup } from './lib/hooks/onCleanup.js';
 export { batch } from '@preact/signals-core';
 export { ComponentDefinition } from './lib/components/componentDefinition.js';
@@ -101,7 +101,6 @@ export {
 } from './lib/vdom/viewComputedElementNode.js';
 export { staticRender } from './lib/render/staticRender.js';
 export { render, renderFragment } from './lib/render/render.js';
-export * from './core/primitives/index.js';
 export { untracked } from './lib/reactivity/untracked.js';
 export { read } from './lib/reactivity/core/read.js';
 export { isSuspended } from './framework/hooks/index.js';

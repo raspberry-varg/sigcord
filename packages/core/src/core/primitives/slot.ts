@@ -1,11 +1,11 @@
-import { signal } from '../core/primitives/index.js';
-import { effect, markDirty } from '../framework/hooks/index.js';
+import { effect, markDirty } from '../../framework/hooks/index.js';
+import { owner, useDisposeOwnerFn } from '../../lib/owners/owner.js';
+import { untracked } from '../../lib/reactivity/untracked.js';
+import { type DeferredNode, h } from '../../lib/vdom/index.js';
 
-import { owner, useDisposeOwnerFn } from './owners/owner.js';
-import { untracked } from './reactivity/untracked.js';
-import { type DeferredNode, h } from './vdom/index.js';
+import { signal } from './index.js';
 
-import type { DisposeFn } from './render/dispose.js';
+import type { DisposeFn } from '../../lib/render/dispose.js';
 
 const isTruthy = (x: unknown) => !!x;
 
