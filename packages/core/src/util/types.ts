@@ -7,3 +7,5 @@ export type UnionToIntersection<U> = (U extends any ? (x: U) => void : never) ex
   ? I
   : never;
 export type ArrayUnionToIntersection<U> = U extends Array<infer T> ? UnionToIntersection<T> : never;
+export type Recursive<T> = T[] | T;
+export type ReadonlyRecursive<T> = readonly T[] | T;

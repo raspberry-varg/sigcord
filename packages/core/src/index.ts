@@ -18,13 +18,15 @@ export { createInternalLogger, InternalLogger } from './internal/internalLogger.
 export { IntrinsicMenuProps, defineMenu } from './lib/menu/defineMenu.js';
 export * from './lib/views/viewFlavors.js';
 export { View } from './lib/views/view.js';
-export { ClassViewProps as ViewProps, ClassViewProps as Props } from './lib/FunctionalMenuView.js';
+export {
+  ClassViewProps as ViewProps,
+  ClassViewProps as Props,
+} from './lib/views/classic/functionalClassViewDefinition.js';
 export { ViewRender } from './lib/views/classic/classViewRender.js';
 export { Synapse, SynapseContext } from './lib/menu/instance/synapse.js';
-export * from './lib/SmartComponents.js';
-export * from './lib/PrebuiltEmbeds.js';
-export * from './lib/Renderable.js';
-export { ModalBundle, useValues } from './lib/ModalBundle.js';
+export * from './components/legacy/SmartCloseButton.js';
+export * from './lib/menu/instance/legacyPrebuiltEmbeds.js';
+export * from './lib/unmaintainedRenderable.js';
 export {
   MaybeSignal,
   WritableSignal,
@@ -83,12 +85,12 @@ export {
   configureAutoComponent,
 } from './lib/components/autocomponents.js';
 export { flattenLegacy, flatten } from './lib/render/flatten.js';
-export { ViewNodeKind, ViewNodeKindBase } from './lib/vdom/viewNodeKind.js';
-export { ViewNodeLegacy } from './lib/vdom/viewNodeLegacy.js';
-export { ViewContentNode } from './lib/vdom/viewContentNode.js';
-export { ViewElementNode } from './lib/vdom/viewElementNode.js';
-export { ViewManualComputedElementNode } from './lib/vdom/viewManualComputedElementNode.js';
-export { OwnerBoundaryViewNodeLegacy } from './lib/vdom/ownerBoundary.js';
+export { ViewNodeKind, ViewNodeKindBase } from './lib/vdom/legacy/viewNodeKind.js';
+export { ViewNodeLegacy } from './lib/vdom/legacy/viewNodeLegacy.js';
+export { ViewContentNode } from './lib/vdom/legacy/viewContentNode.js';
+export { ViewElementNode } from './lib/vdom/legacy/viewElementNode.js';
+export { ViewManualComputedElementNode } from './lib/vdom/legacy/viewManualComputedElementNode.js';
+export { OwnerBoundaryViewNodeLegacy } from './lib/vdom/legacy/viewBoundaryViewNode.js';
 export { DeferredComponentLegacy } from './lib/render/deferredComponent.js';
 export {
   MessageComponentCallback,
@@ -98,7 +100,7 @@ export {
   ViewComputedElementNode,
   elementComputed,
   NodeContentComputer,
-} from './lib/vdom/viewComputedElementNode.js';
+} from './lib/vdom/legacy/viewComputedElementNode.js';
 export { staticRender } from './lib/render/staticRender.js';
 export { render, renderFragment } from './lib/render/render.js';
 export { untracked } from './lib/reactivity/untracked.js';

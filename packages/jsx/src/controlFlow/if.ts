@@ -1,6 +1,6 @@
 import {
   computed,
-  createOwnerBoundary,
+  createBoundaryNode,
   effect,
   getOwnerOrThrow,
   isSignal,
@@ -70,7 +70,7 @@ export function If<Condition>(props: Readonly<IfProps<Condition>>): ViewNode[] {
 
         branchContainer.length = 0;
         if (newVDOM != null && newVDOM !== false) {
-          branchContainer[0] = createOwnerBoundary(
+          branchContainer[0] = createBoundaryNode(
             getOwnerOrThrow(),
             Array.isArray(newVDOM) ? newVDOM : [newVDOM],
           );

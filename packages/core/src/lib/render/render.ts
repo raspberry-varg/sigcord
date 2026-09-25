@@ -1,9 +1,9 @@
 import { owner, useDisposeOwnerFn } from '../owners/owner.js';
 import { untracked } from '../reactivity/untracked.js';
-import { ViewElementNode } from '../vdom/viewElementNode.js';
+import { ViewElementNode } from '../vdom/legacy/viewElementNode.js';
 
-import type { Recursive } from '../recursive.js';
-import type { ViewNodeKind, ViewNodeKindBase } from '../vdom/viewNodeKind.js';
+import type { Recursive } from '../../util/types.js';
+import type { ViewNodeKind, ViewNodeKindBase } from '../vdom/legacy/viewNodeKind.js';
 import type { DisposeFn } from './dispose.js';
 
 /**

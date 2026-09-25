@@ -1,5 +1,5 @@
-import { coreLog } from '../../internal/coreLog.js';
-import { removeManyInPlace } from '../../util/arrays/removeManyInPlace.js';
+import { coreLog } from '../../../internal/coreLog.js';
+import { removeManyInPlace } from '../../../util/arrays/removeManyInPlace.js';
 
 import { ViewNodeLegacy } from './viewNodeLegacy.js';
 

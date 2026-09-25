@@ -1,5 +1,5 @@
 import {
-  createOwnerBoundary,
+  createBoundaryNode,
   effect,
   getConfig,
   getOwnerOrThrow,
@@ -137,7 +137,7 @@ export function Match(...props: [MatchProps] | JSXElement[]): ViewNode[] {
           typeof activeCase.content === 'function' ? activeCase.content() : activeCase.content;
         branchContainer.length = 0;
         if (result != null && result !== false) {
-          branchContainer[0] = createOwnerBoundary(
+          branchContainer[0] = createBoundaryNode(
             getOwnerOrThrow(),
             Array.isArray(result) ? result : [result],
           );

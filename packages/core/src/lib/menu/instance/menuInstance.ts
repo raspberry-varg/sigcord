@@ -18,16 +18,13 @@ import { SingleEvent } from '../../../util/singleEvent.js';
 import { SYNAPSE_CONTEXT_ID } from '../../builtins/currentSynapse.js';
 import { AutoComponentId } from '../../components/autocomponents.js';
 import { ComponentDefinition } from '../../components/componentDefinition.js';
-import { ClassViewProps } from '../../FunctionalMenuView.js';
 import { NamedIdGenerator } from '../../ids/namedIdGenerator.js';
 import {
   ModalHandlingOptions,
   ModalOnSubmitHandler,
   ModalRepliableInteraction,
 } from '../../interactivity/modalHandling.js';
-import { Navigation } from '../../Navigation.js';
 import { createRootOwner, getOwner, runWithOwner } from '../../owners/owner.js';
-import { TimeoutComponent, TimeoutEmbed } from '../../PrebuiltEmbeds.js';
 import {
   createComputed,
   createEffect,
@@ -38,11 +35,14 @@ import {
   WritableSignal,
 } from '../../reactivity/core/signals.js';
 import { untracked } from '../../reactivity/untracked.js';
-import { RenderingEngine } from '../../RenderingEngine.js';
+import { ClassViewProps } from '../../views/classic/functionalClassViewDefinition.js';
 import { type DefinedView, View } from '../../views/view.js';
 
 import { CollectorService } from './collectorService.js';
 import { BufferedPatchStatusLegacy, InteractionPatcherLegacy } from './interactionPatcherLegacy.js';
+import { TimeoutComponent, TimeoutEmbed } from './legacyPrebuiltEmbeds.js';
+import { LegacyRenderingEngine } from './legacyRenderingEngine.js';
+import { LegacyViewNavigation } from './legacyViewNavigation.js';
 import { MenuContext } from './menuContext.js';
 import { type MicrotaskQueuer, microtaskQueuer } from './microtaskQueuer.js';
 import { ModalTracker } from './modalTracker.js';
@@ -94,12 +94,12 @@ export class MenuInstance<ViewId extends string = string, AllProps extends Props
 
   private readonly patcher: InteractionPatcherLegacy;
   private readonly collector: CollectorService;
-  private readonly navigation: Navigation;
+  private readonly navigation: LegacyViewNavigation;
   private readonly patchTracker: PatchTracker;
   private readonly componentIdGenerator: NamedIdGenerator;
 
   private readonly modalTracker = new ModalTracker();
-  private readonly renderer = new RenderingEngine(this.rootOwner);
+  private readonly renderer = new LegacyRenderingEngine(this.rootOwner);
   private readonly listeners: Readonly<MenuControllerListeners> = {
     onRender: new SingleEvent(),
     onEnd: new SingleEvent(),
@@ -128,7 +128,7 @@ export class MenuInstance<ViewId extends string = string, AllProps extends Props
     this.patcher = new InteractionPatcherLegacy(interaction, this.props);
 
     this.collector = new CollectorService(this.listeners);
-    this.navigation = new Navigation(this.collector);
+    this.navigation = new LegacyViewNavigation(this.collector);
     this.patchTracker = new PatchTracker(this.renderer, this.collector);
     this.componentIdGenerator = new NamedIdGenerator('component', menuId);
 

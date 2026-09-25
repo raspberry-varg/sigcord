@@ -1,6 +1,7 @@
 import { PatchTarget, type PatchTargetBitMask } from '../../../framework/patchTarget.js';
 import { coreLog } from '../../../internal/coreLog.js';
-import { type RenderingEngine } from '../../RenderingEngine.js';
+
+import { type LegacyRenderingEngine } from './legacyRenderingEngine.js';
 
 import type { CollectorService } from './collectorService.js';
 
@@ -9,7 +10,7 @@ export class PatchTracker {
   private manualPatchQueued: PatchTargetBitMask = 0;
 
   constructor(
-    private readonly renderer: RenderingEngine,
+    private readonly renderer: LegacyRenderingEngine,
     private readonly collector: CollectorService,
   ) {}
 

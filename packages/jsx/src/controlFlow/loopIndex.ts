@@ -1,7 +1,7 @@
 import {
   batch,
   createOwner,
-  createOwnerBoundary,
+  createBoundaryNode,
   effect,
   getConfig,
   getOwner,
@@ -63,7 +63,7 @@ export function Index<Each extends Iterable<unknown> | Signal<Iterable<unknown>>
             });
             return props.children(item as any, index++);
           });
-          rendered = createOwnerBoundary(
+          rendered = createBoundaryNode(
             childOwner,
             Array.isArray(childOut) ? childOut : [childOut],
           );
@@ -119,7 +119,7 @@ export function Index<Each extends Iterable<unknown> | Signal<Iterable<unknown>>
 
         nodes = props.children(get as any, i);
       });
-      nextNodes[i] = createOwnerBoundary(childOwner, Array.isArray(nodes) ? nodes : [nodes]);
+      nextNodes[i] = createBoundaryNode(childOwner, Array.isArray(nodes) ? nodes : [nodes]);
       newOwners[i] = childOwner;
     }
 

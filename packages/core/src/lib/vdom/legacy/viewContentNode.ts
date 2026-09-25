@@ -1,4 +1,4 @@
-import { coreLog } from '../../internal/coreLog.js';
+import { coreLog } from '../../../internal/coreLog.js';
 
 import { ViewNodeLegacy } from './viewNodeLegacy.js';
 

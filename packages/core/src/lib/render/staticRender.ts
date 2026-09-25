@@ -1,13 +1,13 @@
 import { provideContextValue } from '../contexts/provideContext.js';
 import { SynapseContext } from '../menu/instance/synapse.js';
 import { createRootOwner, runWithOwner } from '../owners/owner.js';
-import { ViewElementNode } from '../vdom/viewElementNode.js';
+import { ViewElementNode } from '../vdom/legacy/viewElementNode.js';
 
 import { flattenLegacy } from './flatten.js';
 import { renderFragment } from './render.js';
 import { STATIC_RENDER_SYNAPSE } from './staticRenderSynapse.js';
 
-import type { ViewNodeKind, ViewNodeKindBase } from '../vdom/viewNodeKind.js';
+import type { ViewNodeKind, ViewNodeKindBase } from '../vdom/legacy/viewNodeKind.js';
 
 type StaticRenderFn<T extends ViewNodeKindBase> = () => ViewNodeKind<T>;
 

@@ -1,9 +1,9 @@
-import { assert } from '../util/asserts.js';
+import { assert } from '../../../util/asserts.js';
 
-import { CollectorService, type ComponentCallbackMap } from './menu/instance/collectorService.js';
+import { CollectorService, type ComponentCallbackMap } from './collectorService.js';
 
-import type { View } from './views/view.js';
-import type { RenderedReactiveView } from './views/viewFlavors.js';
+import type { View } from '../../views/view.js';
+import type { RenderedReactiveView } from '../../views/viewFlavors.js';
 
 export interface NavigationPayload {
   view: View;
@@ -11,7 +11,7 @@ export interface NavigationPayload {
   reactiveInstance: RenderedReactiveView | undefined;
 }
 
-export class Navigation {
+export class LegacyViewNavigation {
   views: NavigationPayload[] = [];
 
   constructor(private readonly collectorService: CollectorService) {}

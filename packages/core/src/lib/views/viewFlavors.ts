@@ -16,8 +16,8 @@ import type { Signalish, WritableSignal } from '../reactivity/core/signals.js';
 import type { DeferredComponentLegacy } from '../render/deferredComponent.js';
 import type { DisposeFn } from '../render/dispose.js';
 import type { Primitive } from '../vdom/index.js';
-import type { ViewNodeKind, ViewNodeKindBase } from '../vdom/viewNodeKind.js';
-import type { ViewNodeLegacy } from '../vdom/viewNodeLegacy.js';
+import type { ViewNodeKind, ViewNodeKindBase } from '../vdom/legacy/viewNodeKind.js';
+import type { ViewNodeLegacy } from '../vdom/legacy/viewNodeLegacy.js';
 import type { REACTIVE_VIEW_SYMBOL } from './reactive/reactiveViewSymbol.js';
 
 export type EmbedComponent = EmbedBuilder;

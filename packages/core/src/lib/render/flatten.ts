@@ -3,20 +3,20 @@
 import { type Owner, runWithOwner, setCurrentOwner } from '../owners/owner.js';
 import { executeDeferredNode } from '../vdom/deferred.js';
 import { isVDOMNode, NodeType } from '../vdom/index.js';
-import { OwnerBoundaryViewNodeLegacy } from '../vdom/ownerBoundary.js';
-import { ViewComputedElementNode } from '../vdom/viewComputedElementNode.js';
-import { ViewContentNode } from '../vdom/viewContentNode.js';
-import { ViewElementNode } from '../vdom/viewElementNode.js';
-import { ViewManualComputedElementNode } from '../vdom/viewManualComputedElementNode.js';
-import { ViewNodeLegacy } from '../vdom/viewNodeLegacy.js';
+import { OwnerBoundaryViewNodeLegacy } from '../vdom/legacy/viewBoundaryViewNode.js';
+import { ViewComputedElementNode } from '../vdom/legacy/viewComputedElementNode.js';
+import { ViewContentNode } from '../vdom/legacy/viewContentNode.js';
+import { ViewElementNode } from '../vdom/legacy/viewElementNode.js';
+import { ViewManualComputedElementNode } from '../vdom/legacy/viewManualComputedElementNode.js';
+import { ViewNodeLegacy } from '../vdom/legacy/viewNodeLegacy.js';
 
 import { formatTextIntrinsic, isTextIntrinsic } from './formatTextIntrinsic.js';
 import { mergeStrings } from './mergeStrings.js';
 import { mountIntrinsic } from './mountIntrinsic.js';
 import { updateIntrinsicChildren } from './updateIntrinsicChildren.js';
 
-import type { ReadonlyRecursive } from '../recursive.js';
-import type { ViewNodeKindBase } from '../vdom/viewNodeKind.js';
+import type { ReadonlyRecursive } from '../../util/types.js';
+import type { ViewNodeKindBase } from '../vdom/legacy/viewNodeKind.js';
 import type { ViewComponent } from '../views/viewFlavors.js';
 
 type ExcludeEmptyTypes<T> = NonNullable<Exclude<T, boolean>>;

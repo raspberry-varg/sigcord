@@ -1,10 +1,11 @@
-import { ClassViewDefinitionBody } from './views/classic/classViewDefinition.js';
-import { PropsBase, type ViewDefinitionBase } from './views/viewDefinitionBase.js';
+import { PropsBase, type ViewDefinitionBase } from '../viewDefinitionBase.js';
+
+import { ClassViewDefinitionBody } from './classViewDefinition.js';
 
 /**
  * Functional implementation of Menu Views.
  */
-import type { Synapse } from './menu/instance/synapse.js';
+import type { Synapse } from '../../menu/instance/synapse.js';
 
 export type ClassViewDefinition<Props extends PropsBase = PropsBase> = ViewDefinitionBase &
   ClassViewDefinitionBody<Props>;
