@@ -7,7 +7,7 @@ import {
 } from 'discord.js';
 
 import { clamp } from '../../util/clamp.js';
-import { isDiscordAPIComponentType } from '../../util/isDiscordAPIComponentType.js';
+import { isDiscordAPIComponentType } from '../../util/discord/isDiscordAPIComponentType.js';
 
 import type { IntrinsicPropsMap } from '../vdom/index.js';
 

@@ -10,7 +10,7 @@ import { untracked } from '../../lib/reactivity/untracked.js';
 import { computed } from './computed.js';
 import { signal } from './signal.js';
 
-import type { MaybePromise } from '../../util/TypesUtil.js';
+import type { MaybePromise } from '../../util/types.js';
 
 const OPTIONS_DEFAULTS: Readonly<ResourceOptions<unknown, unknown>> = {
   autoUpdate: true,

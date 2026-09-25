@@ -1,4 +1,4 @@
-import { assert } from '../util/Assertions.js';
+import { assert } from '../util/asserts.js';
 
 import { CollectorService, type ComponentCallbackMap } from './menu/instance/collectorService.js';
 

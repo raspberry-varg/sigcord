@@ -1,4 +1,4 @@
-import type { MaybePromise } from '../../../util/TypesUtil.js';
+import type { MaybePromise } from '../../../util/types.js';
 import type { ClassViewProps } from '../../FunctionalMenuView.js';
 import type { PropsBase } from '../viewDefinitionBase.js';
 import type { ViewMessagePayload } from '../viewFlavors.js';

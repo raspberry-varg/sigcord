@@ -1,7 +1,7 @@
 import { PatchTarget } from '../../../framework/patchTarget.js';
 import { STATIC_RENDER_SYNAPSE } from '../../render/staticRenderSynapse.js';
 
-import type { UnionToIntersection } from '../../../util/TypesUtil.js';
+import type { UnionToIntersection } from '../../../util/types.js';
 import type { ComponentDefinition } from '../../components/componentDefinition.js';
 import type { Context } from '../../contexts/context.js';
 import type {

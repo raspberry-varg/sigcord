@@ -7,7 +7,7 @@ import {
   type RepliableInteraction,
 } from 'discord.js';
 
-import { safeRender } from '../util/RenderingUtil.js';
+import { safeRender } from '../util/discord/safeRender.js';
 
 import { ViewMessagePayload } from './views/viewFlavors.js';
 

@@ -2,7 +2,7 @@ import { type DefinedView, View } from '../views/view.js';
 
 import { instantiateMenu } from './instance/instantiateMenu.js';
 
-import type { ArrayUnionToIntersection } from '../../util/TypesUtil.js';
+import type { ArrayUnionToIntersection } from '../../util/types.js';
 import type { PropsBase } from '../views/viewDefinitionBase.js';
 import type { IntrinsicViewProps } from '../views/viewFlavors.js';
 import type { MenuInstanceActions } from './instance/menuInstanceActions.js';
