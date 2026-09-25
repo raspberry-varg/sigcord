@@ -1,33 +1,15 @@
-import {
-  HeadingLevel,
-  channelLink,
-  channelMention,
-  heading,
-  hyperlink,
-  inlineCode,
-  italic,
-  quote,
-  roleMention,
-  spoiler,
-  strikethrough,
-  subtext,
-  time,
-  underline,
-  userMention,
-} from 'discord.js';
+import { channelMention, roleMention, time as formatTime, userMention } from 'discord.js';
 
 import { effect, markDirty } from '../../framework/hooks/index.js';
-import { parseChildrenToString } from '../../util/parseChildrenToString.js';
-import { resolveString } from '../../util/resolveString.js';
-import { resolveToConditionalFormatter } from '../../util/resolveToConditionalFormatter.js';
 import { read } from '../reactivity/core/read.js';
-import { isSignal } from '../reactivity/core/signals.js';
 import { type IntrinsicPropsMap } from '../vdom/index.js';
 
 const TEXT_INTRINSICS = [
   'a',
-  'channel',
+  'b',
   'br',
+  'code',
+  'channel',
   'i',
   'u',
   'pre',
@@ -50,151 +32,109 @@ export function isTextIntrinsic(type: keyof IntrinsicPropsMap): type is TextIntr
 }
 
 export function formatTextIntrinsic(
-  type: keyof IntrinsicPropsMap,
-  props: IntrinsicPropsMap[keyof IntrinsicPropsMap],
-): string | (() => string) {
+  type: TextIntrinsic,
+  props: IntrinsicPropsMap[TextIntrinsic] & { children?: unknown },
+): unknown[] {
+  const children = !props.children
+    ? []
+    : Array.isArray(props.children)
+      ? props.children
+      : [props.children];
+
   switch (type) {
-    case 'a': {
-      cast<'a'>(props);
-      const children = props.children;
-      if (!children) {
-        return '';
-      }
-
-      const displayText = parseChildrenToString(children);
-
-      const title = props.title;
-      const url = props.url;
-
-      if (!(isSignal(displayText) || isSignal(url) || isSignal(title))) {
-        return hyperlink(displayText, url, resolveString(title));
-      }
-
-      let value = '';
-      effect(() => {
-        markDirty();
-        const txt = read(displayText);
-        if (!txt) {
-          value = '';
-          return;
-        }
-
-        value = hyperlink(txt, read(url), resolveString(read(title)));
-      });
-      return () => value;
-    }
-    case 'channel': {
-      cast<'channel'>(props);
-      const id = props.id;
-      if (typeof id === 'string') {
-        if (!id) return '';
-        return props.link ? channelLink(id) : channelMention(id);
-      }
-
-      let value: string | undefined;
-      effect(() => {
-        value = id();
-        markDirty();
-      });
-
-      return () => {
-        return !value ? '' : props.link ? channelLink(value) : channelMention(value);
-      };
-    }
     case 'br':
-      cast<'br'>(props);
-      return '\n';
+      return ['\n'];
+    case 'b':
+      return ['**', ...children, '**'];
     case 'i':
-      cast<'i'>(props);
-      return resolveToConditionalFormatter(italic, props.children);
+      return ['*', ...children, '*'];
     case 'u':
-      cast<'u'>(props);
-      return resolveToConditionalFormatter(underline, props.children);
-    case 'pre':
-      cast<'pre'>(props);
-      return resolveToConditionalFormatter(inlineCode, props.children);
-    case 'sub':
-      cast<'sub'>(props);
-      return resolveToConditionalFormatter(subtext, props.children, true);
-    case 'h1':
-      cast<'h1'>(props);
-      return resolveToConditionalFormatter(
-        (text) => heading(text, HeadingLevel.One),
-        props.children,
-        true,
-      );
-    case 'h2':
-      cast<'h2'>(props);
-      return resolveToConditionalFormatter(
-        (text) => heading(text, HeadingLevel.Two),
-        props.children,
-        true,
-      );
-    case 'h3':
-      cast<'h3'>(props);
-      return resolveToConditionalFormatter(
-        (text) => heading(text, HeadingLevel.Three),
-        props.children,
-        true,
-      );
+      return ['__', ...children, '__'];
     case 'strike':
-      cast<'strike'>(props);
-      return resolveToConditionalFormatter(strikethrough, props.children, true);
+      return ['~~', ...children, '~~'];
     case 'spoiler':
-      cast<'spoiler'>(props);
-      return resolveToConditionalFormatter(spoiler, props.children, true);
+      return ['||', ...children, '||'];
+    case 'h1':
+      return ['# ', ...children, '\n'];
+    case 'h2':
+      return ['## ', ...children, '\n'];
+    case 'h3':
+      return ['### ', ...children, '\n'];
+    case 'sub':
+      return ['-# ', ...children, '\n'];
     case 'quote':
       cast<'quote'>(props);
-      return resolveToConditionalFormatter(quote, props.children, true);
-    case 'time':
-      cast<'time'>(props);
-      if (!isSignal(props.time) && !isSignal(props.style)) {
-        return time(props.time as Exclude<typeof props.time, Date>, props.style);
-      }
-
-      let timestamp = '';
-      effect(() => {
-        timestamp = time(read(props.time) as number, read(props.style));
-      });
-
-      return () => timestamp;
-    case 'user': {
+      return [props.block ? '>>> ' : '> ', ...children, '\n'];
+    case 'pre':
+      return ['`', ...children, '\n```'];
+    case 'code':
+      cast<'code'>(props);
+      return ['```' + (props.language ?? '') + '\n', ...children, '\n```'];
+    case 'user':
       cast<'user'>(props);
-      const id = props.id;
-      if (typeof id === 'string') {
-        return id && userMention(id);
-      }
-
-      let value = '';
-      effect(() => {
-        value = id();
-        markDirty();
-      });
-
-      return () => {
-        return value && userMention(value);
-      };
-    }
-    case 'role': {
+      return [bindToFormatter(props.id, userMention)];
+    case 'role':
       cast<'role'>(props);
-      const id = props.id;
-      if (typeof id === 'string') {
-        return id && roleMention(id);
+      return [bindToFormatter(props.id, roleMention)];
+    case 'channel':
+      cast<'channel'>(props);
+      return [bindToFormatter(props.id, channelMention)];
+    case 'a': {
+      cast<'a'>(props);
+      const url = bindToFormatter(props.url);
+      const title = bindToFormatter(props.url);
+
+      const end = title ? [url, ' "', title, '"'] : [url];
+      return ['[', ...children, '](', ...end, ')'];
+    }
+    case 'time': {
+      cast<'time'>(props);
+      const { time, style } = props;
+      if (typeof time !== 'function' && typeof style !== 'function') {
+        return [
+          formatTime(
+            time as Date /* gets really mad with the overloaded types if I leave number in here */,
+            style,
+          ),
+        ];
       }
 
-      let value = '';
+      let current = '';
       effect(() => {
-        value = id();
+        const currentTime = read(time);
+        const currentStyle = read(style);
+        current = formatTime(currentTime as Date, currentStyle);
         markDirty();
       });
-
-      return () => value && roleMention(value);
+      return [() => current];
     }
     default:
-      throw new Error(`Unhandled potentially-text intrinsic: ${type}`);
+      throw new Error(`Unhandled potentially-text intrinsic: ${type satisfies never}`);
   }
 }
 
 function cast<K extends keyof IntrinsicPropsMap>(
   _x: IntrinsicPropsMap[keyof IntrinsicPropsMap],
 ): asserts _x is IntrinsicPropsMap[K] {}
+
+type Formatter = (value: string) => string;
+const defaultFormatter: Formatter = (v) => v;
+
+function bindToFormatter(
+  prop: unknown,
+  formatter: Formatter = defaultFormatter,
+): string | (() => string) {
+  if (prop == null || prop === false) {
+    return '';
+  }
+  if (typeof prop !== 'function') {
+    return formatter(String(prop));
+  }
+
+  let current = '';
+  effect(() => {
+    current = formatter(String(prop()));
+    markDirty();
+  });
+  return () => current;
+}

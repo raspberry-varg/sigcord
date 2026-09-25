@@ -1,5 +1,6 @@
 import {
   type AnyComponent,
+  APIButtonComponentWithCustomId,
   type APIComponentInContainer,
   APITextDisplayComponent,
   ComponentType,
@@ -29,7 +30,12 @@ export function updateIntrinsicChildren<K extends keyof IntrinsicPropsMap>(
     }
     case 'text': {
       const textDisplay = cast(cached, ComponentType.TextDisplay);
-      return textDisplay.content ? textDisplay : null;
+      const childrenArray = Array.isArray(resolvedChildren) ? resolvedChildren : [resolvedChildren];
+      textDisplay.content = childrenArray
+        .filter((child) => child != null && child !== false)
+        .join('');
+
+      return textDisplay.content.length ? textDisplay : null;
     }
     case 'container': {
       const container = cast(cached, ComponentType.Container);
@@ -110,7 +116,6 @@ export function updateIntrinsicChildren<K extends keyof IntrinsicPropsMap>(
           section.accessory = validAccessory;
           break;
         default:
-          console.dir(validAccessory, { depth: 3 });
           throw new Error(`Invalid accessory type: ${validAccessory.type}`);
       }
 
@@ -130,7 +135,10 @@ export function updateIntrinsicChildren<K extends keyof IntrinsicPropsMap>(
     case 'stringOption':
       return cached;
     case 'button': {
-      return cast(cached, ComponentType.Button);
+      const button = cast(cached, ComponentType.Button) as APIButtonComponentWithCustomId;
+      const childrenArray = Array.isArray(resolvedChildren) ? resolvedChildren : [resolvedChildren];
+      button.label = childrenArray.filter((child) => child != null && child !== false).join('');
+      return button;
     }
     case 'stringSelect': {
       const stringSelectProps = props as unknown as IntrinsicPropsMap['stringSelect'];
@@ -164,6 +172,7 @@ export function updateIntrinsicChildren<K extends keyof IntrinsicPropsMap>(
     case 'a':
     case 'b':
     case 'br':
+    case 'code':
     case 'channel':
     case 'h1':
     case 'h2':

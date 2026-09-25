@@ -1,9 +1,9 @@
 import {
   type APIActionRowComponent,
   type APIButtonComponentWithCustomId,
-  APIComponentInActionRow,
+  type APIComponentInActionRow,
   type APIContainerComponent,
-  APISectionComponent,
+  type APISectionComponent,
   type APISelectMenuOption,
   type APISeparatorComponent,
   type APIStringSelectComponent,
@@ -23,12 +23,9 @@ import {
   useComponentHandler,
 } from '../../framework/hooks/index.js';
 import { coreLog } from '../../internal/coreLog.js';
-import { parseChildrenToString } from '../../util/parseChildrenToString.js';
-import { upgradeStringSequenceToReactive } from '../../util/upgradeStringSequenceToReactive.js';
-import { getNextUniqueComponentId } from '../builtins/builtins.js';
 import { getCurrentSynapseOrDefault } from '../builtins/currentSynapse.js';
 import { read } from '../reactivity/core/read.js';
-import { isSignal, type Signal } from '../reactivity/core/signals.js';
+import { isSignal } from '../reactivity/core/signals.js';
 
 import type { IntrinsicPropsMap } from '../vdom/index.js';
 
@@ -74,28 +71,13 @@ export function mountIntrinsic(
     }
     case 'text': {
       cast<'text'>(props);
-      const textDisplay: APITextDisplayComponent = {
+      return {
         type: ComponentType.TextDisplay,
         content: '',
-      };
-      const finalString = parseChildrenToString(props.children);
-      if (typeof finalString === 'string') {
-        if (!finalString) {
-          return null;
-        }
-        textDisplay.content = finalString;
-        return textDisplay;
-      }
-
-      effect(() => {
-        textDisplay.content = finalString();
-      });
-
-      return textDisplay;
+      } satisfies APITextDisplayComponent;
     }
     case 'container': {
       cast<'container'>(props);
-      // Accent Color
       const container: Partial<APIContainerComponent> = {
         type: ComponentType.Container,
       };
@@ -229,32 +211,7 @@ export function mountIntrinsic(
         });
       }
 
-      let label: string | Signal<string> = '';
-      if (props.children) {
-        if (!Array.isArray(props.children)) {
-          label = props.children;
-        } else {
-          const children = props.children;
-          for (let i = 0; i < children.length; i++) {
-            if (isSignal(children[i])) {
-              label = upgradeStringSequenceToReactive(label, children, i);
-              break;
-            }
-            label += children[i];
-          }
-        }
-      }
-
       let reactiveSetters: CallableFunction[] | undefined = undefined;
-      if (typeof label === 'string') {
-        if (label) {
-          button.label = label;
-        }
-      } else {
-        (reactiveSetters ??= []).push(() => {
-          button.label = label();
-        });
-      }
 
       const style = props.style;
       if (typeof style === 'number') {
@@ -316,7 +273,7 @@ export function mountIntrinsic(
     }
     case 'stringSelect': {
       cast<'stringSelect'>(props);
-      const id = props.id || getNextUniqueComponentId();
+      const id = props.id || createUniqueComponentId();
 
       const stringSelect: Partial<APIStringSelectComponent> = {
         type: ComponentType.StringSelect,
@@ -360,6 +317,7 @@ export function mountIntrinsic(
     case 'a':
     case 'b':
     case 'br':
+    case 'code':
     case 'channel':
     case 'h1':
     case 'h2':

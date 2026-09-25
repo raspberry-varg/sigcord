@@ -28,6 +28,7 @@ export interface IntrinsicPropsMap {
   i: WithChildren;
   u: WithChildren;
   pre: WithChildren;
+  code: CodeAttributes;
   sub: WithChildren;
   h1: WithChildren;
   h2: WithChildren;
@@ -123,7 +124,6 @@ export interface RoleAttributes {
 
 export interface ChannelAttributes {
   id: MaybeSignal<string>;
-  link?: MaybeSignal<boolean>;
 }
 
 export interface QuoteAttributes extends WithChildren {
@@ -150,6 +150,10 @@ export interface BaseSelectMenuAttributes<Interaction extends AnySelectMenuInter
 
 interface StringSelectAttributes extends BaseSelectMenuAttributes<StringSelectMenuInteraction> {
   children: unknown | unknown[];
+}
+
+interface CodeAttributes extends WithChildren {
+  language?: string;
 }
 
 export type Primitive = string | number | boolean | null | undefined;

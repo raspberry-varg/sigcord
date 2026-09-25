@@ -11,6 +11,7 @@ import { ViewManualComputedElementNode } from '../vdom/viewManualComputedElement
 import { ViewNodeLegacy } from '../vdom/viewNodeLegacy.js';
 
 import { formatTextIntrinsic, isTextIntrinsic } from './formatTextIntrinsic.js';
+import { mergeStrings } from './mergeStrings.js';
 import { mountIntrinsic } from './mountIntrinsic.js';
 import { updateIntrinsicChildren } from './updateIntrinsicChildren.js';
 
@@ -80,9 +81,14 @@ export function flattenLegacy<T extends ViewNodeKindBase>(
 
 export function flatten(node: unknown, debugStack?: string): unknown {
   if (Array.isArray(node)) {
-    return node
-      .flatMap((n) => flatten(n, debugStack))
-      .filter((r) => r != null && typeof r !== 'boolean');
+    const out: unknown[] = [];
+    for (let i = 0; i < node.length; i++) {
+      const next = flatten(node[i], debugStack);
+      if (next != null && typeof next !== 'boolean') {
+        mergeStrings(out, next);
+      }
+    }
+    return out;
   }
 
   if (node == null || typeof node === 'boolean') {
