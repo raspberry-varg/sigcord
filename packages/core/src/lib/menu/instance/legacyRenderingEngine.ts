@@ -4,6 +4,7 @@ import { EmbedBuilder, MessageFlags } from 'discord.js';
 import { PatchTargetContext } from '../../../framework/hooks/usePatchTarget.js';
 import { PatchTarget, type PatchTargetBitMask } from '../../../framework/patchTarget.js';
 import {
+  createOwner,
   flatten,
   getOwnerOrThrow,
   type Owner,
@@ -261,45 +262,43 @@ export class LegacyRenderingEngine {
         }
 
         if (!instance.roots) {
-          const superOwner = owner(
-            () => {
-              instance.roots = {};
-              const result = (instance.lastRender = instance.factory());
-              if (result.embeds) {
-                instance.roots.embeds = owner(
-                  () => {
-                    provideContextValue(PatchTargetContext, PatchTarget.Embeds);
-                    const vdom =
-                      typeof result.embeds === 'function' ? result.embeds() : result.embeds;
-                    return Array.isArray(vdom) ? vdom : [vdom];
-                  },
-                  {
-                    debugName: 'V1_embeds_root',
-                  },
-                );
-              }
-              if (result.components) {
-                instance.roots.components = owner(
-                  () => {
-                    provideContextValue(PatchTargetContext, PatchTarget.Components);
-                    const vdom =
-                      typeof result.components === 'function'
-                        ? result.components()
-                        : result.components;
-                    return Array.isArray(vdom) ? vdom : [vdom];
-                  },
-                  {
-                    debugName: 'V1_components_root',
-                  },
-                );
-              }
+          const superOwner = createOwner(this.menuRootOwner, {
+            debugName: 'V1_super_root',
+          });
+          runWithOwner(superOwner, () => {
+            instance.roots = {};
+            const result = (instance.lastRender = instance.factory());
+            if (result.embeds) {
+              instance.roots.embeds = owner(
+                () => {
+                  provideContextValue(PatchTargetContext, PatchTarget.Embeds);
+                  const vdom =
+                    typeof result.embeds === 'function' ? result.embeds() : result.embeds;
+                  return Array.isArray(vdom) ? vdom : [vdom];
+                },
+                {
+                  debugName: 'V1_embeds_root',
+                },
+              );
+            }
+            if (result.components) {
+              instance.roots.components = owner(
+                () => {
+                  provideContextValue(PatchTargetContext, PatchTarget.Components);
+                  const vdom =
+                    typeof result.components === 'function'
+                      ? result.components()
+                      : result.components;
+                  return Array.isArray(vdom) ? vdom : [vdom];
+                },
+                {
+                  debugName: 'V1_components_root',
+                },
+              );
+            }
 
-              return getOwnerOrThrow();
-            },
-            {
-              debugName: 'V1_super_root',
-            },
-          );
+            return getOwnerOrThrow();
+          });
 
           instance.dispose = () => superOwner.dispose();
           instance.owner = superOwner;
