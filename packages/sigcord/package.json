@@ -22,6 +22,14 @@
       "default": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
+    "./flow": {
+      "default": "./dist/flow/index.js",
+      "types": "./dist/flow/index.d.ts"
+    },
+    "./components": {
+      "default": "./dist/components/index.js",
+      "types": "./dist/components/index.d.ts"
+    },
     "./jsx": {
       "default": "./dist/jsx-runtime.js",
       "types": "./dist/jsx-runtime.d.ts"
@@ -33,18 +41,6 @@
     "./jsx-dev-runtime": {
       "default": "./dist/jsx-runtime.js",
       "types": "./dist/jsx-runtime.d.ts"
-    },
-    "./components": {
-      "default": "./dist/components/index.js",
-      "types": "./dist/components/index.d.ts"
-    },
-    "./context": {
-      "default": "./dist/context/index.js",
-      "types": "./dist/context/index.d.ts"
-    },
-    "./flow": {
-      "default": "./dist/flow/index.js",
-      "types": "./dist/flow/index.d.ts"
     }
   },
   "scripts": {
@@ -56,10 +52,7 @@
     "@sigcord/core": "workspace:*"
   },
   "devDependencies": {
-    "@sigcord/jsx": "workspace:*"
-  },
-  "peerDependencies": {
-    "@sigcord/jsx": "workspace:*"
+    "typescript": "catalog:"
   },
   "packageManager": "pnpm@10.11.0",
   "nx": {

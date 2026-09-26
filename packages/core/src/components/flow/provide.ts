@@ -1,11 +1,8 @@
-import {
-  type BoundaryNode,
-  type Context,
-  createBoundaryNode,
-  createOwner,
-  getOwner,
-  setContextValueTo,
-} from '@sigcord/core';
+import { setContextValueTo } from '../../lib/contexts/provideContext.js';
+import { createOwner, getOwner } from '../../lib/owners/owner.js';
+import { type BoundaryNode, createBoundaryNode } from '../../lib/vdom/index.js';
+
+import type { Context } from '../../lib/contexts/context.js';
 
 type ContextEntry<T> = readonly [Context<T>, NoInfer<T>];
 

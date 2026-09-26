@@ -1,5 +1,7 @@
-import { type MaybeSignal, type Signal, effect, markDirty, read } from '@sigcord/core';
+import { effect, markDirty } from '../framework/hooks/index.js';
+import { read } from '../lib/reactivity/core/read.js';
 
+import type { MaybeSignal, Signal } from '../lib/reactivity/core/signals.js';
 import type {
   APISelectMenuComponent,
   AnySelectMenuInteraction,

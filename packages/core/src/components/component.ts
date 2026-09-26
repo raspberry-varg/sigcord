@@ -1,9 +1,10 @@
-import { type ComponentDefinition, component } from '@sigcord/core';
+import { component } from '../framework/hooks/index.js';
 
+import type { ComponentDefinition } from '../lib/components/componentDefinition.js';
 import type { MessageActionRowComponentBuilder } from 'discord.js';
 
 /**
- * @deprecated Please use {@link import('@sigcord/core').useComponentHandler} instead.
+ * @deprecated Please use {@link import('src/index.js').useComponentHandler} instead.
  *
  * JSX wrapper over the {@link component} primitive.
  *
