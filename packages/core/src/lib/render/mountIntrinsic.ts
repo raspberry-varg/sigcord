@@ -199,7 +199,7 @@ export function mountIntrinsic(
         custom_id: id,
       };
 
-      const onClick = props['on:click'];
+      const onClick = props.onClick;
 
       const legacy = !!getCurrentSynapseOrDefault();
 
@@ -285,12 +285,12 @@ export function mountIntrinsic(
         component({
           id,
           component: new StringSelectMenuBuilder(),
-          handler: props['on:select'],
+          handler: props.onChange,
         });
       } else {
         useComponentHandler(id, (select) => {
           if (select.isStringSelectMenu()) {
-            return props['on:select'](select);
+            return props.onChange(select);
           }
         });
       }

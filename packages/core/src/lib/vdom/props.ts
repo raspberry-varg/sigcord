@@ -55,7 +55,7 @@ export interface ButtonAttributesBase {
   children?: string | Signal<string>;
   disabled?: boolean | Signal<boolean>;
   style: unknown;
-  'on:click'?: MessageComponentCallbackFor<'button'>;
+  onClick?: MessageComponentCallbackFor<'button'>;
 }
 
 export interface InteractionButton extends ButtonAttributesBase {
@@ -144,7 +144,7 @@ export interface BaseSelectMenuAttributes<Interaction extends AnySelectMenuInter
   max?: MaybeSignal<number>;
   placeholder?: MaybeSignal<string>;
   disabled?: MaybeSignal<boolean>;
-  'on:select': (select: Interaction) => void;
+  onChange: (select: Interaction) => void;
   children?: unknown;
 }
 

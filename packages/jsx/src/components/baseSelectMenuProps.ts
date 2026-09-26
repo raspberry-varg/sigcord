@@ -1,20 +1,12 @@
+import { type MaybeSignal, type Signal, effect, markDirty, read } from '@sigcord/core';
+
 import type {
   APISelectMenuComponent,
   AnySelectMenuInteraction,
   BaseSelectMenuBuilder,
-} from "discord.js";
+} from 'discord.js';
 
-import {
-  type MaybeSignal,
-  type Signal,
-  effect,
-  markDirty,
-  read,
-} from "@sigcord/core";
-
-export interface BaseSelectMenuProps<
-  Interaction extends AnySelectMenuInteraction,
-> {
+export interface BaseSelectMenuProps<Interaction extends AnySelectMenuInteraction> {
   id?: string;
   /**
    * The minimum required number of options the user must select.
@@ -28,7 +20,7 @@ export interface BaseSelectMenuProps<
   max?: MaybeSignal<number>;
   placeholder?: MaybeSignal<string>;
   disabled?: MaybeSignal<boolean>;
-  "on:select": (select: Interaction) => void;
+  onChange: (select: Interaction) => void;
   children?: unknown;
 }
 
@@ -47,7 +39,7 @@ export function applyPatchEffect(
     selectMenu
       .setMinValues(read(props.min))
       .setMaxValues(read(props.max))
-      .setPlaceholder(read(props.placeholder) ?? "")
+      .setPlaceholder(read(props.placeholder) ?? '')
       .setDisabled(!!read(props.disabled));
     markDirty();
   });

@@ -46,12 +46,12 @@ export function ChannelSelect(props: ChannelSelectMenuProps) {
     component({
       id,
       component: new ChannelSelectMenuBuilder(),
-      handler: props['on:select'],
+      handler: props.onChange,
     });
   } else {
     useComponentHandler(id, (select) => {
       if (select.isChannelSelectMenu()) {
-        return props['on:select'](select);
+        return props.onChange(select);
       }
     });
   }

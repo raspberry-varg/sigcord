@@ -174,7 +174,7 @@ function ClicksButton({ style }: { style: ButtonStyle }) {
     <button
       id={'click-button'} // optional
       style={style}
-      on:click={(b) => setClicks(clicks() + 1)}
+      onClick={(b) => setClicks(clicks() + 1)}
     >
       You have clicked me {clicks} times.
     </button>
@@ -189,7 +189,7 @@ function HotButton({ hotCount }: { hotCount: number }) {
   };
 
   return (
-    <button style={() => (isHot() ? ButtonStyle.Danger : ButtonStyle.Primary)} on:click={onClick}>
+    <button style={() => (isHot() ? ButtonStyle.Danger : ButtonStyle.Primary)} onClick={onClick}>
       {() =>
         isHot() ? `${clicks()} is a lot of clicks!` : `You have clicked me ${clicks()} times.`
       }

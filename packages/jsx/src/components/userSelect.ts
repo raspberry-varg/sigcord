@@ -64,12 +64,12 @@ export function UserSelect(props: UserSelectProps) {
     component({
       id,
       component: new UserSelectMenuBuilder(),
-      handler: props['on:select'],
+      handler: props.onChange,
     });
   } else {
     useComponentHandler(id, (collectedInteraction) => {
       if (collectedInteraction.isUserSelectMenu()) {
-        return props['on:select'];
+        return props.onChange;
       }
     });
   }
