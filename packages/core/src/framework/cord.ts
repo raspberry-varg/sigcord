@@ -16,17 +16,21 @@ import { InteractionPatcher, PatchType } from './interactionPatcher.js';
 import { PatchTarget, type PatchTargetBitMask } from './patchTarget.js';
 import { getActiveCords } from './registry.js';
 
+import type { ViewFactory } from './cordComposer.js';
 import type {
   CollectedInteractionHandlerData,
   ModalInteractionHandlerData,
 } from './interactionHandlerData.js';
 import type { InteractionMiddleware } from './interactionMiddleware.js';
-import type { ViewFactory } from './menuBuilder.js';
 import type { Payload } from './payload.js';
 import type { Strand } from './strands/strand.js';
 import type { StrandFactory } from './strands/strandFactory.js';
 
-export type BuiltInCloseReasons = 'MANUAL_CLOSE' | 'MANUAL_STOP' | 'IDLE_TIMEOUT';
+export type BuiltInCloseReasons =
+  | 'MANUAL_CLOSE'
+  | 'MANUAL_STOP'
+  | 'IDLE_TIMEOUT'
+  | 'MIDDLEWARE_ABORTED_INITIAL_MOUNT';
 
 /**
  * Simple API over a Cord instance.
@@ -140,12 +144,28 @@ export class Cord implements CordAPI {
     if (this.resolveMountPromise) {
       throw new Error('Already mounted');
     }
+
     this.ephemeral = ephemeral;
     this.interactionPatcher.mountInteraction(interaction);
     const currentStrand = this.currentStrand;
     if (!currentStrand) {
       throw new Error('No strand to mount');
     }
+
+    let aborted = true;
+    await this.executeMiddlewares(interaction, () => {
+      aborted = false;
+    });
+
+    if (aborted) {
+      const mountFinish: MountFinish = {
+        reason: 'MIDDLEWARE_ABORTED_INITIAL_MOUNT',
+        data: undefined,
+      };
+      await this.flushDispose(interaction, mountFinish, false);
+      return mountFinish;
+    }
+
     const payload = currentStrand.render();
     if (this.ephemeral) {
       if (payload.flags != null) {
@@ -311,25 +331,7 @@ export class Cord implements CordAPI {
       return;
     }
 
-    let index = -1;
-
-    // TODO: Modal components should map their *original* customId since we
-    //       clobbered it.
-
     const strand = this.currentStrand;
-    const dispatch = async (i: number): Promise<void> => {
-      if (i <= index) throw new Error('next() called multiple times');
-      index = i;
-
-      const middleware = this.interactionPipeline[i];
-      if (!middleware) {
-        await strand.executeComponentHandler(interaction);
-        this.queueUpdate(interaction, 'middleware_after_component_exec: ' + interaction.customId);
-        return;
-      }
-
-      await middleware(interaction, () => dispatch(i + 1));
-    };
 
     this.resetIdleTimer();
     this.queueUpdate(interaction, 'middleware_before_component_exec: ' + interaction.customId);
@@ -338,13 +340,20 @@ export class Cord implements CordAPI {
     if (interaction.isMessageComponent()) {
       owner = strand.componentHandlers.get(interaction.customId)?.owner ?? null;
     } else if (interaction.isModalSubmit()) {
+      // TODO: Modal components should map their *original* customId since we
+      //       clobbered it.
       owner = strand.modalHandlers.get(interaction.customId)?.owner ?? null;
       if (!interaction.deferred) {
         void interaction.deferUpdate().catch(() => {});
       }
     }
 
-    await runWithOwner(owner, async () => await dispatch(0));
+    await runWithOwner(owner, async () => {
+      await this.executeMiddlewares(interaction, async () => {
+        await strand.executeComponentHandler(interaction);
+        this.queueUpdate(interaction, 'middleware_after_component_exec: ' + interaction.customId);
+      });
+    });
   }
 
   protected async dispatchPayload(
@@ -373,5 +382,31 @@ export class Cord implements CordAPI {
     } else {
       await channel.messages.edit(this.messageId, payload as any);
     }
+  }
+
+  /**
+   * Executes the middleware chain.
+   * The `finalStep` only runs if no middleware aborted the chain.
+   */
+  private async executeMiddlewares(
+    interaction: RepliableInteraction,
+    finalStep: () => Promise<void> | void,
+  ) {
+    let index = -1;
+
+    const dispatch = async (i: number): Promise<void> => {
+      if (i <= index) throw new Error('next() called multiple times in middleware');
+      index = i;
+
+      if (i === this.interactionPipeline.length) {
+        await finalStep();
+        return;
+      }
+
+      const middleware = this.interactionPipeline[i];
+      await middleware(interaction, () => dispatch(i + 1));
+    };
+
+    await dispatch(0);
   }
 }
