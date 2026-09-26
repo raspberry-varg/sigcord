@@ -1,6 +1,6 @@
-import { CollectedInteraction } from 'discord.js';
+import { type RepliableInteraction } from 'discord.js';
 
 export type InteractionMiddleware = (
-  interaction: CollectedInteraction,
+  interaction: RepliableInteraction,
   next: () => Promise<void>,
 ) => void | Promise<void>;
