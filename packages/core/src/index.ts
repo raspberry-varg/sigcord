@@ -76,7 +76,7 @@ export {
   disposeOwner,
 } from './lib/owners/owner.js';
 export { Context } from './lib/contexts/context.js';
-export { provideContextValue } from './lib/contexts/provideContext.js';
+export { provideContextValue, setContextValueTo } from './lib/contexts/provideContext.js';
 export { useContext } from './lib/contexts/useContext.js';
 export { DisposeFn } from './lib/render/dispose.js';
 export {
