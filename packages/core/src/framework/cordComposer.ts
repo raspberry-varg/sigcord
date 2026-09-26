@@ -135,7 +135,7 @@ export class CordComposer<TProvided = never, TRequired = never> {
     for (let i = this.wrappers.length - 1; i >= 0; i--) {
       const wrapper = this.wrappers[i];
       const inner = rootView;
-      rootView = () => wrapper(inner);
+      rootView = () => wrapper(inner());
     }
     return rootView;
   }
