@@ -1,4 +1,4 @@
-import { Cord } from './cord.js';
+import { Cord, type MountFinish } from './cord.js';
 import { ComponentsV1Strand, type ComponentsV1ViewFactory } from './strands/componentsV1Strand.js';
 import { ComponentsV2Strand } from './strands/componentsV2Strand.js';
 
@@ -8,7 +8,7 @@ import type { RepliableInteraction } from 'discord.js';
 
 export type ViewFactory = () => unknown;
 
-export type Wrapper = (children: ViewFactory) => unknown;
+export type Wrapper = (children: unknown) => unknown;
 
 /**
  * Entry point for all menus managed by Sigcord.
@@ -21,7 +21,7 @@ export function composeCord(): CordComposer {
  * Fluent builder for interactive menus. This is the entry point for all menus
  * managed by Sigcord.
  */
-export class CordComposer {
+export class CordComposer<TProvided = never, TRequired = never> {
   constructor(
     private readonly middlewares: readonly InteractionMiddleware[],
     private readonly wrappers: readonly Wrapper[],
@@ -29,26 +29,45 @@ export class CordComposer {
     private readonly isEphemeral: boolean,
   ) {}
 
-  extends(other: CordComposer): CordComposer {
+  /**
+   * Requires a context to be provided to the menu before any mount method is called.
+   *
+   * This is purely a type-level assertion with no runtime validation.
+   */
+  requires<TNewContext extends Context<any>>(
+    _context: TNewContext,
+  ): CordComposer<TProvided, TRequired | TNewContext> {
+    return this as any;
+  }
+
+  extends<TOtherProvided, TOtherRequired>(
+    other: CordComposer<TOtherProvided, TOtherRequired>,
+  ): CordComposer<
+    TProvided | TOtherProvided,
+    Exclude<TRequired | TOtherRequired, TProvided | TOtherProvided>
+  > {
     return new CordComposer(
       concatDedupe(this.middlewares, other.middlewares),
       concatDedupe(this.wrappers, other.wrappers),
-      this.injectedContexts,
-      this.isEphemeral,
+      extendMap(this.injectedContexts, other.injectedContexts),
+      this.isEphemeral || other.isEphemeral,
     );
   }
 
-  provide<T>(context: Context<T>, value: T) {
+  provide<T>(
+    context: Context<T>,
+    value: NoInfer<T>,
+  ): CordComposer<TProvided | Context<T>, Exclude<TRequired, Context<T>>> {
     const extended = new Map(this.injectedContexts);
     extended.set(context, value);
     return new CordComposer(this.middlewares, this.wrappers, extended, this.isEphemeral);
   }
 
-  ephemeral(value = true) {
+  ephemeral(value = true): CordComposer<TProvided, TRequired> {
     return new CordComposer(this.middlewares, this.wrappers, this.injectedContexts, value);
   }
 
-  use(middleware: InteractionMiddleware) {
+  use(middleware: InteractionMiddleware): CordComposer<TProvided, TRequired> {
     return new CordComposer(
       [...this.middlewares, middleware],
       this.wrappers,
@@ -57,7 +76,7 @@ export class CordComposer {
     );
   }
 
-  wrap(wrapper: Wrapper) {
+  wrap(wrapper: Wrapper): CordComposer<TProvided, TRequired> {
     return new CordComposer(
       this.middlewares,
       [...this.wrappers, wrapper],
@@ -66,7 +85,18 @@ export class CordComposer {
     );
   }
 
-  async mount(interaction: RepliableInteraction, rootView: ViewFactory) {
+  mount(
+    interaction: RepliableInteraction,
+    rootView: ViewFactory,
+    ...[_missing]: [TRequired] extends [never]
+      ? []
+      : [
+          {
+            readonly ERROR: 'Cannot mount! Missing required contexts:';
+            readonly MISSING: TRequired;
+          },
+        ]
+  ): Promise<MountFinish> {
     const cord = new Cord(
       (thisCord, factory) => new ComponentsV2Strand(thisCord, factory, this.injectedContexts),
     );
@@ -78,7 +108,18 @@ export class CordComposer {
     return cord.mount(interaction, this.isEphemeral);
   }
 
-  async mountV1(interaction: RepliableInteraction, rootView: ComponentsV1ViewFactory) {
+  async mountV1(
+    interaction: RepliableInteraction,
+    rootView: ComponentsV1ViewFactory,
+    ...[_missing]: [TRequired] extends [never]
+      ? []
+      : [
+          {
+            readonly ERROR: 'Cannot mount! Missing required contexts:';
+            readonly MISSING: TRequired;
+          },
+        ]
+  ) {
     const cord = new Cord(
       (thisCord, factory) => new ComponentsV1Strand(thisCord, factory, this.injectedContexts),
     );
@@ -102,4 +143,8 @@ export class CordComposer {
 
 function concatDedupe<T>(a: readonly T[], b: readonly T[]): T[] {
   return [...new Set([...a, ...b])];
+}
+
+function extendMap<K, V>(a: ReadonlyMap<K, V>, b: ReadonlyMap<K, V>): Map<K, V> {
+  return new Map([...a, ...b]);
 }
