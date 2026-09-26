@@ -30,7 +30,10 @@ export function createContext<T>(
   defaultValue?: undefined,
   options?: CreateContextOptions,
 ): ContextWithProvider<T | undefined>;
-export function createContext<T>(defaultValue: T, options?: CreateContextOptions): Context<T>;
+export function createContext<T>(
+  defaultValue: T,
+  options?: CreateContextOptions,
+): ContextWithProvider<T>;
 export function createContext<T>(
   defaultValue?: T,
   options?: CreateContextOptions,
