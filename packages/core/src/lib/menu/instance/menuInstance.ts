@@ -6,6 +6,7 @@ import {
   MessageActionRowComponentBuilder,
   MessageComponentBuilder,
   MessageFlags,
+  MessageFlagsBitField,
   ModalBuilder,
   ModalSubmitInteraction,
   type RepliableInteraction,
@@ -123,7 +124,7 @@ export class MenuInstance<ViewId extends string = string, AllProps extends Props
   ) {
     this.rootOwner.context[SYNAPSE_CONTEXT_ID] = this;
     this.views = new Map(registeredViews.map((v) => [v.id, v]));
-    this.props = buildProps(this, this.getView(initialViewId).defaults as any, initialProps as any);
+    this.props = buildProps(this, initialProps as any, this.getView(initialViewId).defaults as any);
 
     this.patcher = new InteractionPatcherLegacy(interaction, this.props);
 
@@ -274,6 +275,16 @@ export class MenuInstance<ViewId extends string = string, AllProps extends Props
 
     const payload = await this.render(null);
     if (payload) {
+      const flags = payload.flags ? MessageFlagsBitField.resolve([payload.flags]) : 0;
+      if (
+        this.props.ephemeral ||
+        ((this.props.flags ? MessageFlagsBitField.resolve([this.props.flags]) : 0) &
+          MessageFlags.Ephemeral) !==
+          0
+      ) {
+        payload.flags = flags | MessageFlags.Ephemeral;
+      }
+
       try {
         const result = await this.patcher.patch(payload, {});
         switch (result) {
@@ -736,26 +747,10 @@ function buildProps(
   initProps: PropsBase & IntrinsicMenuProps,
   initialViewDefaults: PropsBase & IntrinsicMenuProps,
 ): ClassViewProps & IntrinsicMenuProps {
-  let flags = initProps.flags ?? 0;
-  flags |= initialViewDefaults.flags ?? 0;
-
-  if (initProps.ephemeral) {
-    flags |= MessageFlags.Ephemeral;
-  } else if (initProps.ephemeral === false) {
-    flags &= ~MessageFlags.Ephemeral;
-  }
-
-  if (initProps.ephemeral) {
-    flags |= MessageFlags.Ephemeral;
-  } else if (initProps.ephemeral === false) {
-    flags &= ~MessageFlags.Ephemeral;
-  }
-
   return {
     ...DefaultProperties,
     ...initialViewDefaults,
     ...initProps,
-    flags,
     $: instance,
   };
 }
