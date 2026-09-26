@@ -1,21 +1,12 @@
-import {
-  computed,
-  createBoundaryNode,
-  effect,
-  getOwnerOrThrow,
-  isSignal,
-  isWritableSignal,
-  markDirty,
-  owner,
-  OwnerTraceContext,
-  OwnerTraceType,
-  provideContextValue,
-  read,
-  type Signal,
-  untracked,
-  useDisposeOwnerFn,
-  type ViewNode,
-} from '@sigcord/core';
+import { OwnerTraceContext, OwnerTraceType } from '../../core/contexts/ownerTraceContext.js';
+import { computed } from '../../core/primitives/index.js';
+import { effect, markDirty } from '../../framework/hooks/index.js';
+import { provideContextValue } from '../../lib/contexts/provideContext.js';
+import { getOwnerOrThrow, owner, useDisposeOwnerFn } from '../../lib/owners/owner.js';
+import { read } from '../../lib/reactivity/core/read.js';
+import { isSignal, isWritableSignal, type Signal } from '../../lib/reactivity/core/signals.js';
+import { untracked } from '../../lib/reactivity/untracked.js';
+import { createBoundaryNode, type ViewNode } from '../../lib/vdom/index.js';
 
 type WhenTruthy<Condition> = (
   result: Condition extends Signal<infer C> | (() => infer C)

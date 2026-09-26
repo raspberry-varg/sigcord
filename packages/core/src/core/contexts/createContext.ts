@@ -1,27 +1,26 @@
-import {
-  type Context as CoreContext,
-  getOwnerOrThrow,
-  owner,
-  provideContextValue,
-  createBoundaryNode,
-  type ViewNode,
-} from '@sigcord/core';
+import { provideContextValue } from '../../lib/contexts/provideContext.js';
+import { getOwnerOrThrow, owner } from '../../lib/owners/owner.js';
+import { createBoundaryNode, type ViewNode } from '../../lib/vdom/index.js';
 
-import type { JSXChildren } from '../jsx-runtime.js';
-
-interface ProviderProps<T> extends JSXChildren {
-  value: T;
-}
+import type { Context } from '../../lib/contexts/context.js';
 
 /**
- * Context with a Provider.
+ * Props for a Context's {@link Provider} component.
  */
-export interface Context<T> extends CoreContext<T> {
-  Provider: (props: ProviderProps<T>) => ViewNode | ViewNode[];
+export interface ProviderProps<T> {
+  value: T;
+  children: unknown;
 }
 
 interface CreateContextOptions {
   name?: string;
+}
+
+/**
+ * Creates a new context with a built-in Provider component.
+ */
+export interface ContextWithProvider<T> extends Context<T> {
+  Provider: (props: ProviderProps<T>) => ViewNode | ViewNode[];
 }
 
 /**
@@ -30,13 +29,13 @@ interface CreateContextOptions {
 export function createContext<T>(
   defaultValue?: undefined,
   options?: CreateContextOptions,
-): Context<T | undefined>;
+): ContextWithProvider<T | undefined>;
 export function createContext<T>(defaultValue: T, options?: CreateContextOptions): Context<T>;
 export function createContext<T>(
   defaultValue?: T,
   options?: CreateContextOptions,
-): Context<T | undefined> {
-  const context: Context<T | undefined> = {
+): ContextWithProvider<T | undefined> {
+  const context: ContextWithProvider<T | undefined> = {
     id: Symbol(options?.name ?? 'unnamed context'),
     default: defaultValue,
     Provider: (props: ProviderProps<T | undefined>) => {

@@ -1,22 +1,13 @@
-import {
-  createBoundaryNode,
-  effect,
-  getConfig,
-  getOwnerOrThrow,
-  isVDOMNode,
-  markDirty,
-  NodeType,
-  onCleanup,
-  owner,
-  OwnerTraceContext,
-  OwnerTraceType,
-  provideContextValue,
-  type Signal,
-  useDisposeOwnerFn,
-  type ViewNode,
-} from '@sigcord/core';
+import { getConfig } from '../../config.js';
+import { OwnerTraceContext, OwnerTraceType } from '../../core/contexts/ownerTraceContext.js';
+import { effect, markDirty } from '../../framework/hooks/index.js';
+import { provideContextValue } from '../../lib/contexts/provideContext.js';
+import { onCleanup } from '../../lib/hooks/onCleanup.js';
+import { getOwnerOrThrow, owner, useDisposeOwnerFn } from '../../lib/owners/owner.js';
+import { createBoundaryNode, isVDOMNode, NodeType, type ViewNode } from '../../lib/vdom/index.js';
 
-import { type JSXElement, type JSXNode } from '../index.js';
+import type { Signal } from '../../lib/reactivity/core/signals.js';
+import type { JSXElement } from 'oxlint/plugins-dev';
 
 interface BaseProps {
   isDefault?: true;
@@ -165,7 +156,7 @@ interface CaseProps<Condition = unknown> {
 
 export function Case<Condition = unknown>(
   ...props: [CaseProps<Condition>] | [when: () => Condition, content: () => unknown]
-): JSXNode {
+): ViewNode {
   let when;
   let content;
   if (props.length === 1) {
@@ -178,14 +169,14 @@ export function Case<Condition = unknown>(
   return {
     when,
     content,
-  } satisfies CaseData<Condition> as unknown as JSXNode;
+  } satisfies CaseData<Condition> as unknown as ViewNode;
 }
 
-export function Default(show: () => unknown): JSXNode {
+export function Default(show: () => unknown): ViewNode {
   return {
     isDefault: true,
     content: show,
-  } satisfies DefaultData as unknown as JSXNode;
+  } satisfies DefaultData as unknown as ViewNode;
 }
 
 function throwValidationError(index: number, value: unknown): never {

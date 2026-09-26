@@ -16,6 +16,7 @@
   "type": "module",
   "types": "./dist/index.d.ts",
   "exports": {
+    "./package.json": "./package.json",
     ".": {
       "default": "./dist/index.js",
       "types": "./dist/index.d.ts"
@@ -23,6 +24,14 @@
     "./legacy": {
       "default": "./dist/legacy/index.js",
       "types": "./dist/legacy/index.d.ts"
+    },
+    "./flow": {
+      "default": "./dist/components/flow/index.js",
+      "types": "./dist/components/flow/index.d.ts"
+    },
+    "./components": {
+      "default": "./dist/components/index.js",
+      "types": "./dist/components/index.d.ts"
     }
   },
   "publishConfig": {

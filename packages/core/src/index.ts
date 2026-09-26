@@ -7,6 +7,8 @@ export * from './core/primitives/index.js';
 
 export * from './lib/vdom/index.js';
 
+export { createContext } from './core/contexts/createContext.js';
+
 export { OwnerTraceContext, OwnerTraceType } from './core/contexts/ownerTraceContext.js';
 
 export { patchEffect } from './framework/hooks/legacy/patchEffect.js';

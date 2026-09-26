@@ -1,24 +1,15 @@
-import {
-  batch,
-  createOwner,
-  createBoundaryNode,
-  effect,
-  getConfig,
-  getOwner,
-  isSignal,
-  markDirty,
-  onCleanup,
-  type Owner,
-  OwnerTraceContext,
-  OwnerTraceType,
-  provideContextValue,
-  runWithOwner,
-  type Setter,
-  signal,
-  type Signal,
-  untracked,
-  type ViewNode,
-} from '@sigcord/core';
+import { batch } from '@preact/signals-core';
+
+import { getConfig } from '../../config.js';
+import { OwnerTraceContext, OwnerTraceType } from '../../core/contexts/ownerTraceContext.js';
+import { signal } from '../../core/primitives/index.js';
+import { effect, markDirty } from '../../framework/hooks/index.js';
+import { provideContextValue } from '../../lib/contexts/provideContext.js';
+import { onCleanup } from '../../lib/hooks/onCleanup.js';
+import { createOwner, getOwner, type Owner, runWithOwner } from '../../lib/owners/owner.js';
+import { isSignal, type Setter, type Signal } from '../../lib/reactivity/core/signals.js';
+import { untracked } from '../../lib/reactivity/untracked.js';
+import { createBoundaryNode, type ViewNode } from '../../lib/vdom/index.js';
 
 interface IndexProps<Each extends Iterable<unknown> | Signal<Iterable<unknown>>> {
   each: Each;

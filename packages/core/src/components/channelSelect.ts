@@ -1,14 +1,4 @@
 import {
-  component,
-  effect,
-  getCurrentSynapseOrDefault,
-  getNextUniqueComponentId,
-  markDirty,
-  type MaybeSignal,
-  read,
-  useComponentHandler,
-} from '@sigcord/core';
-import {
   APIChannelSelectComponent,
   APISelectMenuDefaultValue,
   ChannelSelectMenuBuilder,
@@ -18,12 +8,24 @@ import {
   SelectMenuDefaultValueType,
 } from 'discord.js';
 
-import { isNonNullable } from '../util/guards/isNonNullable.js';
+import {
+  component,
+  createUniqueComponentId,
+  effect,
+  markDirty,
+  useComponentHandler,
+} from '../framework/hooks/index.js';
+import { getCurrentSynapseOrDefault } from '../lib/builtins/currentSynapse.js';
+import { read } from '../lib/reactivity/core/read.js';
 
 import { type BaseSelectMenuProps } from './baseSelectMenuProps.js';
 
+import type { MaybeSignal } from '../lib/reactivity/core/signals.js';
+
 const MIN_DEFAULT = 0;
 const MAX_DEFAULT = 1;
+
+const isNonNullable = <T>(value: T): value is NonNullable<T> => value != null;
 
 interface ChannelSelectMenuProps extends BaseSelectMenuProps<ChannelSelectMenuInteraction> {
   selected?: MaybeSignal<ReadonlyArray<MaybeSignal<string | null | undefined>>>;
@@ -35,7 +37,7 @@ interface ChannelSelectMenuProps extends BaseSelectMenuProps<ChannelSelectMenuIn
  * the types of channels allowed.
  */
 export function ChannelSelect(props: ChannelSelectMenuProps) {
-  const id = props.id || getNextUniqueComponentId();
+  const id = props.id || createUniqueComponentId();
 
   const selectMenu: APIChannelSelectComponent = {
     type: ComponentType.ChannelSelect,

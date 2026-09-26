@@ -1,14 +1,4 @@
 import {
-  component,
-  effect,
-  getCurrentSynapseOrDefault,
-  getNextUniqueComponentId,
-  markDirty,
-  type MaybeSignal,
-  read,
-  useComponentHandler,
-} from '@sigcord/core';
-import {
   APISelectMenuDefaultValue,
   type APIUserSelectComponent,
   ComponentType,
@@ -17,7 +7,14 @@ import {
   type UserSelectMenuInteraction,
 } from 'discord.js';
 
+import { component, effect, markDirty, useComponentHandler } from '../framework/hooks/index.js';
+import { getNextUniqueComponentId } from '../lib/builtins/builtins.js';
+import { getCurrentSynapseOrDefault } from '../lib/builtins/currentSynapse.js';
+import { read } from '../lib/reactivity/core/read.js';
+
 import { type BaseSelectMenuProps } from './baseSelectMenuProps.js';
+
+import type { MaybeSignal } from '../lib/reactivity/core/signals.js';
 
 const MIN_DEFAULT = 0;
 const MAX_DEFAULT = 1;

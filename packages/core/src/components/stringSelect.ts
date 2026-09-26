@@ -1,4 +1,4 @@
-import { h, type IntrinsicPropsMap } from '@sigcord/core';
+import { h, type IntrinsicPropsMap } from '../lib/vdom/index.js';
 
 /**
  * @deprecated Use the intrinsic <stringSelect> tag instead.

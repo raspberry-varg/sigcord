@@ -8,9 +8,13 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "skipLibCheck": true,
-    
+
     "types": [],
+
+    "jsx": "preserve",
+    "jsxFactory": "elementFactory",
+    "jsxFragmentFactory": "fragmentFactory"
   },
   "include": ["./src/**/*"],
-  "exclude": ["dist"],
+  "exclude": ["dist"]
 }
