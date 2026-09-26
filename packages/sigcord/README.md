@@ -6,17 +6,11 @@ Integrates with [Discord.js](https://discord.js.org) under the hood.
 
 ## Installation
 
-Add `sigcord` as a dependency to your `package.json`. JSX is recommended, but not required.
+Add `sigcord` as a dependency to your `package.json`. JSX is supported out of the box.
 
 **Note that [Discord.js](https://discord.js.org) is required.**
 
 ```shell
-npm install sigcord @sigcord/jsx discord.js
-yarn add sigcord @sigcord/jsx discord.js
-pnpm add sigcord @sigcord/jsx discord.js
-bun add sigcord @sigcord/jsx discord.js
-
-# Without JSX
 npm install sigcord discord.js
 yarn add sigcord discord.js
 pnpm add sigcord discord.js
@@ -25,23 +19,16 @@ bun add sigcord discord.js
 
 ### JSX (React syntax)
 
-Sigcord comes with an optional JSX wrapper, types and batteries included. First, install the peer dependency:
+Sigcord supports writing UI in JSX, types and batteries included. First, install the peer dependency:
 
-```shell
-npm install @sigcord/jsx
-yarn add @sigcord/jsx
-pnpm add @sigcord/jsx
-bun add @sigcord/jsx
-```
-
-Then configure your JSX to be `react-jsx`, pointing at `@sigcord/jsx` as the import source. For `tsconfig.json`, this
+Configure your JSX to be `react-jsx`, pointing at `sigcord` as the import source. For `tsconfig.json`, this
 would look something like:
 
 ```json
 {
   "compilerOptions": {
     "jsx": "react-jsx",
-    "jsxImportSource": "@sigcord/jsx"
+    "jsxImportSource": "sigcord"
   }
 }
 ```
