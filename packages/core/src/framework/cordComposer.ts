@@ -32,6 +32,9 @@ export class CordComposer<TProvided = never, TRequired = never> {
   /**
    * Requires a context to be provided to the menu before any mount method is called.
    *
+   * Satisfied by any subsequent call to {@link provide} with {@link _context} in the composition
+   * chain.
+   *
    * This is purely a type-level assertion with no runtime validation.
    */
   requires<TNewContext extends Context<any>>(
@@ -40,6 +43,12 @@ export class CordComposer<TProvided = never, TRequired = never> {
     return this as any;
   }
 
+  /**
+   * Inherit the contexts and middlewares from another composer. Those defined within this composer
+   * take precedence over those defined within {@link other}.
+   *
+   * @param other
+   */
   extends<TOtherProvided, TOtherRequired>(
     other: CordComposer<TOtherProvided, TOtherRequired>,
   ): CordComposer<
@@ -54,6 +63,12 @@ export class CordComposer<TProvided = never, TRequired = never> {
     );
   }
 
+  /**
+   * Provide a context value to the root owner of the mounted Cord.
+   *
+   * Helps to avoid the provider tree of doom. Satisfies any {@link requires} call that references
+   * the provided context in the composition chain.
+   */
   provide<T>(
     context: Context<T>,
     value: NoInfer<T>,
@@ -63,10 +78,22 @@ export class CordComposer<TProvided = never, TRequired = never> {
     return new CordComposer(this.middlewares, this.wrappers, extended, this.isEphemeral);
   }
 
+  /**
+   * Set if this Cord should mount to an interaction as an ephemeral message.
+   */
   ephemeral(value = true): CordComposer<TProvided, TRequired> {
     return new CordComposer(this.middlewares, this.wrappers, this.injectedContexts, value);
   }
 
+  /**
+   * Add a middleware to run on an incoming interaction. If a middleware's `next()` is not called,
+   * the interaction will be ignored.
+   *
+   * This also runs on the interaction mount target; if you skip calling `next()`, you can skip
+   * instantiating the Cord altogether.
+   *
+   * @param middleware
+   */
   use(middleware: InteractionMiddleware): CordComposer<TProvided, TRequired> {
     return new CordComposer(
       [...this.middlewares, middleware],
@@ -76,6 +103,13 @@ export class CordComposer<TProvided = never, TRequired = never> {
     );
   }
 
+  /**
+   * Wrap the main mount point of the Cord in another function.
+   *
+   * Note that the wrapped function is invoked before being sent into {@link wrapper}.
+   *
+   * @param wrapper
+   */
   wrap(wrapper: Wrapper): CordComposer<TProvided, TRequired> {
     return new CordComposer(
       this.middlewares,
@@ -85,6 +119,9 @@ export class CordComposer<TProvided = never, TRequired = never> {
     );
   }
 
+  /**
+   * Mount a Components V2 view onto an interaction.
+   */
   mount(
     interaction: RepliableInteraction,
     rootView: ViewFactory,
@@ -108,6 +145,9 @@ export class CordComposer<TProvided = never, TRequired = never> {
     return cord.mount(interaction, this.isEphemeral);
   }
 
+  /**
+   * Mount a Components V1 view onto an interaction.
+   */
   async mountV1(
     interaction: RepliableInteraction,
     rootView: ComponentsV1ViewFactory,
