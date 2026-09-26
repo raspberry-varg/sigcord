@@ -46,8 +46,14 @@ interface RenderedReactiveViewBase {
 
 interface RenderedReactiveViewV1 extends RenderedReactiveViewBase {
   roots?: {
-    embeds?: unknown[];
-    components?: unknown[];
+    embeds?: {
+      vdom: unknown[];
+      owner: Owner;
+    };
+    components?: {
+      vdom: unknown[];
+      owner: Owner;
+    };
   };
   lastRender?: ReactiveViewPayloadV1;
   factory: () => ReactiveViewPayloadV1;

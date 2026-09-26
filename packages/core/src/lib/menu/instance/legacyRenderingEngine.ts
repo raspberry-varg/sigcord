@@ -266,6 +266,8 @@ export class LegacyRenderingEngine {
             debugName: 'V1_super_root',
           });
           runWithOwner(superOwner, () => {
+            provideContextValue(PatchTargetContext, PatchTarget.All);
+
             instance.roots = {};
             const result = (instance.lastRender = instance.factory());
             if (result.embeds) {
@@ -274,7 +276,10 @@ export class LegacyRenderingEngine {
                   provideContextValue(PatchTargetContext, PatchTarget.Embeds);
                   const vdom =
                     typeof result.embeds === 'function' ? result.embeds() : result.embeds;
-                  return Array.isArray(vdom) ? vdom : [vdom];
+                  return {
+                    owner: getOwnerOrThrow(),
+                    vdom: Array.isArray(vdom) ? vdom : [vdom],
+                  };
                 },
                 {
                   debugName: 'V1_embeds_root',
@@ -289,7 +294,10 @@ export class LegacyRenderingEngine {
                     typeof result.components === 'function'
                       ? result.components()
                       : result.components;
-                  return Array.isArray(vdom) ? vdom : [vdom];
+                  return {
+                    owner: getOwnerOrThrow(),
+                    vdom: Array.isArray(vdom) ? vdom : [vdom],
+                  };
                 },
                 {
                   debugName: 'V1_components_root',
@@ -312,9 +320,9 @@ export class LegacyRenderingEngine {
           if (this.isQueuedForClear(PatchTarget.Embeds)) {
             payload.embeds = [];
           } else {
-            const embedsRoot = roots.embeds;
+            const { vdom, owner: embedsOwner } = roots.embeds;
             // TODO: We should be using the embeds owner, not the instance root's.
-            const flattened = runWithOwner(instance.owner!, () => flatten(embedsRoot));
+            const flattened = runWithOwner(embedsOwner, () => flatten(vdom));
             payload.embeds = Array.isArray(flattened) ? flattened : [flattened];
             coreLog.verbose('flattened embeds', payload.embeds);
           }
@@ -323,9 +331,9 @@ export class LegacyRenderingEngine {
           if (this.isQueuedForClear(PatchTarget.Components)) {
             payload.components = [];
           } else {
-            const componentsRoot = roots.components;
+            const { vdom, owner: componentsOwner } = roots.components;
             // TODO: We should be using the components owner, not the instance root's.
-            const flattened = runWithOwner(instance.owner!, () => flatten(componentsRoot));
+            const flattened = runWithOwner(componentsOwner, () => flatten(vdom));
             payload.components = Array.isArray(flattened) ? flattened : [flattened];
             coreLog.verbose('flattened components', payload.components);
           }
