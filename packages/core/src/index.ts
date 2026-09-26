@@ -1,6 +1,6 @@
 export { configure, getConfig } from './config.js';
 export { routeInteraction } from './framework/router.js';
-export { MenuBuilder } from './framework/menuBuilder.js';
+export { CordComposer, composeCord } from './framework/cordComposer.js';
 export * from './framework/hooks/index.js';
 export * from './framework/interactionMiddleware.js';
 export * from './core/primitives/index.js';

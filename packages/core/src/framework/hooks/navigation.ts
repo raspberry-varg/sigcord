@@ -2,7 +2,7 @@ import { getCurrentSynapse } from '../../lib/builtins/currentSynapse.js';
 import { useCordInternalOrThrow } from '../cordContext.js';
 
 import type { Synapse } from '../../lib/menu/instance/synapse.js';
-import type { ViewFactory } from '../menuBuilder.js';
+import type { ViewFactory } from '../cordComposer.js';
 
 /**
  * Instantiate and navigate to a different view.
