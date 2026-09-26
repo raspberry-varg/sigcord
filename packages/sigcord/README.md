@@ -33,6 +33,51 @@ would look something like:
 }
 ```
 
+Once that's done, you can start using JSX in your views:
+
+```tsx
+import { ButtonStyle } from 'discord.js';
+
+function ClickMe({ name }: { name: string }) {
+  return (
+    <button
+      style={ButtonStyle.PRIMARY}
+      onClick={(button) => {
+        /* ... */
+      }}
+    >
+      Click me, {name}!
+    </button>
+  );
+}
+
+function App() {
+  return <ClickMe name="Sigcord" />;
+}
+```
+
+### Hyperscript (For the JSX-averse)
+
+You can use a simple `h` function that is provided by `sigcord`, which powers the underlying JSX wrapper:
+
+```tsx
+import { h } from 'sigcord';
+
+function ClickMe({ name }: { name: string }) {
+  return h('button', {
+    style: ButtonStyle.PRIMARY,
+    onClick: (button) => {
+      /* ... */
+    },
+    children: ['Click me, ', name, '!'],
+  });
+}
+
+function App() {
+  return h(ClickMe, {});
+}
+```
+
 ### Example Usage
 
 > _Full documentation is planned, but with no set timeline._
@@ -46,86 +91,105 @@ take a single type parameter defining the props it accepts, which is useful for 
 Each view takes an `id`, followed by the factory function, and lastly some default options (i.e. `flags` for ephemeral).
 
 ```tsx
-import { defineView, defineViewV2 } from './defineReactiveView';
-import { ActionRowBuilder, ButtonBuilder, EmbedBuilder, MessageFlags } from 'discord.js';
+import { ButtonBuilder, ButtonStyle } from 'discord.js';
 
 interface Props {
   name: string;
 }
 
-const HelloWorldV2 = defineViewV2(
-  'hello-world-v2',
-  (props) => {
-    return (
-      <container>
-        <h1>Hello World</h1>
-        <text>Hello, {props.name}, it's great to have you here!</text>
-        <actionRow>
-          <button>{/* ... */}</button>
-        </actionRow>
-      </container>
-    );
-  },
-  { flags: MessageFlags.Ephemeral },
-); // default attributes
+function HelloWorldV2(props: Props) {
+  const builder = new ButtonBuilder();
+  return (
+    <container>
+      <h1>Hello World</h1>
+      <text>Hello, {props.name}, it's great to have you here!</text>
+      <actionRow>
+        <button
+          style={ButtonStyle.PRIMARY}
+          onClick={(button) => {
+            /* ... */
+          }}
+        >
+          {/* ... */}
+        </button>
+        {builder /* supports builders and API data for incremental adoption/simplicity */}
+      </actionRow>
+    </container>
+  );
+}
 
-const HelloWorld = defineView(
-  'hello-world',
-  (props) => {
-    return {
-      content: 'Some text content',
-      embeds: [
-        new EmbedBuilder()
-          .setTitle('Hello World')
-          .setDescription(`Hello, ${props.name}, it's great to have you here!`),
-      ],
-      components: [
-        new ActionRowBuilder().setComponents(
-          new ButtonBuilder(), //...
-        ),
-      ],
-    };
-  },
-  { flags: MessageFlags.Ephemeral },
-); // default attributes
+function HelloWorld(props: Props) {
+  return {
+    content: 'Some text content',
+    embeds: [
+      new EmbedBuilder()
+        .setTitle('Hello World')
+        .setDescription(`Hello, ${props.name}, it's great to have you here!`),
+    ],
+    components: [
+      <actionRow>
+        <button
+          style={ButtonStyle.PRIMARY}
+          onClick={(button) => {
+            /* ... */
+          }}
+        >
+          {/* ... */}
+        </button>
+        {builder /* supports builders and API data for incremental adoption/simplicity */}
+      </actionRow>,
+    ],
+  };
+}
 ```
 
 These view functions return a factory that can be invoked directly. It accepts an interaction, followed by an object
 that accepts common attributes like `flags` (i.e., `MessageFlags.Ephemeral`) and any props the view accepts:
 
-```ts
-import { HelloWorld } from './helloWorld.js';
+```tsx
 import type { ChatInputCommandInteraction } from 'discord.js';
+import { composeCord } from './cordComposer';
 
 async function handleInteraction(interaction: ChatInputCommandInteraction): Promise<void> {
-  const menuInstance = HelloWorld(interaction, {
-    // props
-    name: interaction.member.displayName,
+  const result = await composeCord()
+    .ephemeral()
+    .mountV1(interaction, () => <HelloWorld />);
+}
 
-    // attributes; these override any defaults defined by the view itself.
-    flags: MessageFlags.Ephemeral,
-  });
-  await menuInstance.start();
+async function handleInteraction(interaction: ChatInputCommandInteraction): Promise<void> {
+  const result = await composeCord()
+    .ephemeral()
+    .mount(interaction, () => <HelloWorldV2 />);
 }
 ```
 
 Here's a more involved example:
 
-```ts
-const menu = SheetEditorV2(lastInteraction, {
-  // props
-  server: server.document,
-  sheet: character,
-  viewer: interaction.member,
-  author: target,
-  wantEdit: true,
+```tsx
+import { composeCord } from './cordComposer';
+import { SheetEditorV2 } from './view';
+import { ViewerContext } from './viewerContext';
 
-  // attributes
-  renderAfterHandledInteraction: true,
-  initialMessage: message,
-  flags: MessageFlags.Ephemeral,
-});
-await menu.start();
+const ViewerContext = createContext<{ viewer: Member }>();
+
+const AuthCord = composeCord()
+  .requires(ViewerContext) // enforce at the type-level that this context is provided
+  .use(async (interaction, next) => {
+    // ...authentication, skip next() if not authorized.
+    await next();
+  });
+
+const result = await composeCord()
+  .extends(AuthCord)
+  .ephemeral()
+  .provide(ViewerContext, { viewer: interaction.member })
+  .use(async (interaction, next) => {
+    // ...some middleware
+    await next();
+  })
+  .mount(() => (
+    <SheetEditorV2 server={server.document} sheet={character} author={target} wantEdit />
+  ));
 ```
 
 #### Reusable Components
@@ -140,7 +204,7 @@ import { signal } from 'sigcord';
 import { type ButtonInteraction, ButtonStyle } from 'discord.js';
 import { computed } from './computed';
 
-const ButtonMenu = defineViewV2('button-menu', () => {
+function ButtonMenu() {
   return (
     <>
       <h1>Button Clicker!!!</h1>
@@ -152,7 +216,7 @@ const ButtonMenu = defineViewV2('button-menu', () => {
       </container>
     </>
   );
-});
+}
 
 function ClicksButton({ style }: { style: ButtonStyle }) {
   const [clicks, setClicks] = signal(0);
@@ -185,42 +249,42 @@ function HotButton({ hotCount }: { hotCount: number }) {
 }
 ```
 
-If you prefer to gradually adopt this library into existing code, however, the same can be achieved with the underlying
-`component()` function! This function takes an optional `id`, a component builder for the actual component to display,
-and an event handler. The component builder is returned as-is.
+If you prefer to gradually adopt this library into existing code, however, there are some hooks that can help you out!
 
-Signal-based libraries typically ban asynchronous event handlers, but all global state is saved to
+Signal-based libraries typically ban asynchronous event handlers, but global state is saved to
 [`AsyncLocalStorage`](https://nodejs.org/api/async_context.html)! So feel free to `async`/`await` as much as you want :)
 
-`patchEffect(() => {...})` subscribes to signals that are called within it, rerunning each time one of them has changed.
-It also notifies the library that each time it reruns, something might have changed, kicking off an edit to the message
-with the newly-modified content. Since signals are granular, only the relevant code dependent on a signal reruns rather
-than reexecuting the entire component!
+`effect(() => {...})` subscribes to signals that are called within it, rerunning each time one of them has changed.
 
-There is a non-patch version `effect()` that may be useful for logging.
+If you are manually updating some display components, be sure to call `markDirty()` so that the library knows to redraw
+the UI and update the message with the new reply.
+
+Since signals are granular, only the relevant code dependent on a signal will rerun rather than reexecuting the entire component!
 
 ```ts
 import { ButtonBuilder, ButtonStyle } from 'discord.js';
-import { patchEffect } from './builtins';
-import { computed } from './computed';
+import { computed, effect, markDirty, createUniqueComponentId } from 'sigcord';
+import { useComponentHandler } from './useComponentHandler';
 
 function HotButton({ hotCount }: { hotCount: number }) {
   const [clicks, setClicks] = signal(0);
   const isHot = computed(() => clicks() >= hotCount);
 
-  const button = new ButtonBuilder();
-  patchEffect(() => {
+  const id = createUniqueComponentId();
+  const button = new ButtonBuilder().setCustomId(id);
+  useComponentHandler(id, (button) => {
+    setClicks(clicks() + 1);
+  });
+  effect(() => {
     button
       .setStyle(isHot() ? ButtonStyle.Danger : ButtonStyle.Primary)
       .setLabel(
         isHot() ? `${clicks()} is a lot of clicks!` : `You have clicked me ${clicks()} times.`,
       );
+    markDirty();
   });
 
-  return component({
-    component: button,
-    handler: (b) => setClicks(clicks() + 1),
-  });
+  return button;
 }
 ```
 
