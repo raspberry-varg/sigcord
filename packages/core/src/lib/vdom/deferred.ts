@@ -32,11 +32,14 @@ export function executeDeferredNode(node: DeferredNode): unknown {
     return node._resolvedContent;
   }
 
-  const componentOwner = (node._owner ??= createOwner(getOwner()));
+  const name = node.componentFn.name || 'AnonymousComponent';
+  const componentOwner = (node._owner ??= createOwner(getOwner(), {
+    debugName: `Component(${name})`,
+  }));
   node._resolvedContent = runWithOwner(componentOwner, () => {
     provideContextValue(OwnerTraceContext, {
       type: OwnerTraceType.Component,
-      name: node.componentFn.name || 'AnonymousComponent',
+      name,
     });
     try {
       return node.componentFn(node.props ?? {});
