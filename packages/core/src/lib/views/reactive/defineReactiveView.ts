@@ -7,7 +7,7 @@ import {
 
 import { getConfig } from '../../../config.js';
 import { promiseWithResolvers } from '../../../core/utils/promiseWithResolvers.js';
-import { MenuBuilder } from '../../../framework/menuBuilder.js';
+import { composeCord } from '../../../framework/cordComposer.js';
 import { instantiateMenu } from '../../menu/instance/instantiateMenu.js';
 import { IS_V2 } from '../viewFlavors.js';
 
@@ -28,7 +28,7 @@ import type {
 } from './reactiveViewFactory.js';
 
 /**
- * @deprecated Please use {@link MenuBuilder} with {@link MenuBuilder.mountV1} instead.
+ * @deprecated Please use {@link CordComposer} with {@link CordComposer.mountV1} instead.
  *
  * Define a reactive view instance.
  *
@@ -69,7 +69,7 @@ export function defineView<Props extends PropsBase = PropsBase>(
 }
 
 /**
- * @deprecated Please use {@link MenuBuilder} with {@link MenuBuilder.mount} instead.
+ * @deprecated Please use {@link CordComposer} with {@link CordComposer.mount} instead.
  *
  * Returns a callable function to instantiate a new Menu instance that supports Components V2.
  */
@@ -131,7 +131,7 @@ function toMenuInstanceActions(
   interaction: RepliableInteraction,
   resolvedProps: PropsBase,
 ): MenuInstanceActions {
-  const template = new MenuBuilder().ephemeral(isEphemeral);
+  const template = composeCord().ephemeral(isEphemeral);
 
   const endPromise = promiseWithResolvers<string | null>();
   const endCallbacks: Array<(reason: string | null) => void> = [endPromise.resolve];
