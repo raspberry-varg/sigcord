@@ -47,19 +47,9 @@ export function defineView<Props extends PropsBase = PropsBase>(
     [REACTIVE_VIEW_SYMBOL]: true,
   };
   const menuFactory: MenuFactory<Props> = (interaction, props) => {
-    const flags: MessageFlagsResolvable[] = [];
-    if (defaults.flags != null) flags.push(defaults.flags);
-    if (props.flags != null) flags.push(props.flags);
-    if (defaults.ephemeral && props.ephemeral !== false) {
-      flags.push(MessageFlags.Ephemeral);
-    }
-    if (props.ephemeral) {
-      flags.push(MessageFlags.Ephemeral);
-    }
-
-    const resolvedFlags = MessageFlagsBitField.resolve(flags);
-    const resolvedProps = { ...definition.defaults, ...props, flags: resolvedFlags };
-    const isEphemeral = (resolvedFlags & MessageFlags.Ephemeral) !== 0;
+    const resolvedProps = { ...definition.defaults, ...props };
+    const isEphemeral =
+      resolvedProps.flags != null && (resolvedProps.flags & MessageFlags.Ephemeral) !== 0;
     if (!getConfig().useCordFactoriesForLegacyViewDefines) {
       return instantiateMenu(id, id, [definition], interaction, resolvedProps);
     }
