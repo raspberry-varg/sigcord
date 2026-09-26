@@ -2,7 +2,11 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 
 import { ImperativeLockContext, ImperativeLockKind } from '../../core/contexts/imperativeLock.js';
 import { coreLog } from '../../internal/coreLog.js';
-import { provideContextValue } from '../contexts/provideContext.js';
+import {
+  dropContextValue,
+  provideContextValue,
+  setContextValueTo,
+} from '../contexts/provideContext.js';
 
 import type { ContextNode } from '../contexts/contextNode.js';
 import type { DisposeFn, ResumeFn, SuspendFn } from '../render/dispose.js';
@@ -80,6 +84,11 @@ class OwnerImpl implements Owner {
   }
 
   addChild(child: Owner): void {
+    if (this.disposed) {
+      coreLog.warn('Attempted to add a child to a disposed owner', { debugName: this.debugName });
+      child.dispose();
+      return;
+    }
     this.childOwners.add(child);
   }
 
@@ -112,15 +121,17 @@ class OwnerImpl implements Owner {
     if (!callbacks.length) {
       return;
     }
-    runWithOwner(this, () => {
-      for (let i = 0; i < callbacks.length; i++) {
-        owner(() => {
+    try {
+      setContextValueTo(this, ImperativeLockContext, lock);
+      runWithOwner(this, () => {
+        for (let i = 0; i < callbacks.length; i++) {
           provideContextValue(ImperativeLockContext, lock);
           callbacks[i]();
-          return getOwnerOrThrow();
-        }).dispose();
-      }
-    });
+        }
+      });
+    } finally {
+      dropContextValue(ImperativeLockContext);
+    }
   }
 
   dispose() {
@@ -160,6 +171,65 @@ class OwnerImpl implements Owner {
   [Symbol.dispose]() {
     this.dispose();
   }
+}
+
+/**
+ * Transparent owner that creates an isolated context boundary for async handlers, forwarding all
+ * lifecycle events.
+ */
+export class ContextShadowOwner implements Owner {
+  readonly context: ContextNode;
+
+  constructor(private readonly target: Owner) {
+    // Inherit the context prototype chain so `useContext` still finds parent data
+    this.context = Object.create(target.context);
+  }
+
+  get parent() {
+    return this.target.parent;
+  }
+  get childOwners() {
+    return this.target.childOwners;
+  }
+  get debugName() {
+    return `Shadow(${this.target.debugName})`;
+  }
+  get disposed() {
+    return this.target.disposed;
+  }
+  get suspended() {
+    return this.target.suspended;
+  }
+
+  registerDisposal(disposal: DisposeFn) {
+    this.target.registerDisposal(disposal);
+  }
+  registerComponentDisposal(id: string, disposal: DisposeFn) {
+    this.target.registerComponentDisposal(id, disposal);
+  }
+  registerOnSuspend(onSuspend: SuspendFn) {
+    this.target.registerOnSuspend(onSuspend);
+  }
+  registerOnResume(onResume: ResumeFn) {
+    this.target.registerOnResume(onResume);
+  }
+  addChild(child: Owner) {
+    this.target.addChild(child);
+  }
+  removeChild(child: Owner) {
+    this.target.removeChild(child);
+  }
+  suspend() {
+    this.target.suspend();
+  }
+  resume() {
+    this.target.resume();
+  }
+
+  dispose() {
+    // Explicitly do absolutely nothing, just passin' thru.
+  }
+  [Symbol.dispose]() {}
 }
 
 const ownerStore = new AsyncLocalStorage<Owner | null>();

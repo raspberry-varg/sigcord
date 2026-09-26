@@ -5,8 +5,9 @@ import { CurrentRepliableContext } from '../../core/contexts/currentRepliableCon
 import { ImperativeLockContext, ImperativeLockKind } from '../../core/contexts/imperativeLock.js';
 import { OwnerTraceContext, OwnerTraceType } from '../../core/contexts/ownerTraceContext.js';
 import { enhanceErrorWithComponentStack } from '../../core/utils/errorStack.js';
+import { coreLog } from '../../internal/coreLog.js';
 import { provideContextValue } from '../../lib/contexts/provideContext.js';
-import { createOwner, getOwner, runWithOwner } from '../../lib/owners/owner.js';
+import { ContextShadowOwner, getOwner, runWithOwner } from '../../lib/owners/owner.js';
 
 import type { Cord } from '../cord.js';
 import type {
@@ -52,7 +53,12 @@ export abstract class Strand {
     interaction: CollectedInteraction,
     handler: CollectedInteractionHandlerData,
   ) {
-    const handlerOwner = createOwner(getOwner());
+    const currentOwner = getOwner();
+    if (!currentOwner) {
+      coreLog.warn('Interaction handler called without an owner');
+      return;
+    }
+    const handlerOwner = new ContextShadowOwner(currentOwner);
     try {
       await runWithOwner(handlerOwner, async () => {
         provideContextValue(CurrentRepliableContext, interaction);
@@ -79,8 +85,6 @@ export abstract class Strand {
       });
     } catch (error: unknown) {
       throw enhanceErrorWithComponentStack(error, handlerOwner);
-    } finally {
-      handlerOwner.dispose();
     }
   }
 }

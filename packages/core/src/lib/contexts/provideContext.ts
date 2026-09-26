@@ -30,3 +30,8 @@ export function setContextValueTo<T>(
     }
   }
 }
+
+export function dropContextValue(context: Context<unknown>): boolean {
+  const openOwner = getOwner();
+  return delete openOwner?.context[context.id];
+}
