@@ -10,6 +10,7 @@ import { PatchTarget } from '../patchTarget.js';
 
 import { Strand } from './strand.js';
 
+import type { Context } from '../../lib/contexts/context.js';
 import type { Cord } from '../cord.js';
 import type { Payload } from '../payload.js';
 
@@ -24,6 +25,7 @@ export class ComponentsV2Strand extends Strand {
   constructor(
     cord: Cord,
     private readonly factory: UncheckedFactory,
+    private readonly extraProvides: Map<Context<unknown>, unknown> | undefined,
   ) {
     super(cord);
   }
@@ -33,6 +35,10 @@ export class ComponentsV2Strand extends Strand {
       this.vdom = runWithOwner(this.rootOwner, () => {
         provideContextValue(CordContext, this.cord);
         provideContextValue(PatchTargetContext, PatchTarget.Components);
+        if (this.extraProvides)
+          for (const [context, value] of this.extraProvides) {
+            provideContextValue(context, value);
+          }
         return this.factory();
       });
     }

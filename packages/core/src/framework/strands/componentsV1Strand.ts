@@ -17,6 +17,7 @@ import { PatchTarget, type PatchTargetBitMask } from '../patchTarget.js';
 
 import { Strand } from './strand.js';
 
+import type { Context } from '../../lib/contexts/context.js';
 import type { Cord } from '../cord.js';
 import type { Payload } from '../payload.js';
 
@@ -49,6 +50,7 @@ export class ComponentsV1Strand extends Strand {
   constructor(
     cord: Cord,
     private readonly factory: UncheckedComponentsV1ViewFactory,
+    private readonly extraProvides: Map<Context<unknown>, unknown> | undefined,
   ) {
     super(cord);
   }
@@ -73,6 +75,11 @@ export class ComponentsV1Strand extends Strand {
             this.queuedComponents!.unshift(...components);
           },
         });
+        if (this.extraProvides) {
+          for (const [context, value] of this.extraProvides) {
+            provideContextValue(context, value);
+          }
+        }
         this.queuedEmbeds = slot({ ephemeral: true });
         this.queuedComponents = slot({ ephemeral: true });
         return this.factory();
