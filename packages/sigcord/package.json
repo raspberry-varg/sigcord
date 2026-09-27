@@ -1,6 +1,6 @@
 {
   "name": "sigcord",
-  "version": "1.2.1",
+  "version": "8.0.0-beta.2",
   "description": "Build interactive and stateful menus for Discord.",
   "keywords": [],
   "license": "Apache-2.0",
