@@ -65,7 +65,7 @@
   "peerDependencies": {
     "discord.js": "catalog:"
   },
-  "packageManager": "pnpm@10.11.0",
+  "packageManager": "pnpm@12.6.0",
   "nx": {
     "targets": {
       "typecheck": {},
