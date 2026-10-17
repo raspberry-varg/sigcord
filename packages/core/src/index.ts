@@ -3,6 +3,7 @@ export { routeInteraction } from './framework/router.js';
 export { CordComposer, composeCord } from './framework/cordComposer.js';
 export * from './framework/hooks/index.js';
 export * from './framework/interactionMiddleware.js';
+export * from './framework/createSigcordMiddleware.js';
 export * from './core/primitives/index.js';
 
 export * from './lib/vdom/index.js';

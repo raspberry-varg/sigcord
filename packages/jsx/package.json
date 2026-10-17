@@ -18,32 +18,32 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "default": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
     "./jsx-runtime": {
-      "default": "./dist/jsx-runtime.js",
-      "types": "./dist/jsx-runtime.d.ts"
+      "types": "./dist/jsx-runtime.d.ts",
+      "default": "./dist/jsx-runtime.js"
     },
     "./jsx-dev-runtime": {
-      "default": "./dist/jsx-runtime.js",
-      "types": "./dist/jsx-runtime.d.ts"
+      "types": "./dist/jsx-runtime.d.ts",
+      "default": "./dist/jsx-runtime.js"
     },
     "./components": {
-      "default": "./dist/components/index.js",
-      "types": "./dist/components/index.d.ts"
+      "types": "./dist/components/index.d.ts",
+      "default": "./dist/components/index.js"
     },
     "./context": {
-      "default": "./dist/context/index.js",
-      "types": "./dist/context/index.d.ts"
+      "types": "./dist/context/index.d.ts",
+      "default": "./dist/context/index.js"
     },
     "./flow": {
-      "default": "./dist/controlFlow/index.js",
-      "types": "./dist/controlFlow/index.d.ts"
+      "types": "./dist/controlFlow/index.d.ts",
+      "default": "./dist/controlFlow/index.js"
     },
     "./legacy": {
-      "default": "./dist/legacy/index.js",
-      "types": "./dist/legacy/index.d.ts"
+      "types": "./dist/legacy/index.d.ts",
+      "default": "./dist/legacy/index.js"
     }
   },
   "publishConfig": {
