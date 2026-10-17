@@ -7,7 +7,6 @@ import { getOwnerOrThrow, owner, useDisposeOwnerFn } from '../../lib/owners/owne
 import { createBoundaryNode, isVDOMNode, NodeType, type ViewNode } from '../../lib/vdom/index.js';
 
 import type { Signal } from '../../lib/reactivity/core/signals.js';
-import type { JSXElement } from 'oxlint/plugins-dev';
 
 interface BaseProps {
   isDefault?: true;
@@ -23,13 +22,11 @@ interface DefaultData extends BaseProps {
   content: () => unknown;
 }
 
-type Case = CaseData | DefaultData;
-
 interface MatchProps {
-  children: JSXElement[];
+  children: unknown[];
 }
 
-export function Match(...props: [MatchProps] | JSXElement[]): ViewNode[] {
+export function Match(...props: [MatchProps] | unknown[]): ViewNode[] {
   const rawChildren =
     props.length === 1 && !!props[0] && typeof props[0] === 'object' && 'children' in props[0]
       ? (props[0] as unknown as MatchProps).children
