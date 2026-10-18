@@ -65,13 +65,5 @@
   "peerDependencies": {
     "discord.js": "catalog:"
   },
-  "packageManager": "pnpm@12.6.0",
-  "nx": {
-    "targets": {
-      "typecheck": {},
-      "lint": {},
-      "format": {},
-      "yalc:push": {}
-    }
-  }
+  "packageManager": "pnpm@12.6.0"
 }

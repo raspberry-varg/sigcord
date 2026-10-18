@@ -52,13 +52,5 @@
   },
   "peerDependencies": {
     "discord.js": "catalog:"
-  },
-  "nx": {
-    "targets": {
-      "typecheck": {},
-      "lint": {},
-      "format": {},
-      "yalc:push": {}
-    }
   }
 }
