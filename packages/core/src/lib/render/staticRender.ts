@@ -1,15 +1,15 @@
+import { getConfig } from '../../config.js';
+import { StaticCord } from '../../framework/staticCord.js';
+import { StaticCordContext } from '../../framework/staticCordContext.js';
 import { provideContextValue } from '../contexts/provideContext.js';
 import { SynapseContext } from '../menu/instance/synapse.js';
 import { createRootOwner, runWithOwner } from '../owners/owner.js';
-import { ViewElementNode } from '../vdom/legacy/viewElementNode.js';
+import { untracked } from '../reactivity/untracked.js';
 
-import { flattenLegacy } from './flatten.js';
-import { renderFragment } from './render.js';
+import { flatten } from './flatten.js';
 import { STATIC_RENDER_SYNAPSE } from './staticRenderSynapse.js';
 
-import type { ViewNodeKind, ViewNodeKindBase } from '../vdom/legacy/viewNodeKind.js';
-
-type StaticRenderFn<T extends ViewNodeKindBase> = () => ViewNodeKind<T>;
+const isDev = process.env.NODE_ENV === 'development';
 
 /**
  * Render a set of DIM-compatible reactive function components to a flattened
@@ -18,19 +18,18 @@ type StaticRenderFn<T extends ViewNodeKindBase> = () => ViewNodeKind<T>;
  * @param renderFn
  * @returns
  */
-export function staticRender<T extends ViewNodeKindBase>(
-  renderFn: StaticRenderFn<ViewNodeKindBase>,
-): T[] {
+export function staticRender<T>(renderFn: () => unknown): T[] {
   const rootOwner = createRootOwner();
-  const nodes = runWithOwner(rootOwner, () => {
-    provideContextValue(SynapseContext, STATIC_RENDER_SYNAPSE);
-    return renderFragment(renderFn);
+  const result = runWithOwner(rootOwner, () => {
+    if (getConfig().useCordFactoriesForLegacyViewDefines) {
+      provideContextValue(SynapseContext, STATIC_RENDER_SYNAPSE);
+    } else {
+      provideContextValue(StaticCordContext, new StaticCord());
+    }
+    const out = untracked(renderFn);
+    const flattened = flatten(out, isDev ? 'StaticRoot' : undefined);
+    return Array.isArray(flattened) ? flattened : [flattened];
   });
-
-  const root = new ViewElementNode();
-  root.setChildren(...nodes);
-  const flattened = flattenLegacy(root, rootOwner);
-
   rootOwner.dispose();
-  return flattened as T[];
+  return result as T[];
 }

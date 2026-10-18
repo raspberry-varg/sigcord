@@ -66,7 +66,7 @@ export function formatTextIntrinsic(
       cast<'quote'>(props);
       return [props.block ? '>>> ' : '> ', ...children, '\n'];
     case 'pre':
-      return ['`', ...children, '\n```'];
+      return ['`', ...children, '`'];
     case 'code':
       cast<'code'>(props);
       return ['```' + (props.language ?? '') + '\n', ...children, '\n```'];

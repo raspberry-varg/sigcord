@@ -1,11 +1,12 @@
-import { getCurrentSynapse } from '../../lib/builtins/currentSynapse.js';
-import { useCordInternal } from '../cordContext.js';
+import { getCurrentSynapseOrDefault } from '../../lib/builtins/currentSynapse.js';
+import { useCordInternalOrThrow } from '../cordContext.js';
 
 export const closeMenu = () => {
-  const cord = useCordInternal();
-  if (!cord) {
-    // Legacy behavior
-    return getCurrentSynapse().close();
+  const legacy = getCurrentSynapseOrDefault();
+  if (legacy) {
+    return legacy.close();
   }
+
+  const cord = useCordInternalOrThrow();
   return cord.close();
 };

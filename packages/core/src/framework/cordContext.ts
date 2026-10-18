@@ -1,5 +1,7 @@
 import { useContext } from '../lib/contexts/useContext.js';
 
+import { inStaticCord } from './staticCordContext.js';
+
 import type { Context } from '../lib/contexts/context.js';
 import type { Cord } from './cord.js';
 
@@ -15,6 +17,9 @@ export function useCordInternal(): Cord | undefined {
 export function useCordInternalOrThrow(): Cord {
   const cord = useCordInternal();
   if (!cord) {
+    if (inStaticCord()) {
+      throw new Error('Attempted to use a hook during static rendering.');
+    }
     throw new Error(
       'Attempted to use a hook outside of a reactive context. Was this called ' +
         'outside of a reactive view?',
