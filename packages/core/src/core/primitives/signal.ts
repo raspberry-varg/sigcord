@@ -1,3 +1,4 @@
+import { inStaticCord } from '../../framework/staticCordContext.js';
 import { getCurrentSynapseOrDefault } from '../../lib/builtins/currentSynapse.js';
 import { type SignalTuple, createSignal } from '../../lib/reactivity/core/signals.js';
 
@@ -33,6 +34,20 @@ export function signal<T>(initialValue?: T): SignalTuple<T | undefined> {
   if (legacy) {
     // Route to legacy behavior.
     return legacy.createSignal(initialValue);
+  }
+  if (inStaticCord()) {
+    const partial = [
+      () => initialValue,
+      () => {
+        throw new Error('Signal sets are not allowed in a static Cord.');
+      },
+    ];
+    Object.defineProperty(partial, 2, {
+      get: () => {
+        throw new Error('Cannot extract writable signal in a static Cord.');
+      },
+    });
+    return partial as SignalTuple<T | undefined>;
   }
   return createSignal(initialValue).split();
 }

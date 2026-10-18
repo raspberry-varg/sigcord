@@ -1,6 +1,5 @@
-import { getCurrentSynapse } from '../../lib/builtins/currentSynapse.js';
-import { useContext } from '../../lib/contexts/useContext.js';
-import { CordContext } from '../cordContext.js';
+import { getCurrentSynapseOrDefault } from '../../lib/builtins/currentSynapse.js';
+import { useCordInternalOrThrow } from '../cordContext.js';
 
 import type { RepliableInteraction } from 'discord.js';
 
@@ -35,11 +34,11 @@ import type { RepliableInteraction } from 'discord.js';
  * @param interaction
  */
 export function deferUpdate(interaction?: RepliableInteraction): void {
-  const cord = useContext(CordContext);
-  if (!cord) {
-    // Fallback to legacy behavior.
-    getCurrentSynapse().deferUpdate(interaction);
+  const legacy = getCurrentSynapseOrDefault();
+  if (legacy) {
+    legacy.deferUpdate(interaction);
     return;
   }
+  const cord = useCordInternalOrThrow();
   cord.deferUpdate(interaction);
 }

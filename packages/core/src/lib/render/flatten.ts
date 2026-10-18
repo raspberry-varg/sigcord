@@ -1,83 +1,13 @@
 // oxlint-disable no-underscore-dangle
 
-import { type Owner, runWithOwner, setCurrentOwner } from '../owners/owner.js';
+import { runWithOwner } from '../owners/owner.js';
 import { executeDeferredNode } from '../vdom/deferred.js';
 import { isVDOMNode, NodeType } from '../vdom/index.js';
-import { OwnerBoundaryViewNodeLegacy } from '../vdom/legacy/viewBoundaryViewNode.js';
-import { ViewComputedElementNode } from '../vdom/legacy/viewComputedElementNode.js';
-import { ViewContentNode } from '../vdom/legacy/viewContentNode.js';
-import { ViewElementNode } from '../vdom/legacy/viewElementNode.js';
-import { ViewManualComputedElementNode } from '../vdom/legacy/viewManualComputedElementNode.js';
-import { ViewNodeLegacy } from '../vdom/legacy/viewNodeLegacy.js';
 
 import { formatTextIntrinsic, isTextIntrinsic } from './formatTextIntrinsic.js';
 import { mergeStrings } from './mergeStrings.js';
 import { mountIntrinsic } from './mountIntrinsic.js';
 import { updateIntrinsicChildren } from './updateIntrinsicChildren.js';
-
-import type { ReadonlyRecursive } from '../../util/types.js';
-import type { ViewNodeKindBase } from '../vdom/legacy/viewNodeKind.js';
-import type { ViewComponent } from '../views/viewFlavors.js';
-
-type ExcludeEmptyTypes<T> = NonNullable<Exclude<T, boolean>>;
-
-export function flattenLegacy<T extends ViewNodeKindBase>(
-  root: ViewNodeLegacy<T> | ReadonlyArray<ViewNodeLegacy<T>>,
-  owner: Owner | null,
-): Array<ExcludeEmptyTypes<T>> {
-  const flattened: Array<ExcludeEmptyTypes<T>> = [];
-  const stack: ReadonlyRecursive<ViewComponent | ViewNodeLegacy<ViewComponent>>[] = Array.isArray(
-    root,
-  )
-    ? [...root]
-    : [root];
-  const prevOwner = setCurrentOwner(owner);
-  try {
-    while (stack.length) {
-      const item = stack.pop();
-      if (item == null || (item as any) === false) {
-        continue;
-      }
-      if (Array.isArray(item)) {
-        stack.push(...item);
-        continue;
-      }
-      if (item instanceof ViewContentNode) {
-        const content = item.getContent();
-        stack.push(content);
-        continue;
-      }
-      if (item instanceof ViewManualComputedElementNode) {
-        const content = runWithOwner(owner, () => item.getFlattened());
-        stack.push(content);
-        continue;
-      }
-      if (item instanceof ViewComputedElementNode) {
-        const content = runWithOwner(owner, () =>
-          item.computer(flattenLegacy(item.children, owner)),
-        );
-        stack.push(content);
-        continue;
-      }
-      if (item instanceof ViewElementNode) {
-        stack.push(item.children);
-        continue;
-      }
-      if (item instanceof OwnerBoundaryViewNodeLegacy) {
-        stack.push(flattenLegacy(item.children, item.owner) as any);
-        continue;
-      }
-      if (item instanceof ViewNodeLegacy) {
-        // How did we get here?
-        throw new Error(`Unhandled ViewNode: ${item}`);
-      }
-      flattened.push(item as (typeof flattened)[number]);
-    }
-  } finally {
-    setCurrentOwner(prevOwner);
-  }
-  return flattened.toReversed();
-}
 
 export function flatten(node: unknown, debugStack?: string): unknown {
   if (Array.isArray(node)) {

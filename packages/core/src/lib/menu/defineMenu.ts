@@ -1,16 +1,25 @@
+import { type Message, MessageFlags, type RepliableInteraction } from 'discord.js';
+
 import { type DefinedView, View } from '../views/view.js';
 
 import { instantiateMenu } from './instance/instantiateMenu.js';
 
 import type { ArrayUnionToIntersection } from '../../util/types.js';
 import type { PropsBase } from '../views/viewDefinitionBase.js';
-import type { IntrinsicViewProps } from '../views/viewFlavors.js';
 import type { MenuInstanceActions } from './instance/menuInstanceActions.js';
-import type { Message, RepliableInteraction } from 'discord.js';
 
 type ViewDefinitions = DefinedView<any>[];
 
-export interface IntrinsicMenuProps extends IntrinsicViewProps {
+/**
+ * @deprecated Please move to Cords instead.
+ */
+export interface IntrinsicMenuProps {
+  /**
+   * @deprecated Use {@link flags} instead
+   */
+  ephemeral?: boolean | false;
+  flags?: MessageFlags;
+
   /**
    * When a message component is handled, call {@link render()}.
    * @default true
@@ -28,7 +37,7 @@ export interface IntrinsicMenuProps extends IntrinsicViewProps {
 
 /**
  * @deprecated Multi-view single menus will be removed in a future release. Please begin migrating
- * to {@link MenuBuilder} instead. {@link useNavigation} provides navigation functionality with
+ * to {@link CordComposer} instead. {@link useNavigation} provides navigation functionality with
  * type safety for initializing views.
  *
  * Define an interactive menu.

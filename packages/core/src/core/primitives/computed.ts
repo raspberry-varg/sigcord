@@ -1,3 +1,4 @@
+import { inStaticCord } from '../../framework/staticCordContext.js';
 import { getCurrentSynapseOrDefault } from '../../lib/builtins/currentSynapse.js';
 import { type Signal, createComputed } from '../../lib/reactivity/core/signals.js';
 
@@ -11,6 +12,9 @@ export function computed<T>(derived: () => T): Signal<T> {
   const legacy = getCurrentSynapseOrDefault();
   if (legacy) {
     return legacy.createComputed(derived);
+  }
+  if (inStaticCord()) {
+    return derived;
   }
   return createComputed(derived);
 }

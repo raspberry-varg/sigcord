@@ -87,25 +87,13 @@ export {
   AutoComponents,
   configureAutoComponent,
 } from './lib/components/autocomponents.js';
-export { flattenLegacy, flatten } from './lib/render/flatten.js';
-export { ViewNodeKind, ViewNodeKindBase } from './lib/vdom/legacy/viewNodeKind.js';
-export { ViewNodeLegacy } from './lib/vdom/legacy/viewNodeLegacy.js';
-export { ViewContentNode } from './lib/vdom/legacy/viewContentNode.js';
-export { ViewElementNode } from './lib/vdom/legacy/viewElementNode.js';
-export { ViewManualComputedElementNode } from './lib/vdom/legacy/viewManualComputedElementNode.js';
-export { OwnerBoundaryViewNodeLegacy } from './lib/vdom/legacy/viewBoundaryViewNode.js';
+export { flatten } from './lib/render/flatten.js';
 export { DeferredComponentLegacy } from './lib/render/deferredComponent.js';
 export {
   MessageComponentCallback,
   MessageComponentCallbackFor,
 } from './lib/components/messageComponentCallback.js';
-export {
-  ViewComputedElementNode,
-  elementComputed,
-  NodeContentComputer,
-} from './lib/vdom/legacy/viewComputedElementNode.js';
 export { staticRender } from './lib/render/staticRender.js';
-export { render, renderFragment } from './lib/render/render.js';
 export { untracked } from './lib/reactivity/untracked.js';
 export { read } from './lib/reactivity/core/read.js';
 export { isSuspended } from './framework/hooks/index.js';
