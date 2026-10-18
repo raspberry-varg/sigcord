@@ -44,7 +44,6 @@
     }
   },
   "scripts": {
-    "test": "bun test",
     "build": "tsc -p ./tsconfig.build.json",
     "prepack": "rm -rf ./dist/** && pnpm run build"
   },

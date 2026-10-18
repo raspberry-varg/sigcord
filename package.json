@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "pnpm --recursive run build",
-    "test": "bun test",
+    "test": "pnpm --recursive run test",
     "lint": "oxlint .",
     "format": "oxfmt .",
     "clean": "pnpm --recursive exec rm -rf dist node_modules"
