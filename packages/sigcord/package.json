@@ -54,28 +54,5 @@
   "devDependencies": {
     "typescript": "catalog:"
   },
-  "packageManager": "pnpm@12.6.0",
-  "nx": {
-    "targets": {
-      "build": {},
-      "typecheck": {},
-      "lint": {
-        "dependsOn": [
-          "^lint"
-        ]
-      },
-      "format": {
-        "dependsOn": [
-          "^format"
-        ]
-      },
-      "test": {
-        "dependsOn": [
-          "^test"
-        ],
-        "executor": "nx:noop"
-      },
-      "yalc:push": {}
-    }
-  }
+  "packageManager": "pnpm@12.6.0"
 }

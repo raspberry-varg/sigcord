@@ -147,8 +147,9 @@ These view functions return a factory that can be invoked directly. It accepts a
 that accepts common attributes like `flags` (i.e., `MessageFlags.Ephemeral`) and any props the view accepts:
 
 ```tsx
-import type { ChatInputCommandInteraction } from 'discord.js';
 import { composeCord } from './cordComposer';
+
+import type { ChatInputCommandInteraction } from 'discord.js';
 
 async function handleInteraction(interaction: ChatInputCommandInteraction): Promise<void> {
   const result = await composeCord()
@@ -200,8 +201,9 @@ JSX comes preloaded with all available Discord components (including V2 componen
 updates are handled by the library itself, no need to define your own `effect()` calls!
 
 ```tsx
-import { signal } from 'sigcord';
 import { type ButtonInteraction, ButtonStyle } from 'discord.js';
+import { signal } from 'sigcord';
+
 import { computed } from './computed';
 
 function ButtonMenu() {
@@ -264,6 +266,7 @@ Since signals are granular, only the relevant code dependent on a signal will re
 ```ts
 import { ButtonBuilder, ButtonStyle } from 'discord.js';
 import { computed, effect, markDirty, createUniqueComponentId } from 'sigcord';
+
 import { useComponentHandler } from './useComponentHandler';
 
 function HotButton({ hotCount }: { hotCount: number }) {
