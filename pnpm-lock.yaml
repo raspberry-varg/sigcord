@@ -219,22 +219,6 @@ importers:
         specifier: 'catalog:'
         version: 7.0.2
 
-  packages/jsx:
-    dependencies:
-      '@sigcord/core':
-        specifier: workspace:*
-        version: link:../core
-    devDependencies:
-      '@types/bun':
-        specifier: 'catalog:'
-        version: 1.4.3
-      discord.js:
-        specifier: 'catalog:'
-        version: 14.27.0
-      typescript:
-        specifier: 'catalog:'
-        version: 7.0.2
-
   packages/sigcord:
     dependencies:
       '@sigcord/core':
