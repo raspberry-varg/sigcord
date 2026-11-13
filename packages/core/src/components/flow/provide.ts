@@ -6,16 +6,20 @@ import type { Context } from '../../lib/contexts/context.js';
 
 type ContextEntry<T> = readonly [Context<T>, NoInfer<T>];
 
+type ContextEntries<T extends Iterable<unknown>> = {
+  [K in keyof T]: ContextEntry<T[K]>;
+};
+
 /**
  * Provide multiple context entries under a single owner.
  *
  * Avoid the nested <FooContext.Provider> tree of doom.
  */
-function Provide<T extends Iterable<ContextEntry<unknown>>>({
+function Provide<T extends readonly unknown[]>({
   contexts,
   children,
 }: {
-  contexts: T;
+  contexts: readonly [...ContextEntries<T>];
   children: unknown;
 }): BoundaryNode {
   const provideOwner = createOwner(getOwner());
